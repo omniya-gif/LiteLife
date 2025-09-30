@@ -1,2 +1,1 @@
-# LiteLife
-just another project
+# nativewind
