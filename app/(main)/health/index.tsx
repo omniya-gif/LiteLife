@@ -57,7 +57,10 @@ export default function HealthPage() {
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
       <ScrollView className="flex-1">
-        <Header />
+        <Header 
+          title="Health" 
+          imageUrl="https://images.unsplash.com/photo-1599566150163-29194dcaad36" 
+        />
         <TabBar activeTab="health" />
         <View className="p-6">
           <Text className="mb-6 text-2xl font-bold">Health Calculators</Text>

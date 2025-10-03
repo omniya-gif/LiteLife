@@ -1,41 +1,22 @@
+import { LinearGradient } from 'expo-linear-gradient';
+import { Bell, Settings } from 'lucide-react-native'; // Updated import
 import React from 'react';
 import { ScrollView, View, Text, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Bell, Moon } from 'lucide-react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 
-import { MetricsOverview } from './components/MetricsOverview';
-import { MealPlanSection } from './components/MealPlanSection';
 import { BottomNavigation } from './components/BottomNavigation';
+import { MealPlanSection } from './components/MealPlanSection';
+import { MetricsOverview } from './components/MetricsOverview';
 import { TabBar } from './components/TabBar';
+import { Header } from './components/Header'; // Import the reusable header
 
 export default function HomePage() {
   return (
     <SafeAreaView className="flex-1 bg-[#1A1B1E]">
-      {/* Header */}
-      <View className="px-6 pt-4 pb-2">
-        <View className="flex-row items-center justify-between">
-          <View className="flex-row items-center space-x-3">
-            <Image
-              source={{ uri: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36' }}
-              className="h-12 w-12 rounded-full border-2 border-[#4ADE80]"
-            />
-            <View>
-              <Text className="text-sm font-medium text-gray-400">Welcome back</Text>
-              <Text className="text-2xl font-bold text-white">Hassan Mdala</Text>
-            </View>
-          </View>
-          <View className="flex-row items-center space-x-4">
-            <TouchableOpacity className="h-10 w-10 items-center justify-center rounded-full bg-[#25262B]">
-              <Moon size={20} color="#4ADE80" />
-            </TouchableOpacity>
-            <TouchableOpacity className="h-10 w-10 items-center justify-center rounded-full bg-[#25262B]">
-              <Bell size={20} color="#4ADE80" />
-              <View className="absolute right-1 top-1 h-2 w-2 rounded-full bg-[#4ADE80]" />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+      <Header 
+        title="Hassan Mdala" 
+        imageUrl="https://images.unsplash.com/photo-1599566150163-29194dcaad36" 
+      />
 
       <TabBar activeTab="home" />
 
@@ -56,10 +37,10 @@ export default function HomePage() {
               <View className="flex-row justify-between">
                 {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, index) => (
                   <View key={day} className="items-center">
-                    <View 
+                    <View
                       className={`mb-2 h-16 w-1.5 rounded-full ${
                         index <= 3 ? 'bg-[#4ADE80]' : 'bg-[#2C2D32]'
-                      }`} 
+                      }`}
                     />
                     <Text className="text-sm font-medium text-gray-400">{day}</Text>
                   </View>
@@ -73,7 +54,9 @@ export default function HomePage() {
             <Text className="mb-4 text-2xl font-bold text-white">Recent Trainings</Text>
             <View className="rounded-3xl bg-[#25262B] p-6">
               <Image
-                source={{ uri: 'https://images.unsplash.com/photo-1549476464-37392f717541?q=80&w=1887&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' }}
+                source={{
+                  uri: 'https://images.unsplash.com/photo-1549476464-37392f717541?q=80&w=1887&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+                }}
                 className="mb-4 h-40 w-full rounded-xl"
                 resizeMode="cover"
               />
