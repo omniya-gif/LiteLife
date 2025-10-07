@@ -1,91 +1,125 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, SafeAreaView, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Plus } from 'lucide-react-native';
-import { WaveAnimation } from '../../../components/WaveAnimation';
+import { ArrowLeft, Plus, Minus, GlassWater } from 'lucide-react-native';
 import { CircularProgress } from '../../../components/CircularProgress';
 
 const { width } = Dimensions.get('window');
 
+const waterCups = [
+  { id: 1, amount: 0.2, label: '200ml' },
+  { id: 2, amount: 0.5, label: '500ml' },
+  { id: 3, amount: 1.0, label: '1L' },
+];
+
 export default function WaterTrackerPage() {
   const router = useRouter();
-  const [waterLeft, setWaterLeft] = useState(2.7);
-  const [goal] = useState(2932);
-  const progress = 0.65; // Calculate based on waterLeft and goal
+  const [waterAmount, setWaterAmount] = useState(750);
+  const [selectedAmount, setSelectedAmount] = useState(0.2); // Default to 200ml
+  const [goal] = useState(2500);
+  const progress = waterAmount / goal;
+
+  const handleCupSelection = (amount) => {
+    setSelectedAmount(amount);
+  };
+
+  const addWater = () => {
+    setWaterAmount((prev) => Math.min(goal, prev + selectedAmount * 1000));
+  };
+
+  const removeWater = () => {
+    setWaterAmount((prev) => Math.max(0, prev - selectedAmount * 1000));
+  };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-[#1A1B1E]">
       {/* Header */}
-      <View className="px-6 pt-4 pb-2">
+      <View className="px-6 pt-4 pb-2 flex-row items-center">
         <TouchableOpacity onPress={() => router.back()}>
-          <ArrowLeft size={24} color="#000" />
+          <ArrowLeft size={24} color="#fff" />
         </TouchableOpacity>
+        <Text className="text-lg font-medium text-[#4ADE80] ml-4">HYDRATION</Text>
       </View>
 
-      {/* Wave Container */}
-      <View className="relative" style={{ height: width }}>
-        {/* Goal Display */}
-        <View className="absolute top-8 left-0 right-0 z-10 items-center">
-          <View className="rounded-xl bg-white/20 px-6 py-2">
-            <Text className="text-xl font-bold text-white">
-              Goal <Text className="text-2xl">2932</Text>
-            </Text>
-          </View>
+      {/* Main Content */}
+      <View className="flex-1 px-6 justify-center">
+        {/* Water Intake Summary */}
+        <View className="items-center">
+          <Text className="text-3xl font-bold text-white text-center">
+            You drank{' '}
+            <Text className="text-[#4ADE80]">{waterAmount}ml</Text>
+            {' '}of{' '}
+            <Text className="text-gray-400">{goal}ml</Text>
+          </Text>
+          <Text className="text-gray-400 mt-2">
+            {progress < 0.5
+              ? 'Keep going!'
+              : progress < 0.8
+              ? 'Almost there!'
+              : 'Great job!'}
+          </Text>
         </View>
 
-        {/* Circular Progress with Water Amount Display */}
-        <View className="absolute left-0 right-0 top-1/4 z-10 items-center">
-          <View className="relative items-center justify-center">
+        {/* Progress Circle */}
+        <View className="items-center py-8">
+          <View className="relative">
             <CircularProgress
               size={width * 0.6}
-              strokeWidth={4}
+              strokeWidth={16}
               progress={progress}
+              colors={['#4ADE80', '#4ADE80', '#4ADE80']}
             />
-            <View className="absolute items-center">
-              <Text className="text-5xl font-bold text-white">
-                {waterLeft} L
-              </Text>
-              <Text className="mt-2 text-lg text-white/90">
-                left to drink
+            <View className="absolute inset-0 items-center justify-center">
+              <Text className="text-4xl font-bold text-white">
+                {Math.round(progress * 100)}%
               </Text>
             </View>
           </View>
         </View>
 
-        {/* Wave Animation */}
-        <WaveAnimation />
-      </View>
-
-      {/* Weather Section */}
-      <View className="px-6 pt-8">
-        <Text className="text-3xl font-bold text-gray-800">Weather</Text>
-        <View className="mt-4 flex-row items-center space-x-4">
-          <View className="h-16 w-16 items-center justify-center rounded-xl bg-[#0043F9]">
-            <View className="h-6 w-8">
-              <View className="mb-1 h-[2px] w-full bg-white" />
-              <View className="mb-1 h-[2px] w-full bg-white" />
-              <View className="h-[2px] w-full bg-white" />
-            </View>
-          </View>
-          <View>
-            <Text className="text-xl font-semibold text-gray-800">
-              It's today!
-            </Text>
-            <Text className="text-base text-gray-600">
-              Don't forget to take the water bottle with you.
-            </Text>
+        {/* Quick Add Buttons */}
+        <View>
+          <Text className="text-xl font-bold text-white mb-4 text-center">
+            Quick Add
+          </Text>
+          <View className="flex-row justify-around">
+            {waterCups.map((cup) => (
+              <TouchableOpacity
+                key={cup.id}
+                onPress={() => handleCupSelection(cup.amount)}
+                className={`h-16 w-16 items-center justify-center rounded-full ${
+                  selectedAmount === cup.amount ? 'bg-[#4ADE80]' : 'bg-[#25262B]'
+                }`}
+              >
+                <GlassWater size={24} color="white" />
+                <Text className="text-white text-xs mt-1">{cup.label}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
       </View>
 
-      {/* Add Water Button */}
-      <View className="absolute bottom-8 right-8">
-        <TouchableOpacity 
-          onPress={() => setWaterLeft(prev => Math.max(0, prev - 0.2))}
-          className="h-14 w-14 items-center justify-center rounded-xl bg-[#0043F9]"
-        >
-          <Plus size={24} color="#fff" />
-        </TouchableOpacity>
+      {/* Bottom Controls */}
+      <View className="bg-[#1A1B1E] px-6 pb-8 pt-4">
+        <View className="flex-row justify-between items-center bg-[#25262B] p-4 rounded-2xl">
+          <TouchableOpacity
+            onPress={removeWater}
+            className="h-12 w-12 items-center justify-center rounded-full bg-[#2C2D32]"
+          >
+            <Minus size={24} color="#4ADE80" />
+          </TouchableOpacity>
+          <View className="items-center">
+            <Text className="text-white text-lg">
+              Add {selectedAmount * 1000}ml
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={addWater}
+            className="h-12 w-12 items-center justify-center rounded-full bg-[#2C2D32]"
+          >
+            <Plus size={24} color="#4ADE80" />
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );

@@ -3,8 +3,9 @@ import { View, Text, ScrollView, TouchableOpacity, Image, TextInput } from 'reac
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Search } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-
-const ORANGE_COLOR = '#FF922C';
+import { TabBar } from '../home/components/TabBar';
+import { Header } from '../home/components/Header';
+import { BottomNavigation } from '../home/components/BottomNavigation';
 
 const categories = [
   {
@@ -68,40 +69,46 @@ export default function RecipesPage() {
   const [searchVisible, setSearchVisible] = useState(false);
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      {searchVisible ? (
-        <View className="px-6 py-4">
-          <View className="flex-row items-center bg-gray-100 rounded-full px-4 py-2">
-            <Search size={20} color="#666" />
-            <TextInput
-              className="flex-1 ml-2 text-base"
-              placeholder="Search recipes..."
-              autoFocus
-            />
-            <TouchableOpacity onPress={() => setSearchVisible(false)}>
-              <Text className="text-gray-600">Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      ) : (
-        <View className="px-6 pt-4 pb-2">
-          <View className="flex-row items-center justify-between">
-            <View>
-              <Text className="text-gray-500">Good Morning</Text>
-              <Text className="text-2xl font-bold">Hi Jenny SO</Text>
-            </View>
-            <TouchableOpacity onPress={() => setSearchVisible(true)}>
-              <Search size={24} color="#000" />
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
-
+    <SafeAreaView className="flex-1 bg-[#1A1B1E]">
+      <Header 
+        title="Recipes" 
+        imageUrl="https://images.unsplash.com/photo-1599566150163-29194dcaad36" 
+      />
+      <TabBar activeTab="recipes" />
       <ScrollView className="flex-1">
+        {searchVisible ? (
+          <View className="px-6 py-4">
+            <View className="flex-row items-center bg-[#25262B] rounded-full px-4 py-2">
+              <Search size={20} color="#fff" />
+              <TextInput
+                className="flex-1 ml-2 text-base text-white"
+                placeholder="Search recipes..."
+                placeholderTextColor="#666"
+                autoFocus
+              />
+              <TouchableOpacity onPress={() => setSearchVisible(false)}>
+                <Text className="text-[#4ADE80]">Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <View className="px-6 pt-4 pb-2">
+            <View className="flex-row items-center justify-between">
+              <View>
+                <Text className="text-gray-400">Good Morning</Text>
+                <Text className="text-2xl font-bold text-white">Hi Jenny SO</Text>
+              </View>
+              <TouchableOpacity onPress={() => setSearchVisible(true)}>
+                <Search size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         {!searchVisible && (
           <>
             <View className="px-6 pt-6">
-              <Text className="text-2xl font-bold mb-4">Featured Recipes</Text>
+              <Text className="text-2xl font-bold text-white mb-4">Featured Recipes</Text>
             </View>
             
             <ScrollView 
@@ -135,7 +142,7 @@ export default function RecipesPage() {
             </ScrollView>
 
             <View className="px-6">
-              <Text className="text-2xl font-bold mb-4">Categories</Text>
+              <Text className="text-2xl font-bold text-white mb-4">Categories</Text>
               <View className="flex-row flex-wrap justify-between">
                 {categories.map((category) => (
                   <TouchableOpacity
@@ -158,47 +165,7 @@ export default function RecipesPage() {
           </>
         )}
       </ScrollView>
-
-      {/* Bottom Navigation */}
-      <View className="border-t border-gray-200 bg-white px-6 py-4">
-        <View className="flex-row items-center justify-around">
-          <TouchableOpacity className="items-center" onPress={() => router.push('/home')}>
-            <Image 
-              source={{ uri: 'https://img.icons8.com/ios/50/home.png' }}
-              style={{ width: 24, height: 24, tintColor: '#666' }}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity className="items-center">
-            <Image 
-              source={{ uri: 'https://img.icons8.com/ios/50/search.png' }}
-              style={{ width: 24, height: 24, tintColor: '#666' }}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity className="items-center">
-            <View className="bg-[#FF922C] rounded-full w-16 h-16 items-center justify-center -mt-8">
-              <Image 
-                source={{ uri: 'https://img.icons8.com/ios/50/spiral.png' }}
-                style={{ width: 32, height: 32, tintColor: '#fff' }}
-              />
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity className="items-center">
-            <Image 
-              source={{ uri: 'https://img.icons8.com/ios/50/shopping-cart.png' }}
-              style={{ width: 24, height: 24, tintColor: '#666' }}
-            />
-            <View className="absolute top-0 right-0 bg-[#FF922C] rounded-full w-4 h-4 items-center justify-center">
-              <Text className="text-white text-xs">2</Text>
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity className="items-center">
-            <Image 
-              source={{ uri: 'https://img.icons8.com/ios/50/settings.png' }}
-              style={{ width: 24, height: 24, tintColor: '#666' }}
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
+      <BottomNavigation />
     </SafeAreaView>
   );
 }

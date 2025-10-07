@@ -11,6 +11,17 @@ import { TabBar } from './components/TabBar';
 import { Header } from './components/Header'; // Import the reusable header
 
 export default function HomePage() {
+  // Add unique identifiers for days
+  const weekDays = [
+    { id: 'mon', label: 'M' },
+    { id: 'tue', label: 'T' },
+    { id: 'wed', label: 'W' },
+    { id: 'thu', label: 'T' },
+    { id: 'fri', label: 'F' },
+    { id: 'sat', label: 'S' },
+    { id: 'sun', label: 'S' }
+  ];
+
   return (
     <SafeAreaView className="flex-1 bg-[#1A1B1E]">
       <Header 
@@ -30,19 +41,19 @@ export default function HomePage() {
             </View>
           </View>
 
-          {/* Weekly Progress */}
+          {/* Weekly Progress - Updated with unique keys */}
           <View className="mb-8">
             <Text className="mb-4 text-2xl font-bold text-white">Weekly Progress</Text>
             <View className="rounded-3xl bg-[#25262B] p-6">
               <View className="flex-row justify-between">
-                {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, index) => (
-                  <View key={day} className="items-center">
+                {weekDays.map((day, index) => (
+                  <View key={day.id} className="items-center">
                     <View
                       className={`mb-2 h-16 w-1.5 rounded-full ${
                         index <= 3 ? 'bg-[#4ADE80]' : 'bg-[#2C2D32]'
                       }`}
                     />
-                    <Text className="text-sm font-medium text-gray-400">{day}</Text>
+                    <Text className="text-sm font-medium text-gray-400">{day.label}</Text>
                   </View>
                 ))}
               </View>

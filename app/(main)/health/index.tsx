@@ -11,7 +11,7 @@ import { BottomNavigation } from '../home/components/BottomNavigation';
 const CalculatorCard = ({ title, description, icon, color, onPress }) => (
   <TouchableOpacity 
     onPress={onPress}
-    className="mb-4 overflow-hidden rounded-2xl bg-white p-4 shadow-sm"
+    className="mb-4 overflow-hidden rounded-2xl bg-[#25262B] p-4 shadow-sm"
     style={{ elevation: 2 }}>
     <View className="flex-row items-center space-x-4">
       <View 
@@ -20,8 +20,8 @@ const CalculatorCard = ({ title, description, icon, color, onPress }) => (
         {icon}
       </View>
       <View className="flex-1">
-        <Text className="text-lg font-semibold text-gray-900">{title}</Text>
-        <Text className="text-sm text-gray-600">{description}</Text>
+        <Text className="text-lg font-semibold text-white">{title}</Text>
+        <Text className="text-sm text-gray-400">{description}</Text>
       </View>
     </View>
   </TouchableOpacity>
@@ -55,7 +55,7 @@ export default function HealthPage() {
   const router = useRouter();
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-[#1A1B1E]">
       <ScrollView className="flex-1">
         <Header 
           title="Health" 
@@ -63,7 +63,7 @@ export default function HealthPage() {
         />
         <TabBar activeTab="health" />
         <View className="p-6">
-          <Text className="mb-6 text-2xl font-bold">Health Calculators</Text>
+          <Text className="mb-6 text-2xl font-bold text-white">Health Calculators</Text>
           {calculators.map((calc, index) => (
             <CalculatorCard 
               key={index} 

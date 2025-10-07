@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
+import LottieView from 'lottie-react-native';
 import React from 'react';
 import { View, Text, TouchableOpacity, Image } from 'react-native';
-import LottieView from 'lottie-react-native';
 
 export const BottomNavigation = () => {
   const router = useRouter();
@@ -23,7 +23,7 @@ export const BottomNavigation = () => {
           />
           <Text className="mt-1 text-sm text-gray-400">Workout</Text>
         </TouchableOpacity>
-        <TouchableOpacity className="items-center" onPress={() => router.push('/recipes')}>
+        <TouchableOpacity className="items-center" onPress={() => router.push('/chat')}>
           <LottieView
             source={require('../../../../assets/lottie_animations/chat.json')}
             autoPlay
@@ -32,7 +32,7 @@ export const BottomNavigation = () => {
           />
         </TouchableOpacity>
         <TouchableOpacity className="items-center" onPress={() => router.push('/dashboard')}>
-          <Image 
+          <Image
             source={{ uri: 'https://img.icons8.com/material-outlined/96/statistics.png' }}
             style={{ width: 24, height: 24, tintColor: '#666' }}
           />

@@ -12,13 +12,13 @@ export default function WeightTrackerPage() {
     labels: ['21 Feb', '28 May', '16 Jul', '19 Aug', '24 Aug', '25 Nov'],
     datasets: [{
       data: [56, 54, 59, 62, 65, 58],
-      color: () => '#7C3AED',
+      color: () => '#4ADE80',
       strokeWidth: 3
     }]
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#7C3AED]">
+    <SafeAreaView className="flex-1 bg-[#1A1B1E]">
       {/* Header */}
       <View className="flex-row items-center justify-between px-6 pt-4 pb-6">
         <TouchableOpacity onPress={() => router.back()}>
@@ -33,28 +33,28 @@ export default function WeightTrackerPage() {
       {/* Weight Stats */}
       <View className="flex-row justify-between px-12 py-8">
         <View>
-          <Text className="text-sm font-medium text-white/80">CURRENT</Text>
-          <Text className="text-5xl font-bold text-white">58<Text className="text-2xl">kg</Text></Text>
+          <Text className="text-sm font-medium text-gray-400">CURRENT</Text>
+          <Text className="text-5xl font-bold text-[#4ADE80]">58<Text className="text-2xl">kg</Text></Text>
         </View>
         <View className="items-center justify-center">
-          <View className="h-20 w-20 items-center justify-center rounded-full border-4 border-white/30">
-            <View className="h-16 w-16 items-center justify-center rounded-full bg-white/20">
-              <Camera size={24} color="white" />
+          <View className="h-20 w-20 items-center justify-center rounded-full border-4 border-[#4ADE80]/30">
+            <View className="h-16 w-16 items-center justify-center rounded-full bg-[#4ADE80]/20">
+              <Camera size={24} color="#4ADE80" />
             </View>
           </View>
         </View>
         <View>
-          <Text className="text-sm font-medium text-white/80">TARGET</Text>
-          <Text className="text-5xl font-bold text-white">64<Text className="text-2xl">kg</Text></Text>
+          <Text className="text-sm font-medium text-gray-400">TARGET</Text>
+          <Text className="text-5xl font-bold text-[#4ADE80]">64<Text className="text-2xl">kg</Text></Text>
         </View>
       </View>
 
       {/* Chart Section */}
-      <View className="flex-1 rounded-t-[32px] bg-white px-6 pt-6">
+      <View className="flex-1 rounded-t-[32px] bg-[#25262B] px-6 pt-6">
         <View className="flex-row items-center justify-between">
-          <Text className="text-2xl font-bold text-gray-800">My Progress</Text>
-          <TouchableOpacity className="rounded-full bg-[#7C3AED]/10 px-6 py-2">
-            <Text className="font-medium text-[#7C3AED]">Weekly</Text>
+          <Text className="text-2xl font-bold text-white">My Progress</Text>
+          <TouchableOpacity className="rounded-full bg-[#4ADE80]/10 px-6 py-2">
+            <Text className="font-medium text-[#4ADE80]">Weekly</Text>
           </TouchableOpacity>
         </View>
 
@@ -64,11 +64,11 @@ export default function WeightTrackerPage() {
             width={width - 48}
             height={220}
             chartConfig={{
-              backgroundColor: '#fff',
-              backgroundGradientFrom: '#fff',
-              backgroundGradientTo: '#fff',
+              backgroundColor: '#25262B',
+              backgroundGradientFrom: '#25262B',
+              backgroundGradientTo: '#25262B',
               decimalPlaces: 0,
-              color: () => '#7C3AED',
+              color: () => '#4ADE80',
               labelColor: () => '#9CA3AF',
               style: {
                 borderRadius: 16
@@ -76,7 +76,7 @@ export default function WeightTrackerPage() {
               propsForDots: {
                 r: '6',
                 strokeWidth: '2',
-                stroke: '#7C3AED'
+                stroke: '#4ADE80'
               }
             }}
             bezier
@@ -90,7 +90,7 @@ export default function WeightTrackerPage() {
         {/* Timeline */}
         <View className="mt-6">
           <View className="flex-row items-center justify-between">
-            <Text className="text-2xl font-bold text-gray-800">Timeline</Text>
+            <Text className="text-2xl font-bold text-white">Timeline</Text>
             <TouchableOpacity>
               <MoreVertical size={24} color="#666" />
             </TouchableOpacity>
@@ -102,12 +102,12 @@ export default function WeightTrackerPage() {
               { weight: 60.2, date: '24 Feb 2023' }
             ].map((item, index) => (
               <View key={index} className="flex-row items-center space-x-4">
-                <View className="h-3 w-3 rounded-full bg-[#7C3AED]" />
-                <View className="flex-1 rounded-xl bg-gray-50 p-4">
-                  <Text className="text-2xl font-bold text-[#7C3AED]">
+                <View className="h-3 w-3 rounded-full bg-[#4ADE80]" />
+                <View className="flex-1 rounded-xl bg-[#2C2D32] p-4">
+                  <Text className="text-2xl font-bold text-[#4ADE80]">
                     {item.weight}<Text className="text-lg">kg</Text>
                   </Text>
-                  <Text className="text-sm text-[#7C3AED]">{item.date}</Text>
+                  <Text className="text-sm text-gray-400">{item.date}</Text>
                 </View>
               </View>
             ))}
@@ -117,7 +117,7 @@ export default function WeightTrackerPage() {
 
       {/* Add Weight Button */}
       <TouchableOpacity 
-        className="absolute bottom-8 right-8 h-16 w-16 items-center justify-center rounded-full bg-[#7C3AED] shadow-lg"
+        className="absolute bottom-8 right-8 h-16 w-16 items-center justify-center rounded-full bg-[#4ADE80] shadow-lg"
       >
         <Plus size={24} color="white" />
       </TouchableOpacity>

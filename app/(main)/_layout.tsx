@@ -8,6 +8,7 @@ export default function MainLayout() {
         animation: 'fade',
       }}>
       <Stack.Screen name="home" />
+      <Stack.Screen name="journal" />
       <Stack.Screen name="recipes" />
       <Stack.Screen name="nutrition" />
       <Stack.Screen name="workouts" /> {/* Add Workouts screen */}

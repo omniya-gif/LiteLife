@@ -29,7 +29,7 @@ export default function NutritionPage() {
 
   const NutritionFilter = ({ title, unit, value, onChange }) => (
     <View className="mb-6">
-      <Text className="text-lg font-semibold text-gray-800 mb-2">{title} {unit && `(${unit})`}</Text>
+      <Text className="text-lg font-semibold text-white mb-2">{title} {unit && `(${unit})`}</Text>
       <View className="flex-row space-x-4">
         <View className="flex-1">
           <TextInput
@@ -37,7 +37,8 @@ export default function NutritionPage() {
             value={value.min}
             onChangeText={(text) => onChange({ ...value, min: text })}
             keyboardType="numeric"
-            className="bg-white px-4 py-3 rounded-xl border border-gray-200"
+            className="bg-[#25262B] px-4 py-3 rounded-xl border border-[#2C2D32] text-white"
+            placeholderTextColor="#666"
           />
         </View>
         <Text className="text-gray-400 self-center">-</Text>
@@ -47,7 +48,8 @@ export default function NutritionPage() {
             value={value.max}
             onChangeText={(text) => onChange({ ...value, max: text })}
             keyboardType="numeric"
-            className="bg-white px-4 py-3 rounded-xl border border-gray-200"
+            className="bg-[#25262B] px-4 py-3 rounded-xl border border-[#2C2D32] text-white"
+            placeholderTextColor="#666"
           />
         </View>
       </View>
@@ -55,15 +57,15 @@ export default function NutritionPage() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <View className="px-6 pt-4 pb-6 bg-white shadow-sm">
+    <SafeAreaView className="flex-1 bg-[#1A1B1E]">
+      <View className="px-6 pt-4 pb-6 bg-[#25262B]">
         <View className="flex-row items-center space-x-4">
           <TouchableOpacity onPress={() => router.back()}>
-            <ArrowLeft size={24} color="#000" />
+            <ArrowLeft size={24} color="#fff" />
           </TouchableOpacity>
           <View className="flex-row items-center">
-            <Apple size={24} color="#84C94B" />
-            <Text className="text-2xl font-bold ml-2 text-gray-800">Nutrition Filters</Text>
+            <Apple size={24} color="#4ADE80" />
+            <Text className="text-2xl font-bold ml-2 text-white">Nutrition Filters</Text>
           </View>
         </View>
       </View>
@@ -99,16 +101,16 @@ export default function NutritionPage() {
         <View className="flex-row space-x-4 mt-6 mb-8">
           <TouchableOpacity
             onPress={handleSearch}
-            className="flex-1 bg-[#84C94B] py-4 rounded-xl items-center"
+            className="flex-1 bg-[#4ADE80] py-4 rounded-xl items-center"
           >
             <Text className="text-white font-semibold text-lg">Search Recipes</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={handleReset}
-            className="bg-gray-200 py-4 px-8 rounded-xl"
+            className="bg-[#2C2D32] py-4 px-8 rounded-xl"
           >
-            <Text className="text-gray-700 font-semibold">Reset</Text>
+            <Text className="text-white font-semibold">Reset</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
