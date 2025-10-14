@@ -1,154 +1,216 @@
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   Image,
-  StatusBar,
-  Animated,
-  ActivityIndicator,
-  ImageBackground,
+  TextInput,
+  Platform,
+  Dimensions,
 } from 'react-native';
+import { Eye, EyeOff } from 'lucide-react-native';
+import { BlurView } from 'expo-blur';
+import Animated, { 
+  FadeInDown, 
+  FadeIn,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring
+} from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 
-import { AuthInput } from '../../components/AuthInput';
-import { WavyBackground } from '../../components/WavyBackground';
+const FloatingLabelInput = ({ label, ...props }) => {
+  const labelAnim = useSharedValue(props.value ? 1 : 0);
+  const inputRef = useRef(null);
+
+  const labelStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: interpolate(labelAnim.value, [0, 1], [0, -25]) },
+      { scale: interpolate(labelAnim.value, [0, 1], [1, 0.85]) }
+    ],
+    color: interpolate(labelAnim.value, [0, 1], [0.6, 1]),
+  }));
+
+  return (
+    <TouchableOpacity 
+      activeOpacity={0.9}
+      onPress={() => inputRef.current?.focus()}
+      className="mb-6"
+    >
+      <BlurView intensity={15} tint="dark" className="overflow-hidden rounded-2xl">
+        <LinearGradient
+          colors={['rgba(224, 255, 99, 0.1)', 'rgba(26, 77, 68, 0.1)']}
+          className="px-5 py-4"
+        >
+          <Animated.Text 
+            className="text-[#E0FF63] text-sm absolute left-5"
+            style={labelStyle}
+          >
+            {label}
+          </Animated.Text>
+          <TextInput
+            ref={inputRef}
+            {...props}
+            onFocus={() => labelAnim.value = withSpring(1)}
+            onBlur={() => !props.value && (labelAnim.value = withSpring(0))}
+            className="text-[#E0FF63] text-lg font-medium pt-2"
+            placeholderTextColor="rgba(224, 255, 99, 0.5)"
+          />
+        </LinearGradient>
+      </BlurView>
+    </TouchableOpacity>
+  );
+};
 
 export default function SignIn() {
+  const [activeTab, setActiveTab] = useState('signin'); // 'signin' or 'signup'
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState('mauricio@divelement.io');
-  const [password, setPassword] = useState('••••••••');
-  const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
-  const buttonScale = new Animated.Value(1);
-
-  const handlePressIn = () => {
-    Animated.spring(buttonScale, {
-      toValue: 0.95,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.spring(buttonScale, {
-      toValue: 1,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const handleLogin = async () => {
-    setIsLoading(true);
-
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 2000);
+  const handleSignIn = () => {
+    if (activeTab === 'signin') {
+      router.push('/(auth)/onboarding/expertise');
+    } else {
+      router.push('/(auth)/signup');
+    }
   };
 
   return (
-    <ImageBackground
-      source={{
-        uri: 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?q=80&w=2076&auto=format&fit=crop',
-      }}
-      className="flex-1"
-      imageStyle={{ opacity: 0.15 }}>
-      <View className="flex-1 bg-white/80">
-        <StatusBar barStyle="dark-content" />
-        <WavyBackground position="top" />
+    <View className="flex-1">
+      <BlurView intensity={80} tint="dark" className="flex-1">
+        {/* Logo with new animation */}
+        <Animated.View 
+          entering={FadeInDown.springify().damping(11)}
+          className="items-center mt-20 mb-12"
+        >
+          <Image
+            source={require('../../assets/images/app-icon/plate-icon.png')}
+            className="h-20 w-20 mb-4"
+            resizeMode="contain"
+          />
+          <Text className="text-[#E0FF63] text-2xl font-bold tracking-wide">
+            Welcome Back
+          </Text>
+        </Animated.View>
 
-        <View className="flex-1 px-6 pt-24">
-          <View className="mb-12">
-            <Text className="text-5xl font-light leading-tight text-gray-800">Welcome Back!</Text>
-            <Text className="text-5xl font-bold leading-tight">
-              <Text className="text-[#84C94B]">Chef</Text>
-              <Text className="text-[#FF6B6B]"> & </Text>
-              <Text className="text-[#4ECDC4]">Fitness Pro</Text>
-            </Text>
-            <Text className="mt-3 text-xl text-gray-600">
-              Your meals, workouts & nutrition awaits
-            </Text>
+        {/* Auth Container with improved layout */}
+        <Animated.View 
+          entering={FadeIn.delay(200).springify()}
+          className="flex-1 px-8"
+        >
+          {/* Tabs */}
+          <View className="flex-row mb-8">
+            <TouchableOpacity 
+              onPress={() => setActiveTab('signin')}
+              className="flex-1"
+            >
+              <Text className={`text-xl font-['Inter'] ${
+                activeTab === 'signin' ? 'text-[#E0FF63] font-semibold' : 'text-gray-400'
+              }`}>
+                Sign In
+              </Text>
+              {activeTab === 'signin' && (
+                <View className="h-0.5 bg-[#E0FF63] mt-2" />
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity 
+              onPress={() => setActiveTab('signup')}
+              className="flex-1"
+            >
+              <Text className={`text-xl font-['Inter'] ${
+                activeTab === 'signup' ? 'text-[#E0FF63] font-semibold' : 'text-gray-400'
+              }`}>
+                Sign Up
+              </Text>
+              {activeTab === 'signup' && (
+                <View className="h-0.5 bg-[#E0FF63] mt-2" />
+              )}
+            </TouchableOpacity>
           </View>
 
-          <View className="flex-1 space-y-5">
-            <AuthInput
+          {/* Improved Form */}
+          <View>
+            <FloatingLabelInput
               label="Email Address"
               value={email}
               onChangeText={setEmail}
-              placeholder="yourname@example.com"
-              keyboardType="email-address"
               autoCapitalize="none"
+              keyboardType="email-address"
             />
 
-            <AuthInput
+            <FloatingLabelInput
               label="Password"
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
-              placeholder="••••••••"
-              icon={showPassword ? 'eye-off-outline' : 'eye-outline'}
-              onIconPress={() => setShowPassword(!showPassword)}
+              autoCapitalize="none"
+              rightIcon={
+                <TouchableOpacity 
+                  onPress={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-4"
+                >
+                  {showPassword ? (
+                    <EyeOff size={22} color="#E0FF63" />
+                  ) : (
+                    <Eye size={22} color="#E0FF63" />
+                  )}
+                </TouchableOpacity>
+              }
             />
 
-            <TouchableOpacity className="mb-4 self-end">
-              <Text className="text-lg font-semibold text-[#84C94B]">Forgot Password?</Text>
+            {activeTab === 'signin' && (
+              <TouchableOpacity className="mb-8">
+                <Text className="text-[#E0FF63] text-sm text-right">
+                  Forgot Password?
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Improved Button */}
+            <TouchableOpacity 
+              onPress={handleSignIn}
+              className="mb-8"
+            >
+              <LinearGradient
+                colors={['#E0FF63', '#CAFF00']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                className="rounded-2xl py-4 px-6"
+              >
+                <Text className="text-[#1A4D44] text-center text-lg font-bold">
+                  {activeTab === 'signin' ? 'Sign In' : 'Create Account'}
+                </Text>
+              </LinearGradient>
             </TouchableOpacity>
 
-            <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
-              <TouchableOpacity
-                onPressIn={handlePressIn}
-                onPressOut={handlePressOut}
-                onPress={handleLogin}
-                className="items-center rounded-2xl bg-[#84C94B] py-4 shadow-lg shadow-green-200"
-                disabled={isLoading}>
-                {isLoading ? (
-                  <View className="flex-row items-center space-x-2">
-                    <ActivityIndicator color="white" />
-                    <Text className="text-lg font-semibold text-white">Signing in...</Text>
-                  </View>
-                ) : (
-                  <Text className="text-lg font-semibold text-white">Sign In</Text>
-                )}
-              </TouchableOpacity>
-            </Animated.View>
+            {/* Improved Social Section */}
+            <View className="flex-row items-center mb-8">
+              <View className="flex-1 h-[1px] bg-[#E0FF63]/20" />
+              <Text className="text-[#E0FF63]/60 mx-4">or continue with</Text>
+              <View className="flex-1 h-[1px] bg-[#E0FF63]/20" />
+            </View>
 
-            <View className="mt-auto pb-8">
-              <View className="my-12 flex-row items-center">
-                <View className="h-[1px] flex-1 bg-gray-300" />
-                <View className="mx-4">
-                  <Text className="text-lg font-medium text-gray-600">alternative ingredients</Text>
-                </View>
-                <View className="h-[1px] flex-1 bg-gray-300" />
-              </View>
-
-              <View className="flex-row justify-center space-x-4">
-                <TouchableOpacity className="h-14 w-14 items-center justify-center rounded-full bg-white shadow-md">
+            <View className="flex-row justify-center space-x-6">
+              {['google', 'apple', 'guest'].map((provider) => (
+                <TouchableOpacity 
+                  key={provider}
+                  className="h-14 w-14 items-center justify-center rounded-full bg-[#E0FF63]/10 border border-[#E0FF63]/30"
+                >
                   <Image
                     source={require('../../assets/images/app-icon/google-icon.png')}
-                    className="h-8 w-8"
+                    className="h-6 w-6"
+                    style={{ tintColor: '#E0FF63' }}
                     resizeMode="contain"
                   />
                 </TouchableOpacity>
-
-                <TouchableOpacity className="h-14 w-14 items-center justify-center rounded-full bg-white shadow-md">
-                  <Image
-                    source={require('../../assets/images/app-icon/facebook.png')}
-                    className="h-8 w-8"
-                    resizeMode="contain"
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <View className="flex-row justify-center pb-4">
-              <Text className="text-lg text-gray-600">Don't have an account? </Text>
-              <TouchableOpacity onPress={() => router.push('/signup')}>
-                <Text className="text-lg font-semibold text-[#84C94B]">Sign up</Text>
-              </TouchableOpacity>
+              ))}
             </View>
           </View>
-        </View>
-
-        <WavyBackground position="bottom" />
-      </View>
-    </ImageBackground>
+        </Animated.View>
+      </BlurView>
+    </View>
   );
 }

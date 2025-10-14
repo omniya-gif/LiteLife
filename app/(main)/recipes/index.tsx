@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, TextInput } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Image, TextInput, Animated, Easing } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Search } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
@@ -67,43 +67,109 @@ const featuredRecipes = [
 export default function RecipesPage() {
   const router = useRouter();
   const [searchVisible, setSearchVisible] = useState(false);
+  
+  // Animation values
+  const headerAnim = useRef(new Animated.Value(0)).current;
+  const searchAnim = useRef(new Animated.Value(0)).current;
+  const featuredAnim = useRef(new Animated.Value(0)).current;
+  const categoryAnims = categories.map(() => useRef(new Animated.Value(0)).current);
+
+  useEffect(() => {
+    // Header animation
+    Animated.spring(headerAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      tension: 10,
+      friction: 2
+    }).start();
+
+    // Featured recipes animation
+    Animated.spring(featuredAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      tension: 20,
+      friction: 7,
+      delay: 300
+    }).start();
+
+    // Staggered category animations
+    categoryAnims.forEach((anim, index) => {
+      Animated.spring(anim, {
+        toValue: 1,
+        useNativeDriver: true,
+        tension: 50,
+        friction: 7,
+        delay: 500 + (index * 100)
+      }).start();
+    });
+  }, []);
+
+  useEffect(() => {
+    Animated.timing(searchAnim, {
+      toValue: searchVisible ? 1 : 0,
+      duration: 300,
+      useNativeDriver: true,
+      easing: Easing.inOut(Easing.ease)
+    }).start();
+  }, [searchVisible]);
 
   return (
     <SafeAreaView className="flex-1 bg-[#1A1B1E]">
-      <Header 
-        title="Recipes" 
-        imageUrl="https://images.unsplash.com/photo-1599566150163-29194dcaad36" 
-      />
-      <TabBar activeTab="recipes" />
+      <Animated.View style={{
+        opacity: headerAnim,
+        transform: [
+          { scale: headerAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0.9, 1]
+          })}
+        ]
+      }}>
+        <Header 
+          title="Recipes" 
+          imageUrl="https://images.unsplash.com/photo-1599566150163-29194dcaad36" 
+        />
+        <TabBar activeTab="recipes" />
+      </Animated.View>
+
       <ScrollView className="flex-1">
-        {searchVisible ? (
-          <View className="px-6 py-4">
-            <View className="flex-row items-center bg-[#25262B] rounded-full px-4 py-2">
-              <Search size={20} color="#fff" />
-              <TextInput
-                className="flex-1 ml-2 text-base text-white"
-                placeholder="Search recipes..."
-                placeholderTextColor="#666"
-                autoFocus
-              />
-              <TouchableOpacity onPress={() => setSearchVisible(false)}>
-                <Text className="text-[#4ADE80]">Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        ) : (
-          <View className="px-6 pt-4 pb-2">
-            <View className="flex-row items-center justify-between">
-              <View>
-                <Text className="text-gray-400">Good Morning</Text>
-                <Text className="text-2xl font-bold text-white">Hi Jenny SO</Text>
+        <Animated.View style={{
+          opacity: searchVisible ? searchAnim : 1,
+          transform: [{
+            translateY: searchAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [-20, 0]
+            })
+          }]
+        }}>
+          {searchVisible ? (
+            <View className="px-6 py-4">
+              <View className="flex-row items-center bg-[#25262B] rounded-full px-4 py-2">
+                <Search size={20} color="#fff" />
+                <TextInput
+                  className="flex-1 ml-2 text-base text-white"
+                  placeholder="Search recipes..."
+                  placeholderTextColor="#666"
+                  autoFocus
+                />
+                <TouchableOpacity onPress={() => setSearchVisible(false)}>
+                  <Text className="text-[#4ADE80]">Cancel</Text>
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity onPress={() => setSearchVisible(true)}>
-                <Search size={24} color="#fff" />
-              </TouchableOpacity>
             </View>
-          </View>
-        )}
+          ) : (
+            <View className="px-6 pt-4 pb-2">
+              <View className="flex-row items-center justify-between">
+                <View>
+                  <Text className="text-gray-400">Good Morning</Text>
+                  <Text className="text-2xl font-bold text-white">Hi Jenny SO</Text>
+                </View>
+                <TouchableOpacity onPress={() => setSearchVisible(true)}>
+                  <Search size={24} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </Animated.View>
 
         {!searchVisible && (
           <>
@@ -111,54 +177,72 @@ export default function RecipesPage() {
               <Text className="text-2xl font-bold text-white mb-4">Featured Recipes</Text>
             </View>
             
-            <ScrollView 
-              horizontal 
-              showsHorizontalScrollIndicator={false}
-              className="mb-8"
-              contentContainerStyle={{ paddingHorizontal: 24 }}
-            >
-              {featuredRecipes.map((recipe) => (
-                <TouchableOpacity
-                  key={recipe.id}
-                  className="mr-4 rounded-3xl overflow-hidden"
-                  style={{ width: 280 }}
-                >
-                  <Image
-                    source={{ uri: recipe.image }}
-                    className="w-full h-40"
-                    resizeMode="cover"
-                  />
-                  <View className="absolute bottom-0 left-0 right-0 p-4 bg-black/30">
-                    <View className="flex-row items-center mb-2">
-                      <View className="bg-white/90 rounded-full px-3 py-1 mr-2">
-                        <Text className="text-sm font-medium">{recipe.type}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-8"
+              contentContainerStyle={{ paddingHorizontal: 24 }}>
+              {featuredRecipes.map((recipe, index) => (
+                <Animated.View key={recipe.id} style={{
+                  transform: [{
+                    translateX: featuredAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [100 * (index + 1), 0]
+                    })
+                  }],
+                  opacity: featuredAnim
+                }}>
+                  <TouchableOpacity className="mr-4 rounded-3xl overflow-hidden" style={{ width: 280 }}>
+                    <Image
+                      source={{ uri: recipe.image }}
+                      className="w-full h-40"
+                      resizeMode="cover"
+                    />
+                    <View className="absolute bottom-0 left-0 right-0 p-4 bg-black/30">
+                      <View className="flex-row items-center mb-2">
+                        <View className="bg-white/90 rounded-full px-3 py-1 mr-2">
+                          <Text className="text-sm font-medium">{recipe.type}</Text>
+                        </View>
                       </View>
+                      <Text className="text-white text-xl font-bold">{recipe.title}</Text>
+                      <Text className="text-white/90 mt-1">{recipe.duration}</Text>
                     </View>
-                    <Text className="text-white text-xl font-bold">{recipe.title}</Text>
-                    <Text className="text-white/90 mt-1">{recipe.duration}</Text>
-                  </View>
-                </TouchableOpacity>
+                  </TouchableOpacity>
+                </Animated.View>
               ))}
             </ScrollView>
 
             <View className="px-6">
               <Text className="text-2xl font-bold text-white mb-4">Categories</Text>
               <View className="flex-row flex-wrap justify-between">
-                {categories.map((category) => (
-                  <TouchableOpacity
+                {categories.map((category, index) => (
+                  <Animated.View
                     key={category.id}
-                    className="w-[48%] mb-4 rounded-2xl overflow-hidden"
-                    style={{ aspectRatio: 1 }}
+                    style={{
+                      width: '48%',
+                      marginBottom: 16,
+                      opacity: categoryAnims[index],
+                      transform: [
+                        { 
+                          translateY: categoryAnims[index].interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [50, 0],
+                          })
+                        }
+                      ]
+                    }}
                   >
-                    <Image
-                      source={{ uri: category.image }}
-                      className="w-full h-full"
-                      resizeMode="cover"
-                    />
-                    <View className="absolute bottom-0 left-0 right-0 p-4 bg-black/30">
-                      <Text className="text-white text-lg font-bold">{category.title}</Text>
-                    </View>
-                  </TouchableOpacity>
+                    <TouchableOpacity
+                      className="rounded-2xl overflow-hidden"
+                      style={{ aspectRatio: 1 }}
+                    >
+                      <Image
+                        source={{ uri: category.image }}
+                        className="w-full h-full"
+                        resizeMode="cover"
+                      />
+                      <View className="absolute bottom-0 left-0 right-0 p-4 bg-black/30">
+                        <Text className="text-white text-lg font-bold">{category.title}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  </Animated.View>
                 ))}
               </View>
             </View>

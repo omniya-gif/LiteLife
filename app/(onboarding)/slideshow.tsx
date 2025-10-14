@@ -1,137 +1,208 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, Image, Dimensions, FlatList, TouchableOpacity, ImageBackground } from 'react-native';
 import { router } from 'expo-router';
+import { Dumbbell, LineChart, Utensils, BookOpen, ChefHat, Calendar, Bell, Target } from 'lucide-react-native';
+import React, { useState } from 'react';
+import { View, Text, ImageBackground, TouchableOpacity, Dimensions } from 'react-native';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 
 const { width } = Dimensions.get('window');
 
+const FeatureItem = ({ icon, title, description, color }) => (
+  <View className="mb-4 flex-row items-center space-x-4">
+    <View
+      className="h-12 w-12 items-center justify-center rounded-full"
+      style={{ backgroundColor: color }}>
+      {icon}
+    </View>
+    <View className="flex-1">
+      <Text className="font-['Outfit'] text-lg font-bold text-white">{title}</Text>
+      <Text className="font-['Manrope'] text-sm text-[#E0E0E0]">{description}</Text>
+    </View>
+  </View>
+);
+
 const slides = [
   {
-    id: '1',
-    title: 'Welcome to Meal Planner',
-    description: 'Your personal recipe, fitness and nutrition companion for a healthier lifestyle.',
+    id: 0,
+    title: "Transform Your Life",
+    description: "Track your nutrition, workouts, and wellness journey all in one place. Get personalized plans and reach your goals faster.",
+    image: "https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?w=500&h=500",
+    features: [
+      {
+        icon: <Dumbbell size={24} color="white" />,
+        title: "Smart Meal Planning",
+        description: "Personalized nutrition recommendations based on your goals",
+        color: "#2797FF"
+      },
+      {
+        icon: <Dumbbell size={24} color="white" />,
+        title: "Workout Tracking",
+        description: "Custom exercise routines and progress monitoring",
+        color: "#0B67BC"
+      },
+      {
+        icon: <LineChart size={24} color="white" />,
+        title: "Progress Analytics",
+        description: "Detailed insights and achievement tracking",
+        color: "#ACC420"
+      }
+    ]
   },
   {
-    id: '2',
-    title: 'Personalized Meal Plans',
-    description: 'Get customized meal plans tailored to your preferences and nutritional goals.',
+    id: 1,
+    title: "Discover Amazing Recipes",
+    description: "Access thousands of delicious recipes and learn to cook like a pro with step-by-step instructions.",
+    image: "https://images.unsplash.com/photo-1495521821757-a1efb6729352?w=500&h=500",
+    features: [
+      {
+        icon: <Utensils size={24} color="white" />,
+        title: "Diverse Recipes",
+        description: "Explore cuisine from around the world",
+        color: "#FF6B6B"
+      },
+      {
+        icon: <BookOpen size={24} color="white" />,
+        title: "Step-by-Step Guide",
+        description: "Detailed instructions for perfect results",
+        color: "#4ECDC4"
+      },
+      {
+        icon: <ChefHat size={24} color="white" />,
+        title: "Cooking Tips",
+        description: "Learn professional cooking techniques",
+        color: "#45B7D1"
+      }
+    ]
   },
   {
-    id: '3',
-    title: 'Track Your Progress',
-    description: 'Monitor your nutrition journey and achieve your health goals with ease.',
-  },
+    id: 2,
+    title: "Track Your Progress",
+    description: "Set your goals, track your meals, and monitor your daily nutrition intake with ease.",
+    image: "https://images.unsplash.com/photo-1543362906-acfc16c67564?w=500&h=500",
+    features: [
+      {
+        icon: <Calendar size={24} color="white" />,
+        title: "Meal Calendar",
+        description: "Plan and track your meals weekly",
+        color: "#FF8C42"
+      },
+      {
+        icon: <Bell size={24} color="white" />,
+        title: "Smart Reminders",
+        description: "Never miss your meal times",
+        color: "#6C63FF"
+      },
+      {
+        icon: <Target size={24} color="white" />,
+        title: "Goal Setting",
+        description: "Track and achieve your nutrition goals",
+        color: "#4CAF50"
+      }
+    ]
+  }
 ];
 
 export default function OnboardingSlideshow() {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const flatListRef = useRef(null);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const currentSlideData = slides[currentSlide];
 
-  const renderItem = ({ item }) => (
-    <ImageBackground
-      source={require('../../assets/images/background-image/background-cropped-428px-923px.png')}
-      style={{ width }}
-      className="flex-1"
-    >
-      <View className="flex-1 bg-black/50">
-        <View className="flex-1 items-center justify-between py-20">
-          <View className="items-center">
-            <View className="w-24 h-24 bg-[#84C94B] rounded-3xl items-center justify-center mb-4">
-              <Image
-                source={require('../../assets/images/app-icon/plate-icon.png')}
-                className="w-16 h-16"
-                resizeMode="contain"
-              />
-            </View>
-            <Text className="text-3xl font-semibold">
-              <Text className="text-white">Meal</Text>
-              <Text className="text-[#84C94B]">Planner</Text>
-            </Text>
-            <Text className="text-white text-3xl font-bold mt-6 text-center">
-              {item.title}
-            </Text>
-            <Text className="text-white text-lg mt-4 text-center px-6">
-              {item.description}
-            </Text>
-          </View>
+  const swipeGesture = Gesture.Pan()
+    .onEnd((event) => {
+      if (event.velocityX > 500 && currentSlide > 0) {
+        handlePrevious();
+      } else if (event.velocityX < -500 && currentSlide < slides.length - 1) {
+        handleNext();
+      }
+    });
 
-          <View className="w-full px-6 items-center">
-            {/* Skip Buttons */}
-            <View className="absolute top-12 right-6">
-              <TouchableOpacity 
-                onPress={() => router.push('/signup')}
-                className="bg-white/20 px-6 py-2 rounded-full"
-              >
-                <Text className="text-white font-semibold">Skip to Sign Up</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                onPress={() => router.push('/home')}
-                className="bg-white/20 px-6 py-2 rounded-full mt-2"
-              >
-                <Text className="text-white font-semibold">Skip to Main</Text>
-              </TouchableOpacity>
-            </View>
+  const handleNext = () => {
+    if (currentSlide < slides.length - 1) {
+      setCurrentSlide(curr => curr + 1);
+    }
+  };
 
-            <View className="flex-row justify-center space-x-3 mb-8">
-              {slides.map((_, index) => (
+  const handlePrevious = () => {
+    if (currentSlide > 0) {
+      setCurrentSlide(curr => curr - 1);
+    }
+  };
+
+  return (
+    <GestureDetector gesture={swipeGesture}>
+      <ImageBackground
+        source={{ uri: currentSlideData.image }}
+        className="flex-1">
+        <View className="flex-1 bg-black/50">
+          {currentSlide > 0 && (
+            <TouchableOpacity
+              onPress={handlePrevious}
+              className="absolute left-4 top-12 z-10 h-10 w-10 items-center justify-center rounded-full bg-white/20">
+              <Text className="text-2xl text-white">←</Text>
+            </TouchableOpacity>
+          )}
+          
+          <View className="flex-1 justify-end px-6 pb-6">
+            <Animated.View entering={FadeInDown.delay(200).springify()}>
+              <Text className="mb-4 font-['Outfit'] text-[36px] font-bold text-white">
+                {currentSlideData.title}
+              </Text>
+              <Text className="mb-6 font-['Outfit'] text-[24px] font-bold text-[#E0E0E0]">
+                {currentSlideData.description}
+              </Text>
+            </Animated.View>
+
+            <Animated.View
+              entering={FadeInDown.delay(400).springify()}
+              className="mb-6 rounded-2xl bg-white/20 p-6">
+              {currentSlideData.features.map((feature, index) => (
+                <FeatureItem
+                  key={index}
+                  icon={feature.icon}
+                  title={feature.title}
+                  description={feature.description}
+                  color={feature.color}
+                />
+              ))}
+            </Animated.View>
+
+            <Animated.View entering={FadeIn.delay(600).springify()}>
+              {currentSlide === slides.length - 1 ? (
+                <>
+                  <TouchableOpacity
+                    onPress={() => router.push('/signup')}
+                    className="mb-4 h-14 items-center justify-center rounded-full bg-[#2797FF]">
+                    <Text className="font-['Manrope'] text-base font-medium text-white">Get Started</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => router.push('/signin')}
+                    className="h-14 items-center justify-center rounded-full bg-white/20">
+                    <Text className="font-['Manrope'] text-base font-medium text-white">
+                      I already have an account
+                    </Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <TouchableOpacity
+                  onPress={handleNext}
+                  className="h-14 items-center justify-center rounded-full bg-[#2797FF]">
+                  <Text className="font-['Manrope'] text-base font-medium text-white">Next</Text>
+                </TouchableOpacity>
+              )}
+            </Animated.View>
+
+            <View className="mt-6 flex-row justify-center space-x-2">
+              {slides.map((slide, index) => (
                 <View
                   key={index}
                   className={`h-2 rounded-full transition-all duration-300 ${
-                    index === currentIndex ? 'w-6 bg-[#84C94B]' : 'w-2 bg-gray-400'
+                    index === currentSlide ? 'w-6 bg-[#2797FF]' : 'w-2 bg-gray-400'
                   }`}
                 />
               ))}
             </View>
-
-            <TouchableOpacity
-              onPress={() => {
-                if (currentIndex === slides.length - 1) {
-                  router.push('/signup'); 
-                } else {
-                  flatListRef.current?.scrollToIndex({
-                    index: currentIndex + 1,
-                    animated: true,
-                  });
-                }
-              }}
-              className="w-full bg-[#84C94B] rounded-full py-4 mb-8"
-              activeOpacity={0.8}
-            >
-              <Text className="text-white text-center text-lg font-semibold">
-                {currentIndex === slides.length - 1 ? 'Get Started' : 'Continue'}
-              </Text>
-            </TouchableOpacity>
-
-            {currentIndex === slides.length - 1 && (
-              <View className="flex-row items-center">
-                <Text className="text-base text-gray-200">Already a member? </Text>
-                <TouchableOpacity onPress={() => router.push('/signin')}> 
-                  <Text className="text-base text-[#84C94B] underline">Sign In</Text>
-                </TouchableOpacity>
-              </View>
-            )}
           </View>
         </View>
-      </View>
-    </ImageBackground>
-  );
-
-  return (
-    <FlatList
-      ref={flatListRef}
-      data={slides}
-      renderItem={renderItem}
-      horizontal
-      pagingEnabled
-      showsHorizontalScrollIndicator={false}
-      onMomentumScrollEnd={(event) => {
-        const newIndex = Math.round(event.nativeEvent.contentOffset.x / width);
-        setCurrentIndex(newIndex);
-      }}
-      getItemLayout={(_, index) => ({
-        length: width,
-        offset: width * index,
-        index,
-      })}
-    />
+      </ImageBackground>
+    </GestureDetector>
   );
 }

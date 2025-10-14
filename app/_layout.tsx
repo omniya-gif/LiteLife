@@ -16,6 +16,7 @@ export default function RootLayout() {
         <Stack.Screen name="details" />
         <Stack.Screen name="+not-found" options={{ title: 'Oops!' }} />
         <Stack.Screen name="calculators" />
+        <Stack.Screen name="workouts" options={{ headerShown: false }} />
       </Stack>
     </GestureHandlerRootView>
   );

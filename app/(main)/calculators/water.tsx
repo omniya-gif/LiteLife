@@ -1,7 +1,21 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Plus, Minus, GlassWater } from 'lucide-react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, SafeAreaView, Dimensions } from 'react-native';
+import Animated, {
+  FadeInDown,
+  FadeIn,
+  FadeInUp,
+  withSpring,
+  useAnimatedStyle,
+  interpolate,
+  useSharedValue,
+  withTiming,
+  withRepeat,
+  Easing,
+} from 'react-native-reanimated';
+import Svg, { Path } from 'react-native-svg';
+
 import { CircularProgress } from '../../../components/CircularProgress';
 
 const { width } = Dimensions.get('window');
@@ -12,6 +26,23 @@ const waterCups = [
   { id: 3, amount: 1.0, label: '1L' },
 ];
 
+// Add this helper function to generate wave path
+const createWavePath = (width: number, amplitude: number, frequency: number, phase: number) => {
+  const steps = 100;
+  let path = `M 0 ${amplitude}`;
+  
+  for (let i = 0; i <= steps; i++) {
+    const x = (i / steps) * width;
+    const y = amplitude + Math.sin((i / steps) * 2 * Math.PI * frequency + phase) * (amplitude / 2);
+    path += ` L ${x} ${y}`;
+  }
+  
+  path += ` L ${width} ${amplitude * 3}`;
+  path += ` L 0 ${amplitude * 3}`;
+  path += ' Z';
+  return path;
+};
+
 export default function WaterTrackerPage() {
   const router = useRouter();
   const [waterAmount, setWaterAmount] = useState(750);
@@ -19,8 +50,101 @@ export default function WaterTrackerPage() {
   const [goal] = useState(2500);
   const progress = waterAmount / goal;
 
+  // Animation values
+  const progressAnimation = useSharedValue(0);
+  const buttonScale = useSharedValue(1);
+
+  // Update animation values for waves
+  const wave1Offset = useSharedValue(0);
+  const wave2Offset = useSharedValue(180); // Start with phase difference
+  const wave3Offset = useSharedValue(90);
+
+  React.useEffect(() => {
+    wave1Offset.value = 0;
+    wave2Offset.value = 0;
+    
+    wave1Offset.value = withRepeat(
+      withTiming(2 * Math.PI, {
+        duration: 4000,
+        easing: Easing.linear,
+      }),
+      -1,
+      false
+    );
+
+    wave2Offset.value = withRepeat(
+      withTiming(2 * Math.PI, {
+        duration: 3000,
+        easing: Easing.linear,
+      }),
+      -1,
+      false
+    );
+
+    progressAnimation.value = withSpring(progress, {
+      damping: 15,
+      stiffness: 80,
+    });
+  }, [progress]);
+
+  const liquidStyle = useAnimatedStyle(() => ({
+    height: `${progressAnimation.value * 100}%`,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    overflow: 'hidden',
+  }));
+
+  const wave1Style = useAnimatedStyle(() => ({
+    transform: [{ translateX: wave1Offset.value }],
+  }));
+
+  const wave2Style = useAnimatedStyle(() => ({
+    transform: [{ translateX: -wave2Offset.value }], // Notice the negative value
+  }));
+
+  const Wave1Component = React.memo(() => {
+    const d = createWavePath(width * 0.6 + 200, 30, 2, wave1Offset.value);
+    return (
+      <Svg height={200} width={width * 0.6 + 200} style={{ position: 'absolute', top: -50 }}>
+        <Path d={d} fill="rgba(74, 222, 128, 0.4)" />
+      </Svg>
+    );
+  });
+
+  const Wave2Component = React.memo(() => {
+    const d = createWavePath(width * 0.6 + 200, 35, 1.5, wave2Offset.value);
+    return (
+      <Svg height={200} width={width * 0.6 + 200} style={{ position: 'absolute', top: -30 }}>
+        <Path d={d} fill="rgba(74, 222, 128, 0.6)" />
+      </Svg>
+    );
+  });
+
+  const WavesContainer = React.memo(() => (
+    <Animated.View style={liquidStyle}>
+      <View style={{ position: 'absolute', bottom: 0, left: -50, right: -50 }}>
+        <Animated.View style={wave1Style}>
+          <Wave1Component />
+        </Animated.View>
+        <Animated.View style={wave2Style}>
+          <Wave2Component />
+        </Animated.View>
+        <View style={{ 
+          backgroundColor: 'rgba(74, 222, 128, 0.8)', 
+          height: 1000,
+          marginTop: 50 
+        }} />
+      </View>
+    </Animated.View>
+  ));
+
   const handleCupSelection = (amount) => {
     setSelectedAmount(amount);
+    buttonScale.value = withSpring(1.1, {}, () => {
+      buttonScale.value = withSpring(1);
+    });
   };
 
   const addWater = () => {
@@ -34,54 +158,51 @@ export default function WaterTrackerPage() {
   return (
     <SafeAreaView className="flex-1 bg-[#1A1B1E]">
       {/* Header */}
-      <View className="px-6 pt-4 pb-2 flex-row items-center">
+      <Animated.View
+        entering={FadeInDown.springify()}
+        className="flex-row items-center px-6 pb-2 pt-4">
         <TouchableOpacity onPress={() => router.back()}>
           <ArrowLeft size={24} color="#fff" />
         </TouchableOpacity>
-        <Text className="text-lg font-medium text-[#4ADE80] ml-4">HYDRATION</Text>
-      </View>
+        <Text className="ml-4 text-lg font-medium text-[#4ADE80]">HYDRATION</Text>
+      </Animated.View>
 
       {/* Main Content */}
-      <View className="flex-1 px-6 justify-center">
+      <View className="flex-1 justify-center px-6">
         {/* Water Intake Summary */}
-        <View className="items-center">
-          <Text className="text-3xl font-bold text-white text-center">
-            You drank{' '}
-            <Text className="text-[#4ADE80]">{waterAmount}ml</Text>
-            {' '}of{' '}
+        <Animated.View entering={FadeIn.delay(300).springify()} className="items-center">
+          <Text className="text-center text-3xl font-bold text-white">
+            You drank <Text className="text-[#4ADE80]">{waterAmount}ml</Text> of{' '}
             <Text className="text-gray-400">{goal}ml</Text>
           </Text>
-          <Text className="text-gray-400 mt-2">
-            {progress < 0.5
-              ? 'Keep going!'
-              : progress < 0.8
-              ? 'Almost there!'
-              : 'Great job!'}
+          <Text className="mt-2 text-gray-400">
+            {progress < 0.5 ? 'Keep going!' : progress < 0.8 ? 'Almost there!' : 'Great job!'}
           </Text>
-        </View>
+        </Animated.View>
 
-        {/* Progress Circle */}
-        <View className="items-center py-8">
-          <View className="relative">
+        {/* Progress Circle with Liquid Animation */}
+        <Animated.View entering={FadeInUp.delay(400).springify()} className="items-center py-8">
+          <View className="relative" style={{ width: width * 0.6, height: width * 0.6 }}>
+            <View className="absolute inset-0 overflow-hidden rounded-full bg-[#25262B]">
+              <WavesContainer />
+            </View>
             <CircularProgress
               size={width * 0.6}
               strokeWidth={16}
               progress={progress}
               colors={['#4ADE80', '#4ADE80', '#4ADE80']}
             />
-            <View className="absolute inset-0 items-center justify-center">
-              <Text className="text-4xl font-bold text-white">
-                {Math.round(progress * 100)}%
-              </Text>
-            </View>
+            <Animated.View
+              entering={FadeIn.delay(500)}
+              className="absolute inset-0 items-center justify-center">
+              <Text className="text-4xl font-bold text-white">{Math.round(progress * 100)}%</Text>
+            </Animated.View>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Quick Add Buttons */}
-        <View>
-          <Text className="text-xl font-bold text-white mb-4 text-center">
-            Quick Add
-          </Text>
+        <Animated.View entering={FadeInUp.delay(600)}>
+          <Text className="mb-4 text-center text-xl font-bold text-white">Quick Add</Text>
           <View className="flex-row justify-around">
             {waterCups.map((cup) => (
               <TouchableOpacity
@@ -89,38 +210,33 @@ export default function WaterTrackerPage() {
                 onPress={() => handleCupSelection(cup.amount)}
                 className={`h-16 w-16 items-center justify-center rounded-full ${
                   selectedAmount === cup.amount ? 'bg-[#4ADE80]' : 'bg-[#25262B]'
-                }`}
-              >
+                }`}>
                 <GlassWater size={24} color="white" />
-                <Text className="text-white text-xs mt-1">{cup.label}</Text>
+                <Text className="mt-1 text-xs text-white">{cup.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
-        </View>
+        </Animated.View>
       </View>
 
       {/* Bottom Controls */}
-      <View className="bg-[#1A1B1E] px-6 pb-8 pt-4">
-        <View className="flex-row justify-between items-center bg-[#25262B] p-4 rounded-2xl">
+      <Animated.View entering={FadeInUp.delay(700)} className="bg-[#1A1B1E] px-6 pb-8 pt-4">
+        <View className="flex-row items-center justify-between rounded-2xl bg-[#25262B] p-4">
           <TouchableOpacity
             onPress={removeWater}
-            className="h-12 w-12 items-center justify-center rounded-full bg-[#2C2D32]"
-          >
+            className="h-12 w-12 items-center justify-center rounded-full bg-[#2C2D32]">
             <Minus size={24} color="#4ADE80" />
           </TouchableOpacity>
           <View className="items-center">
-            <Text className="text-white text-lg">
-              Add {selectedAmount * 1000}ml
-            </Text>
+            <Text className="text-lg text-white">Add {selectedAmount * 1000}ml</Text>
           </View>
           <TouchableOpacity
             onPress={addWater}
-            className="h-12 w-12 items-center justify-center rounded-full bg-[#2C2D32]"
-          >
+            className="h-12 w-12 items-center justify-center rounded-full bg-[#2C2D32]">
             <Plus size={24} color="#4ADE80" />
           </TouchableOpacity>
         </View>
-      </View>
+      </Animated.View>
     </SafeAreaView>
   );
 }

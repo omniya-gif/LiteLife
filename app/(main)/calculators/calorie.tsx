@@ -3,9 +3,13 @@ import { View, Text, TouchableOpacity, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import { CircularProgress } from '../../../components/CircularProgress';
+import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
 
-const MacroRow = ({ name, amount, percentage, color }) => (
-  <View className="flex-row items-center justify-between border-b border-gray-100 py-4">
+const MacroRow = ({ name, amount, percentage, color, index }) => (
+  <Animated.View 
+    entering={FadeInUp.delay(index * 200)}
+    className="flex-row items-center justify-between border-b border-gray-100 py-4"
+  >
     <View className="flex-row items-center space-x-3">
       <View className={`h-3 w-3 rounded-full`} style={{ backgroundColor: color }} />
       <Text className="text-lg font-medium text-white">{name}</Text>
@@ -14,7 +18,7 @@ const MacroRow = ({ name, amount, percentage, color }) => (
       <Text className="text-lg text-white">{amount}g</Text>
       <Text className="w-12 text-right text-lg text-white">{percentage}%</Text>
     </View>
-  </View>
+  </Animated.View>
 );
 
 export default function CalorieTrackerPage() {
@@ -32,7 +36,10 @@ export default function CalorieTrackerPage() {
   return (
     <SafeAreaView className="flex-1 bg-[#1A1B1E]">
       {/* Header */}
-      <View className="flex-row items-center justify-between px-6 pt-4 bg-[#25262B]">
+      <Animated.View 
+        entering={FadeInDown.springify()}
+        className="flex-row items-center justify-between px-6 pt-4 bg-[#25262B]"
+      >
         <TouchableOpacity onPress={() => router.back()}>
           <ArrowLeft size={24} color="#fff" />
         </TouchableOpacity>
@@ -42,20 +49,26 @@ export default function CalorieTrackerPage() {
         >
           <Text className="font-medium text-[#4ADE80]">Journal</Text>
         </TouchableOpacity>
-      </View>
+      </Animated.View>
 
       {/* Daily Intake */}
-      <View className="px-6 pt-12">
+      <Animated.View 
+        entering={FadeIn.delay(300).springify()}
+        className="px-6 pt-12"
+      >
         <Text className="text-center text-lg font-medium text-[#4ADE80]">DAILY INTAKE</Text>
         <Text className="mt-4 text-center text-3xl font-bold text-white">
           Today you have consumed{' '}
           <Text className="text-[#4ADE80]">{calories}</Text>
           <Text className="text-[#4ADE80]"> cal</Text>
         </Text>
-      </View>
+      </Animated.View>
 
       {/* Progress Circle */}
-      <View className="items-center justify-center py-12">
+      <Animated.View 
+        entering={FadeInUp.delay(400).springify()}
+        className="items-center justify-center py-12"
+      >
         <View className="relative">
           <CircularProgress
             size={240}
@@ -68,21 +81,24 @@ export default function CalorieTrackerPage() {
             <Text className="text-gray-500">of daily goal</Text>
           </View>
         </View>
-      </View>
+      </Animated.View>
 
       {/* Macros */}
       <View className="flex-1 px-6">
         {macros.map((macro, index) => (
-          <MacroRow key={index} {...macro} />
+          <MacroRow key={index} {...macro} index={index} />
         ))}
       </View>
 
       {/* Add Meal Button */}
-      <View className="p-6">
+      <Animated.View 
+        entering={FadeInUp.delay(600).springify()}
+        className="p-6"
+      >
         <TouchableOpacity className="w-full rounded-xl bg-[#4ADE80] py-4">
           <Text className="text-center text-lg font-semibold text-white">Add Meal</Text>
         </TouchableOpacity>
-      </View>
+      </Animated.View>
     </SafeAreaView>
   );
 }

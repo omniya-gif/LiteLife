@@ -1,6 +1,6 @@
+import { router } from 'expo-router';
 import React from 'react';
 import { View, Text, Image, ImageBackground } from 'react-native';
-import { router } from 'expo-router';
 
 export default function Splash() {
   React.useEffect(() => {
@@ -13,15 +13,14 @@ export default function Splash() {
   return (
     <ImageBackground
       source={require('../../assets/images/background-image/background-cropped-428px-923px.png')}
-      className="flex-1"
-    >
+      className="flex-1">
       <View className="flex-1 bg-black/50">
         <View className="flex-1 items-center justify-center">
           <View className="items-center">
-            <View className="w-24 h-24 bg-[#84C94B] rounded-3xl items-center justify-center mb-4">
+            <View className="mb-4 h-24 w-24 items-center justify-center rounded-3xl bg-[#84C94B]">
               <Image
                 source={require('../../assets/images/app-icon/plate-icon.png')}
-                className="w-16 h-16"
+                className="h-16 w-16"
                 resizeMode="contain"
               />
             </View>

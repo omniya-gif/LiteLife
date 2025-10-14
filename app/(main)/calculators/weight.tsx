@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, SafeAreaView, Dimensions } from 'react-na
 import { useRouter } from 'expo-router';
 import { ArrowLeft, MoreVertical, Camera, Plus } from 'lucide-react-native';
 import { LineChart } from 'react-native-chart-kit';
+import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');
 
@@ -19,8 +20,10 @@ export default function WeightTrackerPage() {
 
   return (
     <SafeAreaView className="flex-1 bg-[#1A1B1E]">
-      {/* Header */}
-      <View className="flex-row items-center justify-between px-6 pt-4 pb-6">
+      <Animated.View 
+        entering={FadeInDown.springify()}
+        className="flex-row items-center justify-between px-6 pt-4 pb-6"
+      >
         <TouchableOpacity onPress={() => router.back()}>
           <ArrowLeft size={24} color="white" />
         </TouchableOpacity>
@@ -28,10 +31,12 @@ export default function WeightTrackerPage() {
         <TouchableOpacity>
           <MoreVertical size={24} color="white" />
         </TouchableOpacity>
-      </View>
+      </Animated.View>
 
-      {/* Weight Stats */}
-      <View className="flex-row justify-between px-12 py-8">
+      <Animated.View 
+        entering={FadeIn.delay(300).springify()}
+        className="flex-row justify-between px-12 py-8"
+      >
         <View>
           <Text className="text-sm font-medium text-gray-400">CURRENT</Text>
           <Text className="text-5xl font-bold text-[#4ADE80]">58<Text className="text-2xl">kg</Text></Text>
@@ -47,10 +52,12 @@ export default function WeightTrackerPage() {
           <Text className="text-sm font-medium text-gray-400">TARGET</Text>
           <Text className="text-5xl font-bold text-[#4ADE80]">64<Text className="text-2xl">kg</Text></Text>
         </View>
-      </View>
+      </Animated.View>
 
-      {/* Chart Section */}
-      <View className="flex-1 rounded-t-[32px] bg-[#25262B] px-6 pt-6">
+      <Animated.View 
+        entering={FadeInUp.delay(400).springify()}
+        className="flex-1 rounded-t-[32px] bg-[#25262B] px-6 pt-6"
+      >
         <View className="flex-row items-center justify-between">
           <Text className="text-2xl font-bold text-white">My Progress</Text>
           <TouchableOpacity className="rounded-full bg-[#4ADE80]/10 px-6 py-2">
@@ -113,14 +120,18 @@ export default function WeightTrackerPage() {
             ))}
           </View>
         </View>
-      </View>
+      </Animated.View>
 
-      {/* Add Weight Button */}
-      <TouchableOpacity 
-        className="absolute bottom-8 right-8 h-16 w-16 items-center justify-center rounded-full bg-[#4ADE80] shadow-lg"
+      <Animated.View 
+        entering={FadeInUp.delay(500).springify()}
+        className="absolute bottom-8 right-8"
       >
-        <Plus size={24} color="white" />
-      </TouchableOpacity>
+        <TouchableOpacity 
+          className="h-16 w-16 items-center justify-center rounded-full bg-[#4ADE80] shadow-lg"
+        >
+          <Plus size={24} color="white" />
+        </TouchableOpacity>
+      </Animated.View>
     </SafeAreaView>
   );
 }
