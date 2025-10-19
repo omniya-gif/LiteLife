@@ -19,7 +19,7 @@ export default function AgeSelection() {
         entering={FadeIn}
         className="h-1 bg-[#2C2D32] mx-6 mt-4 rounded-full overflow-hidden"
       >
-        <View className="h-full w-2/4 bg-[#4ADE80]" />
+        <View className="h-full w-[25%] bg-[#4ADE80]" />
       </Animated.View>
 
       <View className="flex-1 px-6 pt-12">
@@ -79,6 +79,9 @@ export default function AgeSelection() {
         entering={FadeInDown.delay(700)}
         className="p-6"
       >
+        <Text className="text-[#4ADE80] text-center font-medium">
+          STEP 2/8
+        </Text>
         <TouchableOpacity
           onPress={() => router.push('/onboarding/weight')}
           className="w-full bg-[#4ADE80] p-4 rounded-2xl"

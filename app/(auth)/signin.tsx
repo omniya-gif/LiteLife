@@ -41,11 +41,11 @@ const FloatingLabelInput = ({ label, ...props }) => {
     >
       <BlurView intensity={15} tint="dark" className="overflow-hidden rounded-2xl">
         <LinearGradient
-          colors={['rgba(224, 255, 99, 0.1)', 'rgba(26, 77, 68, 0.1)']}
+          colors={['rgba(74, 222, 128, 0.1)', 'rgba(26, 77, 68, 0.1)']}
           className="px-5 py-4"
         >
           <Animated.Text 
-            className="text-[#E0FF63] text-sm absolute left-5"
+            className="text-[#4ADE80] text-sm absolute left-5"
             style={labelStyle}
           >
             {label}
@@ -55,8 +55,8 @@ const FloatingLabelInput = ({ label, ...props }) => {
             {...props}
             onFocus={() => labelAnim.value = withSpring(1)}
             onBlur={() => !props.value && (labelAnim.value = withSpring(0))}
-            className="text-[#E0FF63] text-lg font-medium pt-2"
-            placeholderTextColor="rgba(224, 255, 99, 0.5)"
+            className="text-[#4ADE80] text-lg font-medium pt-2"
+            placeholderTextColor="rgba(74, 222, 128, 0.5)"
           />
         </LinearGradient>
       </BlurView>
@@ -91,7 +91,7 @@ export default function SignIn() {
             className="h-20 w-20 mb-4"
             resizeMode="contain"
           />
-          <Text className="text-[#E0FF63] text-2xl font-bold tracking-wide">
+          <Text className="text-[#4ADE80] text-2xl font-bold tracking-wide">
             Welcome Back
           </Text>
         </Animated.View>
@@ -108,12 +108,12 @@ export default function SignIn() {
               className="flex-1"
             >
               <Text className={`text-xl font-['Inter'] ${
-                activeTab === 'signin' ? 'text-[#E0FF63] font-semibold' : 'text-gray-400'
+                activeTab === 'signin' ? 'text-[#4ADE80] font-semibold' : 'text-gray-400'
               }`}>
                 Sign In
               </Text>
               {activeTab === 'signin' && (
-                <View className="h-0.5 bg-[#E0FF63] mt-2" />
+                <View className="h-0.5 bg-[#4ADE80] mt-2" />
               )}
             </TouchableOpacity>
             <TouchableOpacity 
@@ -121,12 +121,12 @@ export default function SignIn() {
               className="flex-1"
             >
               <Text className={`text-xl font-['Inter'] ${
-                activeTab === 'signup' ? 'text-[#E0FF63] font-semibold' : 'text-gray-400'
+                activeTab === 'signup' ? 'text-[#4ADE80] font-semibold' : 'text-gray-400'
               }`}>
                 Sign Up
               </Text>
               {activeTab === 'signup' && (
-                <View className="h-0.5 bg-[#E0FF63] mt-2" />
+                <View className="h-0.5 bg-[#4ADE80] mt-2" />
               )}
             </TouchableOpacity>
           </View>
@@ -153,9 +153,9 @@ export default function SignIn() {
                   className="absolute right-4 top-4"
                 >
                   {showPassword ? (
-                    <EyeOff size={22} color="#E0FF63" />
+                    <EyeOff size={22} color="#4ADE80" />
                   ) : (
-                    <Eye size={22} color="#E0FF63" />
+                    <Eye size={22} color="#4ADE80" />
                   )}
                 </TouchableOpacity>
               }
@@ -163,7 +163,7 @@ export default function SignIn() {
 
             {activeTab === 'signin' && (
               <TouchableOpacity className="mb-8">
-                <Text className="text-[#E0FF63] text-sm text-right">
+                <Text className="text-[#4ADE80] text-sm text-right">
                   Forgot Password?
                 </Text>
               </TouchableOpacity>
@@ -175,12 +175,12 @@ export default function SignIn() {
               className="mb-8"
             >
               <LinearGradient
-                colors={['#E0FF63', '#CAFF00']}
+                colors={['#4ADE80', '#22C55E']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 className="rounded-2xl py-4 px-6"
               >
-                <Text className="text-[#1A4D44] text-center text-lg font-bold">
+                <Text className="text-[#1A1B1E] text-center text-lg font-bold">
                   {activeTab === 'signin' ? 'Sign In' : 'Create Account'}
                 </Text>
               </LinearGradient>
@@ -188,21 +188,21 @@ export default function SignIn() {
 
             {/* Improved Social Section */}
             <View className="flex-row items-center mb-8">
-              <View className="flex-1 h-[1px] bg-[#E0FF63]/20" />
-              <Text className="text-[#E0FF63]/60 mx-4">or continue with</Text>
-              <View className="flex-1 h-[1px] bg-[#E0FF63]/20" />
+              <View className="flex-1 h-[1px] bg-[#4ADE80]/20" />
+              <Text className="text-[#4ADE80]/60 mx-4">or continue with</Text>
+              <View className="flex-1 h-[1px] bg-[#4ADE80]/20" />
             </View>
 
             <View className="flex-row justify-center space-x-6">
               {['google', 'apple', 'guest'].map((provider) => (
                 <TouchableOpacity 
                   key={provider}
-                  className="h-14 w-14 items-center justify-center rounded-full bg-[#E0FF63]/10 border border-[#E0FF63]/30"
+                  className="h-14 w-14 items-center justify-center rounded-full bg-[#4ADE80]/10 border border-[#4ADE80]/30"
                 >
                   <Image
                     source={require('../../assets/images/app-icon/google-icon.png')}
                     className="h-6 w-6"
-                    style={{ tintColor: '#E0FF63' }}
+                    style={{ tintColor: '#4ADE80' }}
                     resizeMode="contain"
                   />
                 </TouchableOpacity>

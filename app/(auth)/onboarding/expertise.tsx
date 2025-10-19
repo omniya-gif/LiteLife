@@ -20,7 +20,7 @@ export default function ExpertiseLevel() {
         entering={FadeIn}
         className="h-1.5 bg-[#2C2D32] mx-8 mt-6 rounded-full overflow-hidden"
       >
-        <View className="h-full w-1/4 bg-[#4ADE80]" />
+        <View className="h-full w-[12.5%] bg-[#4ADE80]" />
       </Animated.View>
 
       <View className="flex-1 px-8 pt-12">
@@ -77,6 +77,9 @@ export default function ExpertiseLevel() {
         entering={FadeInDown.delay(700)}
         className="p-8"
       >
+        <Text className="text-[#4ADE80] text-center font-medium">
+          STEP 1/8
+        </Text>
         <TouchableOpacity
           onPress={() => router.push('/onboarding/age')}
           className="w-full bg-[#4ADE80] p-4 rounded-2xl"
