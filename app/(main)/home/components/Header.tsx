@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { Bell, Settings } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 
 interface HeaderProps {
   title: string;
@@ -8,6 +9,8 @@ interface HeaderProps {
 }
 
 export const Header = ({ title, imageUrl }: HeaderProps) => {
+  const router = useRouter();
+
   return (
     <View className="px-6 pb-2 pt-4">
       <View className="flex-row items-center justify-between">
@@ -25,7 +28,10 @@ export const Header = ({ title, imageUrl }: HeaderProps) => {
             <Bell size={20} color="#4ADE80" />
             <View className="absolute right-1 top-1 h-2 w-2 rounded-full bg-[#4ADE80]" />
           </TouchableOpacity>
-          <TouchableOpacity className="h-10 w-10 items-center justify-center rounded-full bg-[#25262B]">
+          <TouchableOpacity 
+            onPress={() => router.push('/profile')}
+            className="h-10 w-10 items-center justify-center rounded-full bg-[#25262B]"
+          >
             <Settings size={20} color="#4ADE80" />
           </TouchableOpacity>
         </View>

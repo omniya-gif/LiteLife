@@ -63,7 +63,6 @@ export default function HomePage() {
             {/* Today's Overview */}
             <View className="mb-8">
               <Text className="mb-4 text-2xl font-bold text-white">Today's Overview</Text>
-              <Text className="mb-3 text-sm text-gray-400">Track your daily progress and goals</Text>
               <View className="rounded-3xl bg-[#25262B] p-4">
                 <MetricsOverview />
               </View>

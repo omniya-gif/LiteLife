@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, TextInput, Animated, Easing } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Search } from 'lucide-react-native';
+import { Search, Heart, Info, ChevronRight } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { TabBar } from '../home/components/TabBar';
 import { Header } from '../home/components/Header';
@@ -46,33 +46,46 @@ const featuredRecipes = [
     title: 'Tartine Bread',
     image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800',
     duration: '48 minutes',
-    type: 'Guided'
+    type: 'Guided',
+    summary: 'A classic sourdough bread recipe that brings the artisanal bakery experience home.',
+    dishTypes: ['breakfast', 'snack']
   },
   {
     id: 2,
     title: 'Tomato Soup',
     image: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=800',
     duration: '30 minutes',
-    type: 'Listed'
+    type: 'Listed',
+    summary: 'Creamy tomato soup with fresh basil and garlic croutons.',
+    dishTypes: ['lunch', 'dinner']
   },
   {
     id: 3,
     title: 'Chicken Noodles',
     image: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=800',
     duration: '30 minutes',
-    type: 'Listed'
+    type: 'Listed',
+    summary: 'Classic chicken noodle soup with tender vegetables and herbs.',
+    dishTypes: ['lunch', 'dinner']
   }
 ];
 
 export default function RecipesPage() {
   const router = useRouter();
   const [searchVisible, setSearchVisible] = useState(false);
+  const [favorites, setFavorites] = useState<number[]>([]);
   
   // Animation values
   const headerAnim = useRef(new Animated.Value(0)).current;
   const searchAnim = useRef(new Animated.Value(0)).current;
   const featuredAnim = useRef(new Animated.Value(0)).current;
   const categoryAnims = categories.map(() => useRef(new Animated.Value(0)).current);
+
+  const toggleFavorite = (id: number) => {
+    setFavorites(prev => 
+      prev.includes(id) ? prev.filter(fid => fid !== id) : [...prev, id]
+    );
+  };
 
   useEffect(() => {
     // Header animation
@@ -177,32 +190,82 @@ export default function RecipesPage() {
               <Text className="text-2xl font-bold text-white mb-4">Featured Recipes</Text>
             </View>
             
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-8"
-              contentContainerStyle={{ paddingHorizontal: 24 }}>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false} 
+              className="mb-8"
+              contentContainerStyle={{ paddingHorizontal: 24 }}
+            >
               {featuredRecipes.map((recipe, index) => (
-                <Animated.View key={recipe.id} style={{
-                  transform: [{
-                    translateX: featuredAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [100 * (index + 1), 0]
-                    })
-                  }],
-                  opacity: featuredAnim
-                }}>
-                  <TouchableOpacity className="mr-4 rounded-3xl overflow-hidden" style={{ width: 280 }}>
-                    <Image
-                      source={{ uri: recipe.image }}
-                      className="w-full h-40"
-                      resizeMode="cover"
-                    />
-                    <View className="absolute bottom-0 left-0 right-0 p-4 bg-black/30">
-                      <View className="flex-row items-center mb-2">
-                        <View className="bg-white/90 rounded-full px-3 py-1 mr-2">
-                          <Text className="text-sm font-medium">{recipe.type}</Text>
-                        </View>
+                <Animated.View 
+                  key={recipe.id} 
+                  style={{
+                    transform: [{
+                      translateX: featuredAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [100 * (index + 1), 0]
+                      })
+                    }],
+                    opacity: featuredAnim
+                  }}
+                >
+                  <TouchableOpacity 
+                    onPress={() => router.push(`/recipes/${recipe.id}`)}
+                    className="mr-4 bg-[#25262B] rounded-3xl overflow-hidden"
+                    style={{ width: 280 }}
+                  >
+                    <View className="relative">
+                      <Image
+                        source={{ uri: recipe.image }}
+                        className="w-full h-40"
+                        resizeMode="cover"
+                      />
+                      <TouchableOpacity 
+                        onPress={() => toggleFavorite(recipe.id)}
+                        className="absolute top-4 right-4 h-10 w-10 rounded-full bg-black/20 items-center justify-center"
+                      >
+                        <Heart 
+                          size={20} 
+                          color={favorites.includes(recipe.id) ? '#4ADE80' : 'white'}
+                          fill={favorites.includes(recipe.id) ? '#4ADE80' : 'transparent'}
+                        />
+                      </TouchableOpacity>
+                    </View>
+
+                    <View className="p-4">
+                      <Text className="text-[#4ADE80] text-sm font-medium mb-2">
+                        {recipe.dishTypes[0]?.toUpperCase()}
+                      </Text>
+                      <Text className="text-white text-lg font-medium mb-2">
+                        {recipe.title}
+                      </Text>
+                      <Text className="text-gray-400 text-sm mb-4" numberOfLines={2}>
+                        {recipe.summary}
+                      </Text>
+
+                      {/* Action Buttons */}
+                      <View className="flex-row justify-between">
+                        <TouchableOpacity 
+                          onPress={() => router.push('/journal')}
+                          className="flex-1 h-12 bg-[#4ADE80] rounded-xl items-center justify-center mr-2"
+                        >
+                          <Text className="text-white font-medium">Add to Journal</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity 
+                          onPress={() => router.push(`/recipes/${recipe.id}/nutrition`)}
+                          className="h-12 w-12 bg-[#2C2D32] rounded-xl items-center justify-center mx-2"
+                        >
+                          <Info size={20} color="#4ADE80" />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity 
+                          onPress={() => router.push(`/recipes/${recipe.id}`)}
+                          className="h-12 w-12 bg-[#2C2D32] rounded-xl items-center justify-center"
+                        >
+                          <ChevronRight size={20} color="#4ADE80" />
+                        </TouchableOpacity>
                       </View>
-                      <Text className="text-white text-xl font-bold">{recipe.title}</Text>
-                      <Text className="text-white/90 mt-1">{recipe.duration}</Text>
                     </View>
                   </TouchableOpacity>
                 </Animated.View>

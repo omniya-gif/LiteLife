@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Bell, Zap, PersonStanding } from 'lucide-react-native';
@@ -24,6 +24,7 @@ const features = [
 
 export default function NotificationsPage() {
   const router = useRouter();
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
   return (
     <SafeAreaView className="flex-1 bg-[#1A1B1E]">
@@ -56,14 +57,22 @@ export default function NotificationsPage() {
         </Text>
       </Animated.View>
 
-      {/* Illustration */}
+      {/* Illustration - Now Clickable */}
       <Animated.View 
         entering={FadeInDown.delay(300)}
         className="items-center justify-center mt-12"
       >
-        <View className="w-48 h-48 rounded-full bg-[#4ADE80]/10 items-center justify-center">
-          <Bell size={80} color="#4ADE80" />
-        </View>
+        <TouchableOpacity
+          onPress={() => setNotificationsEnabled(!notificationsEnabled)}
+          className={`w-48 h-48 rounded-full items-center justify-center ${
+            notificationsEnabled ? 'bg-[#4ADE80]/10' : 'bg-red-500/10'
+          }`}
+        >
+          <Bell 
+            size={80} 
+            color={notificationsEnabled ? "#4ADE80" : "#EF4444"}
+          />
+        </TouchableOpacity>
       </Animated.View>
 
       {/* Features */}
@@ -92,10 +101,12 @@ export default function NotificationsPage() {
       >
         <TouchableOpacity
           onPress={() => router.push('/(main)/home')}
-          className="w-full bg-[#4ADE80] h-14 rounded-2xl items-center justify-center"
+          className={`w-full h-14 rounded-2xl items-center justify-center ${
+            notificationsEnabled ? 'bg-[#4ADE80]' : 'bg-gray-600'
+          }`}
         >
           <Text className="text-[#1A1B1E] font-semibold text-lg">
-            Allow
+            {notificationsEnabled ? 'Allow' : 'Continue without notifications'}
           </Text>
         </TouchableOpacity>
       </Animated.View>

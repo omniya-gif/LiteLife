@@ -21,7 +21,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const FloatingLabelInput = ({ label, ...props }) => {
+const FloatingLabelInput = ({ label, helperText, ...props }) => {
   const labelAnim = useSharedValue(props.value ? 1 : 0);
   const inputRef = useRef(null);
 
@@ -34,33 +34,35 @@ const FloatingLabelInput = ({ label, ...props }) => {
   }));
 
   return (
-    <TouchableOpacity 
-      activeOpacity={0.9}
-      onPress={() => inputRef.current?.focus()}
-      className="mb-6"
-    >
-      <BlurView intensity={15} tint="dark" className="overflow-hidden rounded-2xl">
-        <LinearGradient
-          colors={['rgba(74, 222, 128, 0.1)', 'rgba(26, 77, 68, 0.1)']}
-          className="px-5 py-4"
-        >
-          <Animated.Text 
-            className="text-[#4ADE80] text-sm absolute left-5"
-            style={labelStyle}
+    <View className="mb-6">
+      <Text className="text-[#4ADE80]/80 text-sm mb-2 ml-1">{helperText}</Text>
+      <TouchableOpacity 
+        activeOpacity={0.9}
+        onPress={() => inputRef.current?.focus()}
+      >
+        <BlurView intensity={15} tint="dark" className="overflow-hidden rounded-2xl">
+          <LinearGradient
+            colors={['rgba(74, 222, 128, 0.1)', 'rgba(26, 77, 68, 0.1)']}
+            className="px-5 py-4"
           >
-            {label}
-          </Animated.Text>
-          <TextInput
-            ref={inputRef}
-            {...props}
-            onFocus={() => labelAnim.value = withSpring(1)}
-            onBlur={() => !props.value && (labelAnim.value = withSpring(0))}
-            className="text-[#4ADE80] text-lg font-medium pt-2"
-            placeholderTextColor="rgba(74, 222, 128, 0.5)"
-          />
-        </LinearGradient>
-      </BlurView>
-    </TouchableOpacity>
+            <Animated.Text 
+              className="text-[#4ADE80] text-sm absolute left-5"
+              style={labelStyle}
+            >
+              {label}
+            </Animated.Text>
+            <TextInput
+              ref={inputRef}
+              {...props}
+              onFocus={() => labelAnim.value = withSpring(1)}
+              onBlur={() => !props.value && (labelAnim.value = withSpring(0))}
+              className="text-white text-lg font-medium pt-2"
+              placeholderTextColor="rgba(255, 255, 255, 0.5)"
+            />
+          </LinearGradient>
+        </BlurView>
+      </TouchableOpacity>
+    </View>
   );
 };
 
@@ -135,18 +137,22 @@ export default function SignIn() {
           <View>
             <FloatingLabelInput
               label="Email Address"
+              helperText="Enter your email address"
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
               keyboardType="email-address"
+              placeholder="example@email.com"
             />
 
             <FloatingLabelInput
               label="Password"
+              helperText="Enter your password"
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
               autoCapitalize="none"
+              placeholder="••••••••"
               rightIcon={
                 <TouchableOpacity 
                   onPress={() => setShowPassword(!showPassword)}

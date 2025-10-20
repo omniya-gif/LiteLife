@@ -142,7 +142,9 @@ export default function OnboardingSlideshow() {
           )}
           
           <View className="flex-1 justify-end px-6 pb-6">
-            <Animated.View entering={FadeInDown.delay(200).springify()}>
+            <Animated.View 
+              key={`title-${currentSlide}`} 
+              entering={FadeInDown.delay(200).springify()}>
               <Text className="mb-4 font-['Outfit'] text-[36px] font-bold text-white">
                 {currentSlideData.title}
               </Text>
@@ -152,6 +154,7 @@ export default function OnboardingSlideshow() {
             </Animated.View>
 
             <Animated.View
+              key={`features-${currentSlide}`}
               entering={FadeInDown.delay(400).springify()}
               className="mb-6 rounded-2xl bg-white/20 p-6">
               {currentSlideData.features.map((feature, index) => (
@@ -165,7 +168,9 @@ export default function OnboardingSlideshow() {
               ))}
             </Animated.View>
 
-            <Animated.View entering={FadeIn.delay(600).springify()}>
+            <Animated.View 
+              key={`buttons-${currentSlide}`}
+              entering={FadeIn.delay(600).springify()}>
               {currentSlide === slides.length - 1 ? (
                 <>
                   <TouchableOpacity

@@ -27,6 +27,7 @@ export default function MainLayout() {
         ),
       }}>
       <Stack.Screen name="home" />
+      <Stack.Screen name="profile" />
       <Stack.Screen name="journal" />
       <Stack.Screen name="recipes" />
       <Stack.Screen name="nutrition" />
