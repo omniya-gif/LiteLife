@@ -1,7 +1,8 @@
 import { useRouter, usePathname } from 'expo-router';
 import LottieView from 'lottie-react-native';
+import { Home, Dumbbell, Users, Heart } from 'lucide-react-native';
 import React from 'react';
-import { View, Text, TouchableOpacity, Image } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 
 export const BottomNavigation = () => {
   const router = useRouter();
@@ -18,18 +19,18 @@ export const BottomNavigation = () => {
     <View className="border-t border-[#2C2D32] bg-[#25262B] px-6 py-4">
       <View className="flex-row items-center justify-around">
         <TouchableOpacity className="items-center" onPress={() => router.push('/home')}>
-          <Image
-            source={{ uri: 'https://img.icons8.com/ios/50/home.png' }}
-            style={{ width: 24, height: 24, tintColor: isActive('/home') ? '#4ADE80' : '#666' }}
+          <Home 
+            size={24} 
+            color={isActive('/home') ? '#4ADE80' : '#666'} 
           />
           <Text className={`mt-1 text-sm ${isActive('/home') ? 'text-[#4ADE80]' : 'text-gray-400'}`}>
             Home
           </Text>
         </TouchableOpacity>
         <TouchableOpacity className="items-center" onPress={() => router.push('/workouts')}>
-          <Image
-            source={{ uri: 'https://img.icons8.com/ios/50/dumbbell.png' }}
-            style={{ width: 24, height: 24, tintColor: isActive('/workouts') ? '#4ADE80' : '#666' }}
+          <Dumbbell 
+            size={24} 
+            color={isActive('/workouts') ? '#4ADE80' : '#666'} 
           />
           <Text className={`mt-1 text-sm ${isActive('/workouts') ? 'text-[#4ADE80]' : 'text-gray-400'}`}>
             Workout
@@ -43,19 +44,23 @@ export const BottomNavigation = () => {
             style={{ width: 64, height: 64, marginTop: -16 }}
           />
         </TouchableOpacity>
-        <TouchableOpacity className="items-center" onPress={() => router.push('/dashboard')}>
-          <Image
-            source={{ uri: 'https://img.icons8.com/material-outlined/96/statistics.png' }}
-            style={{ width: 24, height: 24, tintColor: '#666' }}
+        <TouchableOpacity className="items-center" onPress={() => router.push('/community')}>
+          <Users 
+            size={24} 
+            color={isActive('/community') ? '#4ADE80' : '#666'} 
           />
-          <Text className="mt-1 text-sm text-gray-400">Progress</Text>
+          <Text className={`mt-1 text-sm ${isActive('/community') ? 'text-[#4ADE80]' : 'text-gray-400'}`}>
+            Community
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity className="items-center" onPress={() => router.push('/favorites')}>
-          <Image
-            source={{ uri: 'https://img.icons8.com/ios/50/hearts.png' }}
-            style={{ width: 24, height: 24, tintColor: '#666' }}
+          <Heart 
+            size={24} 
+            color={isActive('/favorites') ? '#4ADE80' : '#666'} 
           />
-          <Text className="mt-1 text-sm text-gray-400">Favorites</Text>
+          <Text className={`mt-1 text-sm ${isActive('/favorites') ? 'text-[#4ADE80]' : 'text-gray-400'}`}>
+            Favorites
+          </Text>
         </TouchableOpacity>
       </View>
     </View>

@@ -1,0 +1,203 @@
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, SafeAreaView, Dimensions } from 'react-native';
+import { useRouter } from 'expo-router';
+import { ArrowLeft, TrendingUp, Map, Timer, Footprints } from 'lucide-react-native';
+import { LineChart } from 'react-native-chart-kit';
+import Animated, { 
+  FadeIn, 
+  FadeInDown,
+  useAnimatedStyle,
+  withSpring,
+  withRepeat,
+  withSequence,
+  useSharedValue,
+  FadeInUp
+} from 'react-native-reanimated';
+import { CircularProgress } from '../../../components/CircularProgress';
+import { LinearGradient } from 'expo-linear-gradient';
+
+const { width } = Dimensions.get('window');
+
+const StatsItem = ({ icon, value, label, color, gradient, delay }) => (
+  <Animated.View
+    entering={FadeInUp.delay(delay)}
+    className="items-center rounded-2xl bg-[#25262B] p-4"
+  >
+    <LinearGradient
+      colors={gradient}
+      className="mb-2 rounded-full p-3"
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+    >
+      {icon}
+    </LinearGradient>
+    <Text className="text-xl font-bold text-white">{value}</Text>
+    <Text className="text-xs text-gray-400">{label}</Text>
+  </Animated.View>
+);
+
+export default function StepsTrackerPage() {
+  const router = useRouter();
+  const [steps] = useState(6328);
+  const [goal] = useState(10000);
+  const [activeTab, setActiveTab] = useState('WEEK');
+  const progress = steps / goal;
+  
+  // Animation values
+  const footprintScale = useSharedValue(1);
+  const progressAnimation = useSharedValue(0);
+
+  React.useEffect(() => {
+    footprintScale.value = withRepeat(
+      withSequence(
+        withSpring(1.1),
+        withSpring(1)
+      ),
+      -1,
+      true
+    );
+
+    progressAnimation.value = withSpring(progress, {
+      damping: 15,
+      stiffness: 80,
+    });
+  }, []);
+
+  const footprintStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: footprintScale.value }],
+  }));
+
+  // Sample data for the line chart
+  const data = {
+    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    datasets: [
+      {
+        data: [6000, 7500, 5000, 8000, 6328, 0, 0],
+        color: () => '#4ADE80',
+        strokeWidth: 2
+      },
+      {
+        data: [5000, 6500, 4000, 7000, 5328, 0, 0],
+        color: () => '#22C55E',
+        strokeWidth: 2
+      }
+    ]
+  };
+
+  return (
+    <SafeAreaView className="flex-1 bg-[#1A1B1E]">
+      <Animated.View
+        entering={FadeInDown.springify()}
+        className="flex-row items-center justify-between px-6 pt-4">
+        <TouchableOpacity onPress={() => router.back()}>
+          <ArrowLeft size={24} color="white" />
+        </TouchableOpacity>
+        <TouchableOpacity className="rounded-lg bg-[#4ADE80]/10 px-6 py-2">
+          <Text className="text-[#4ADE80]">Insight</Text>
+        </TouchableOpacity>
+      </Animated.View>
+
+      <View className="mt-12 px-6">
+        <Animated.View
+          entering={FadeIn.delay(300)}
+          className="items-center"
+        >
+          <Text className="text-center text-sm font-medium text-[#4ADE80]">
+            DAILY STEPS
+          </Text>
+          <Text className="mt-2 text-center text-2xl text-white">
+            You have walked {Math.round(progress * 100)}% of your goal
+          </Text>
+        </Animated.View>
+      </View>
+
+      <View className="mt-12 items-center">
+        <View className="relative" style={{ width: 200, height: 200 }}>
+          <CircularProgress
+            size={200}
+            strokeWidth={20}
+            progress={0.8}
+            colors={['#4ADE80', '#22C55E', '#16A34A']}
+            gradientStops={[0, 0.5, 1]}
+          />
+          <Animated.View 
+            style={[footprintStyle]}
+            className="absolute inset-0 items-center justify-center"
+          >
+            <Footprints size={40} color="#4ADE80" />
+            <Text className="mt-2 text-4xl font-bold text-white">{steps}</Text>
+            <Text className="text-gray-400">steps</Text>
+          </Animated.View>
+        </View>
+      </View>
+
+      <View className="mt-9 flex-row justify-between px-6">
+        <StatsItem
+          icon={<TrendingUp size={24} color="white" />}
+          value="310 kcal"
+          label="Calories"
+          gradient={['#4ADE80', '#22C55E']}
+          delay={300}
+        />
+        <StatsItem
+          icon={<Map size={24} color="white" />}
+          value="4 km"
+          label="Distance"
+          gradient={['#3B82F6', '#2563EB']}
+          delay={400}
+        />
+        <StatsItem
+          icon={<Timer size={24} color="white" />}
+          value="32 min"
+          label="Duration"
+          gradient={['#A78BFA', '#7C3AED']}
+          delay={500}
+        />
+      </View>
+
+      <View className="mt-9 flex-1 rounded-t-[36px] bg-[#25262B] px-6 pt-6">
+        <View className="flex-row justify-between">
+          {['DAY', 'WEEK', 'MONTH'].map((tab) => (
+            <TouchableOpacity
+              key={tab}
+              onPress={() => setActiveTab(tab)}
+              className={`rounded-xl px-6 py-3 ${
+                activeTab === tab ? 'bg-[#4ADE80]' : 'bg-transparent'
+              }`}>
+              <Text className="text-white">{tab}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Animated.View
+          entering={FadeIn.delay(600)}
+        >
+          <LineChart
+            data={data}
+            width={width - 48}
+            height={180}
+            chartConfig={{
+              backgroundColor: '#25262B',
+              backgroundGradientFrom: '#25262B',
+              backgroundGradientTo: '#25262B',
+              decimalPlaces: 0,
+              color: () => '#4ADE80',
+              labelColor: () => '#9CA3AF',
+              style: { borderRadius: 16 },
+              propsForDots: {
+                r: '6',
+                strokeWidth: '2',
+                stroke: '#4ADE80'
+              }
+            }}
+            bezier
+            style={{
+              marginVertical: 8,
+              borderRadius: 16
+            }}
+          />
+        </Animated.View>
+      </View>
+    </SafeAreaView>
+  );
+}

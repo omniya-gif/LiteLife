@@ -1,89 +1,136 @@
+import React, { useState, useCallback } from 'react';
 import { router } from 'expo-router';
-import React, { useState, useRef } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Image,
-  TextInput,
-  Platform,
-  Dimensions,
-} from 'react-native';
+import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { Eye, EyeOff } from 'lucide-react-native';
 import { BlurView } from 'expo-blur';
-import Animated, { 
-  FadeInDown, 
-  FadeIn,
-  interpolate,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring
-} from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
+import { useAuth } from '../../hooks/useAuth';
+import { FloatingLabelInput } from '../../components/auth/FloatingLabelInput';
+import { AuthTabs } from '../../components/auth/AuthTabs';
+import { SocialLogin } from '../../components/auth/SocialLogin';
+import { GradientButton } from '../../components/auth/GradientButton';
+import { AuthError } from '../../types/auth';
 
-const FloatingLabelInput = ({ label, helperText, ...props }) => {
-  const labelAnim = useSharedValue(props.value ? 1 : 0);
-  const inputRef = useRef(null);
+interface ValidationErrors {
+  username?: string;
+  email?: string;
+  password?: string;
+  confirmPassword?: string;
+}
 
-  const labelStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateY: interpolate(labelAnim.value, [0, 1], [0, -25]) },
-      { scale: interpolate(labelAnim.value, [0, 1], [1, 0.85]) }
-    ],
-    color: interpolate(labelAnim.value, [0, 1], [0.6, 1]),
-  }));
-
-  return (
-    <View className="mb-6">
-      <Text className="text-[#4ADE80]/80 text-sm mb-2 ml-1">{helperText}</Text>
-      <TouchableOpacity 
-        activeOpacity={0.9}
-        onPress={() => inputRef.current?.focus()}
-      >
-        <BlurView intensity={15} tint="dark" className="overflow-hidden rounded-2xl">
-          <LinearGradient
-            colors={['rgba(74, 222, 128, 0.1)', 'rgba(26, 77, 68, 0.1)']}
-            className="px-5 py-4"
-          >
-            <Animated.Text 
-              className="text-[#4ADE80] text-sm absolute left-5"
-              style={labelStyle}
-            >
-              {label}
-            </Animated.Text>
-            <TextInput
-              ref={inputRef}
-              {...props}
-              onFocus={() => labelAnim.value = withSpring(1)}
-              onBlur={() => !props.value && (labelAnim.value = withSpring(0))}
-              className="text-white text-lg font-medium pt-2"
-              placeholderTextColor="rgba(255, 255, 255, 0.5)"
-            />
-          </LinearGradient>
-        </BlurView>
-      </TouchableOpacity>
-    </View>
-  );
-};
-
-export default function SignIn() {
-  const [activeTab, setActiveTab] = useState('signin'); // 'signin' or 'signup'
+function SignIn() {
+  const [activeTab, setActiveTab] = useState('signin');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [signupStep, setSignupStep] = useState(1);
+  
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [errors, setErrors] = useState<ValidationErrors>({});
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSignIn = () => {
-    if (activeTab === 'signin') {
-      router.push('/(auth)/onboarding/expertise');
-    } else {
-      router.push('/(auth)/signup');
+  const { signIn: authSignIn, signUp: authSignUp } = useAuth();
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    setSignupStep(1);
+    setErrors({});
+    if (tab === 'signin') {
+      setUsername('');
+      setPassword('');
+      setConfirmPassword('');
     }
   };
+
+  const handleNextStep = useCallback(() => {
+    const newErrors: ValidationErrors = {};
+
+    if (signupStep === 1) {
+      if (username.length < 3) {
+        newErrors.username = 'Username must be at least 3 characters long';
+      }
+    } else if (signupStep === 2) {
+      if (!email) {
+        newErrors.email = 'Please enter a valid email address';
+      }
+    }
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length === 0) {
+      if (signupStep === 1 && username.length >= 3) {
+        setSignupStep(2);
+      } else if (signupStep === 2 && email) {
+        setSignupStep(3);
+      }
+    }
+  }, [signupStep, username, email]);
+
+  const handleSignIn = async () => {
+    try {
+      setIsLoading(true);
+      setErrors({});
+
+      const error = await authSignIn({ email, password });
+      if (error) {
+        setErrors({ [error.field || 'email']: error.message });
+        return;
+      }
+
+      router.push('/(main)/home');
+    } catch (error) {
+      setErrors({ email: 'An unexpected error occurred' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSignUp = async () => {
+    try {
+      setIsLoading(true);
+      setErrors({});
+
+      if (password !== confirmPassword) {
+        setErrors({ confirmPassword: 'Passwords do not match' });
+        return;
+      }
+
+      const error = await authSignUp({ email, password, username });
+      if (error) {
+        setErrors({ [error.field || 'email']: error.message });
+        return;
+      }
+
+      router.push('/(auth)/onboarding/expertise');
+    } catch (error) {
+      setErrors({ email: 'An unexpected error occurred' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (activeTab === 'signin') {
+      await handleSignIn();
+    } else {
+      await handleSignUp();
+    }
+  };
+
+  const togglePasswordVisibility = useCallback((field: 'password' | 'confirmPassword') => {
+    if (field === 'password') {
+      setShowPassword(!showPassword);
+    } else {
+      setShowConfirmPassword(!showConfirmPassword);
+    }
+  }, [showPassword, showConfirmPassword]);
 
   return (
     <View className="flex-1">
       <BlurView intensity={80} tint="dark" className="flex-1">
-        {/* Logo with new animation */}
         <Animated.View 
           entering={FadeInDown.springify().damping(11)}
           className="items-center mt-20 mb-12"
@@ -98,125 +145,179 @@ export default function SignIn() {
           </Text>
         </Animated.View>
 
-        {/* Auth Container with improved layout */}
         <Animated.View 
           entering={FadeIn.delay(200).springify()}
           className="flex-1 px-8"
         >
-          {/* Tabs */}
-          <View className="flex-row mb-8">
-            <TouchableOpacity 
-              onPress={() => setActiveTab('signin')}
-              className="flex-1"
-            >
-              <Text className={`text-xl font-['Inter'] ${
-                activeTab === 'signin' ? 'text-[#4ADE80] font-semibold' : 'text-gray-400'
-              }`}>
-                Sign In
-              </Text>
-              {activeTab === 'signin' && (
-                <View className="h-0.5 bg-[#4ADE80] mt-2" />
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity 
-              onPress={() => setActiveTab('signup')}
-              className="flex-1"
-            >
-              <Text className={`text-xl font-['Inter'] ${
-                activeTab === 'signup' ? 'text-[#4ADE80] font-semibold' : 'text-gray-400'
-              }`}>
-                Sign Up
-              </Text>
-              {activeTab === 'signup' && (
-                <View className="h-0.5 bg-[#4ADE80] mt-2" />
-              )}
-            </TouchableOpacity>
-          </View>
+          <AuthTabs activeTab={activeTab} onTabChange={handleTabChange} />
 
-          {/* Improved Form */}
           <View>
-            <FloatingLabelInput
-              label="Email Address"
-              helperText="Enter your email address"
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              placeholder="example@email.com"
-            />
-
-            <FloatingLabelInput
-              label="Password"
-              helperText="Enter your password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-              autoCapitalize="none"
-              placeholder="••••••••"
-              rightIcon={
-                <TouchableOpacity 
-                  onPress={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-4"
-                >
-                  {showPassword ? (
-                    <EyeOff size={22} color="#4ADE80" />
-                  ) : (
-                    <Eye size={22} color="#4ADE80" />
-                  )}
+            {activeTab === 'signup' ? (
+              <Animated.View entering={FadeIn} className="space-y-4">
+                {signupStep === 1 ? (
+                  <>
+                    <FloatingLabelInput
+                      label="Username"
+                      helperText="Choose your username"
+                      value={username}
+                      onChangeText={(text) => {
+                        setUsername(text);
+                        if (errors.username) {
+                          setErrors(prev => ({ ...prev, username: undefined }));
+                        }
+                      }}
+                      autoCapitalize="none"
+                      placeholder="johndoe"
+                      error={errors.username}
+                    />
+                    <GradientButton onPress={handleNextStep} title="Continue" />
+                  </>
+                ) : signupStep === 2 ? (
+                  <>
+                    <FloatingLabelInput
+                      label="Email Address"
+                      helperText="Enter your email address"
+                      value={email}
+                      onChangeText={(text) => {
+                        setEmail(text);
+                        if (errors.email) {
+                          setErrors(prev => ({ ...prev, email: undefined }));
+                        }
+                      }}
+                      autoCapitalize="none"
+                      keyboardType="email-address"
+                      placeholder="example@email.com"
+                      error={errors.email}
+                    />
+                    <GradientButton onPress={handleNextStep} title="Continue" />
+                  </>
+                ) : (
+                  <>
+                    <FloatingLabelInput
+                      label="Password"
+                      helperText="Create a strong password"
+                      value={password}
+                      onChangeText={(text) => {
+                        setPassword(text);
+                        if (errors.password) {
+                          setErrors(prev => ({ ...prev, password: undefined }));
+                        }
+                      }}
+                      secureTextEntry={!showPassword}
+                      autoCapitalize="none"
+                      placeholder="••••••••"
+                      error={errors.password}
+                      rightIcon={
+                        <TouchableOpacity 
+                          onPress={() => togglePasswordVisibility('password')}
+                          className="absolute right-4 top-4"
+                        >
+                          {showPassword ? (
+                            <EyeOff size={22} color="#4ADE80" />
+                          ) : (
+                            <Eye size={22} color="#4ADE80" />
+                          )}
+                        </TouchableOpacity>
+                      }
+                    />
+                    <FloatingLabelInput
+                      label="Confirm Password"
+                      helperText="Repeat your password"
+                      value={confirmPassword}
+                      onChangeText={(text) => {
+                        setConfirmPassword(text);
+                        if (errors.confirmPassword) {
+                          setErrors(prev => ({ ...prev, confirmPassword: undefined }));
+                        }
+                      }}
+                      secureTextEntry={!showConfirmPassword}
+                      autoCapitalize="none"
+                      placeholder="••••••••"
+                      error={errors.confirmPassword}
+                      rightIcon={
+                        <TouchableOpacity 
+                          onPress={() => togglePasswordVisibility('confirmPassword')}
+                          className="absolute right-4 top-4"
+                        >
+                          {showConfirmPassword ? (
+                            <EyeOff size={22} color="#4ADE80" />
+                          ) : (
+                            <Eye size={22} color="#4ADE80" />
+                          )}
+                        </TouchableOpacity>
+                      }
+                    />
+                    <GradientButton 
+                      onPress={handleSubmit} 
+                      title={isLoading ? "Creating Account..." : "Create Account"}
+                      disabled={isLoading}
+                    />
+                  </>
+                )}
+              </Animated.View>
+            ) : (
+              <>
+                <FloatingLabelInput
+                  label="Email Address"
+                  helperText="Enter your email address"
+                  value={email}
+                  onChangeText={(text) => {
+                    setEmail(text);
+                    if (errors.email) {
+                      setErrors(prev => ({ ...prev, email: undefined }));
+                    }
+                  }}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  placeholder="example@email.com"
+                  error={errors.email}
+                />
+                <FloatingLabelInput
+                  label="Password"
+                  helperText="Enter your password"
+                  value={password}
+                  onChangeText={(text) => {
+                    setPassword(text);
+                    if (errors.password) {
+                      setErrors(prev => ({ ...prev, password: undefined }));
+                    }
+                  }}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  placeholder="••••••••"
+                  error={errors.password}
+                  rightIcon={
+                    <TouchableOpacity 
+                      onPress={() => togglePasswordVisibility('password')}
+                      className="absolute right-4 top-4"
+                    >
+                      {showPassword ? (
+                        <EyeOff size={22} color="#4ADE80" />
+                      ) : (
+                        <Eye size={22} color="#4ADE80" />
+                      )}
+                    </TouchableOpacity>
+                  }
+                />
+                <TouchableOpacity className="mb-8">
+                  <Text className="text-[#4ADE80] text-sm text-right">
+                    Forgot Password?
+                  </Text>
                 </TouchableOpacity>
-              }
-            />
-
-            {activeTab === 'signin' && (
-              <TouchableOpacity className="mb-8">
-                <Text className="text-[#4ADE80] text-sm text-right">
-                  Forgot Password?
-                </Text>
-              </TouchableOpacity>
+                <GradientButton 
+                  onPress={handleSubmit} 
+                  title={isLoading ? "Signing in..." : "Sign In"}
+                  disabled={isLoading}
+                />
+              </>
             )}
 
-            {/* Improved Button */}
-            <TouchableOpacity 
-              onPress={handleSignIn}
-              className="mb-8"
-            >
-              <LinearGradient
-                colors={['#4ADE80', '#22C55E']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                className="rounded-2xl py-4 px-6"
-              >
-                <Text className="text-[#1A1B1E] text-center text-lg font-bold">
-                  {activeTab === 'signin' ? 'Sign In' : 'Create Account'}
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
-
-            {/* Improved Social Section */}
-            <View className="flex-row items-center mb-8">
-              <View className="flex-1 h-[1px] bg-[#4ADE80]/20" />
-              <Text className="text-[#4ADE80]/60 mx-4">or continue with</Text>
-              <View className="flex-1 h-[1px] bg-[#4ADE80]/20" />
-            </View>
-
-            <View className="flex-row justify-center space-x-6">
-              {['google', 'apple', 'guest'].map((provider) => (
-                <TouchableOpacity 
-                  key={provider}
-                  className="h-14 w-14 items-center justify-center rounded-full bg-[#4ADE80]/10 border border-[#4ADE80]/30"
-                >
-                  <Image
-                    source={require('../../assets/images/app-icon/google-icon.png')}
-                    className="h-6 w-6"
-                    style={{ tintColor: '#4ADE80' }}
-                    resizeMode="contain"
-                  />
-                </TouchableOpacity>
-              ))}
-            </View>
+            <SocialLogin />
           </View>
         </Animated.View>
       </BlurView>
     </View>
   );
 }
+
+export default SignIn;

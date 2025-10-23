@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Activity, Droplets, Scale, Scale3D, Flame } from 'lucide-react-native';
+import { Activity, Droplets, Scale, Scale3D, Flame, Moon } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
@@ -33,6 +33,20 @@ const CalculatorCard = ({ title, description, icon, color, onPress, index }) => 
 );
 
 const calculators = [
+  {
+    title: 'Sleep Tracker',
+    description: 'Monitor your sleep patterns',
+    icon: <Moon size={24} color="#4ADE80" />,
+    color: '#4ADE80',
+    route: '/calculators/sleep'
+  },
+  {
+    title: 'Steps Tracker',
+    description: 'Track your daily steps and activity',
+    icon: <Activity size={24} color="#7165E3" />,
+    color: '#7165E3',
+    route: '/calculators/steps'
+  },
   {
     title: 'BMI Calculator',
     description: 'Calculate your Body Mass Index',

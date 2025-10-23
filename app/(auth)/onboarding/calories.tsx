@@ -23,9 +23,7 @@ export default function CaloriesPage() {
         <View className="h-2 flex-1 mx-4 rounded-full bg-[#2C2D32]">
           <View className="h-2 w-[50%] rounded-full bg-[#4ADE80]" />
         </View>
-        <TouchableOpacity>
-          <Text className="text-[#4ADE80] font-medium">Skip</Text>
-        </TouchableOpacity>
+        <Text className="text-[#4ADE80] font-medium">STEP 4/8</Text>
       </Animated.View>
 
       {/* Title Section */}
@@ -33,12 +31,19 @@ export default function CaloriesPage() {
         entering={FadeInDown.delay(200)}
         className="px-6 mt-12"
       >
-        <Text className="text-[#4ADE80] text-center font-medium">
-          STEP 4/8
-        </Text>
-        <Text className="text-white text-center text-2xl font-bold mt-4">
+        <Animated.Text 
+          entering={FadeInDown.delay(200)}
+          className="text-4xl font-bold text-[#4ADE80] mb-4"
+        >
           Set your daily calorie goal
-        </Text>
+        </Animated.Text>
+        
+        <Animated.Text 
+          entering={FadeInDown.delay(300)}
+          className="text-gray-400 text-lg mb-8"
+        >
+          This helps us create your personalized meal plan
+        </Animated.Text>
       </Animated.View>
 
       {/* Mode Selection */}

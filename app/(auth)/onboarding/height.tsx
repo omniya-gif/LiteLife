@@ -6,15 +6,15 @@ import { Slider } from '@miblanchard/react-native-slider';
 import { ArrowLeft } from 'lucide-react-native';
 import { useOnboardingStore } from '../../../stores/onboardingStore';
 
-export default function AgeSelection() {
+export default function HeightSelection() {
   const router = useRouter();
   const updateFormData = useOnboardingStore(state => state.updateFormData);
   const formData = useOnboardingStore(state => state.formData);
-  const [age, setAge] = useState(formData.age || 25);
+  const [height, setHeight] = useState(formData.height || 170);
 
   const handleNext = () => {
-    updateFormData({ age });
-    router.push('/onboarding/height');
+    updateFormData({ height });
+    router.push('/onboarding/weight');
   };
 
   const SliderThumb = () => (
@@ -31,9 +31,9 @@ export default function AgeSelection() {
           <ArrowLeft size={24} color="white" />
         </TouchableOpacity>
         <View className="h-2 flex-1 mx-4 rounded-full bg-[#2C2D32]">
-          <View className="h-2 w-[25%] bg-[#4ADE80] rounded-full" />
+          <View className="h-2 w-[37.5%] rounded-full bg-[#4ADE80]" />
         </View>
-        <Text className="text-[#4ADE80] font-medium">STEP 2/8</Text>
+        <Text className="text-[#4ADE80] font-medium">STEP 3/8</Text>
       </Animated.View>
 
       <View className="flex-1 px-6 pt-12">
@@ -41,14 +41,14 @@ export default function AgeSelection() {
           entering={FadeInDown.delay(200)}
           className="text-4xl font-bold text-[#4ADE80] mb-4"
         >
-          How old are you?
+          How tall are you?
         </Animated.Text>
         
         <Animated.Text 
           entering={FadeInDown.delay(300)}
           className="text-gray-400 text-lg mb-12"
         >
-          This helps us create a plan that's safe and effective for your age group
+          This helps us create a plan that's tailored to your height
         </Animated.Text>
 
         <Animated.View 
@@ -56,10 +56,10 @@ export default function AgeSelection() {
           className="items-center mb-12"
         >
           <Text className="text-7xl font-bold text-white mb-2">
-            {age}
+            {height}
           </Text>
           <Text className="text-gray-400 text-xl">
-            years old
+            cm
           </Text>
         </Animated.View>
 
@@ -68,10 +68,10 @@ export default function AgeSelection() {
           className="px-4"
         >
           <Slider
-            value={age}
-            onValueChange={value => setAge(Math.round(value[0]))}
-            minimumValue={15}
-            maximumValue={80}
+            value={height}
+            onValueChange={value => setHeight(Math.round(value[0]))}
+            minimumValue={100}
+            maximumValue={250}
             step={1}
             minimumTrackTintColor="#4ADE80"
             maximumTrackTintColor="#2C2D32"
@@ -79,8 +79,8 @@ export default function AgeSelection() {
           />
           
           <View className="flex-row justify-between mt-2">
-            <Text className="text-gray-400">15</Text>
-            <Text className="text-gray-400">80</Text>
+            <Text className="text-gray-400">100</Text>
+            <Text className="text-gray-400">250</Text>
           </View>
         </Animated.View>
       </View>

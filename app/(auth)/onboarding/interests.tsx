@@ -1,36 +1,33 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import React from 'react';
+import { View, Text, TouchableOpacity, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
+import { useOnboardingStore } from '../../../stores/onboardingStore';
+import { Interest } from '../../../types/onboarding';
 
-const interests = [
+const interests: { id: Interest; icon: string; label: string }[] = [
   { id: 'nutrition', icon: '🍉', label: 'Nutrition' },
-  { id: 'organic', icon: '🌾', label: 'Organic' },
-  { id: 'meditation', icon: '🍃', label: 'Meditation' },
-  { id: 'sports', icon: '⚽', label: 'Sports' },
-  { id: 'smokeFree', icon: '🚭', label: 'Smoke Free' },
   { id: 'sleep', icon: '🛏️', label: 'Sleep' },
-  { id: 'health', icon: '💪', label: 'Health' },
-  { id: 'running', icon: '👟', label: 'Running' },
-  { id: 'vegan', icon: '🥕', label: 'Vegan' },
+  { id: 'mindfulness', icon: '🍃', label: 'Meditation' },
+  { id: 'fitness', icon: '💪', label: 'Fitness' },
+  { id: 'cooking', icon: '👨‍🍳', label: 'Cooking' }
 ];
 
 export default function InterestsPage() {
   const router = useRouter();
-  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+  const { formData, updateFormData } = useOnboardingStore();
+  const selectedInterests = formData.interests || [];
 
-  const toggleInterest = (id: string) => {
-    setSelectedInterests(prev => 
-      prev.includes(id) 
-        ? prev.filter(i => i !== id)
-        : [...prev, id]
-    );
+  const toggleInterest = (interest: Interest) => {
+    const newInterests = selectedInterests.includes(interest)
+      ? selectedInterests.filter(i => i !== interest)
+      : [...selectedInterests, interest];
+    updateFormData({ interests: newInterests });
   };
 
   return (
     <SafeAreaView className="flex-1 bg-[#1A1B1E]">
-      {/* Header */}
       <Animated.View 
         entering={FadeInDown.springify()}
         className="flex-row items-center justify-between px-6 pt-4"
@@ -41,26 +38,24 @@ export default function InterestsPage() {
         <View className="h-2 flex-1 mx-4 rounded-full bg-[#2C2D32]">
           <View className="h-2 w-[87.5%] rounded-full bg-[#4ADE80]" />
         </View>
-        <TouchableOpacity>
-          <Text className="text-[#4ADE80] font-medium">Skip</Text>
-        </TouchableOpacity>
+        <Text className="text-[#4ADE80] font-medium">STEP 7/8</Text>
       </Animated.View>
 
-      {/* Title Section */}
-      <Animated.View 
-        entering={FadeInDown.delay(200)}
-        className="px-6 mt-12"
-      >
-        <Text className="text-[#4ADE80] text-center font-medium">
-          STEP 7/8
-        </Text>
-        <Text className="text-white text-center text-2xl font-bold mt-4">
+      <View className="flex-1 px-6 pt-12">
+        <Animated.Text 
+          entering={FadeInDown.delay(200)}
+          className="text-4xl font-bold text-[#4ADE80] mb-4"
+        >
           Time to customize your interest
-        </Text>
-      </Animated.View>
+        </Animated.Text>
+        
+        <Animated.Text 
+          entering={FadeInDown.delay(300)}
+          className="text-gray-400 text-lg mb-8"
+        >
+          Select the topics that interest you the most
+        </Animated.Text>
 
-      {/* Interests Grid */}
-      <ScrollView className="flex-1 px-6 mt-12">
         <View className="flex-row flex-wrap justify-between">
           {interests.map((interest, index) => (
             <Animated.View
@@ -86,9 +81,8 @@ export default function InterestsPage() {
             </Animated.View>
           ))}
         </View>
-      </ScrollView>
+      </View>
 
-      {/* Continue Button */}
       <Animated.View 
         entering={FadeIn.delay(800)}
         className="p-6"

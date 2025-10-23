@@ -1,30 +1,55 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
+import { ArrowLeft } from 'lucide-react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import { Expertise } from '../../../types/onboarding';
+import { useOnboardingStore } from '../../../stores/onboardingStore';
 
-const levels = [
-  { id: 'beginner', label: 'Beginner' },
-  { id: 'intermediate', label: 'Intermediate' },
-  { id: 'advanced', label: 'Advanced' },
+const levels: { id: Expertise; label: string; description: string }[] = [
+  { 
+    id: 'beginner', 
+    label: 'Beginner', 
+    description: 'New to fitness or returning after a long break'
+  },
+  { 
+    id: 'intermediate', 
+    label: 'Intermediate', 
+    description: 'Regular workout routine for 6+ months'
+  },
+  { 
+    id: 'advanced', 
+    label: 'Advanced', 
+    description: 'Consistent training for 2+ years'
+  }
 ];
 
 export default function ExpertiseLevel() {
   const router = useRouter();
-  const [selectedLevel, setSelectedLevel] = useState('beginner');
+  const updateFormData = useOnboardingStore(state => state.updateFormData);
+  const [selectedLevel, setSelectedLevel] = useState<Expertise>('beginner');
+
+  const handleNext = () => {
+    updateFormData({ expertise: selectedLevel });
+    router.push('/onboarding/age');
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-[#1A1B1E]">
-      {/* Progress Bar */}
       <Animated.View 
-        entering={FadeIn}
-        className="h-1.5 bg-[#2C2D32] mx-8 mt-6 rounded-full overflow-hidden"
+        entering={FadeInDown.springify()}
+        className="flex-row items-center justify-between px-6 pt-4"
       >
-        <View className="h-full w-[12.5%] bg-[#4ADE80]" />
+        <TouchableOpacity onPress={() => router.back()}>
+          <ArrowLeft size={24} color="white" />
+        </TouchableOpacity>
+        <View className="h-2 flex-1 mx-4 rounded-full bg-[#2C2D32]">
+          <View className="h-2 w-[12.5%] bg-[#4ADE80] rounded-full" />
+        </View>
+        <Text className="text-[#4ADE80] font-medium">STEP 1/8</Text>
       </Animated.View>
 
-      <View className="flex-1 px-8 pt-12">
-        {/* Question */}
+      <View className="flex-1 px-6 pt-12">
         <Animated.Text 
           entering={FadeInDown.delay(200)}
           className="text-4xl font-bold text-[#4ADE80] mb-6"
@@ -39,7 +64,6 @@ export default function ExpertiseLevel() {
           For the better experience and personalized plans for you we need to know your expertise level
         </Animated.Text>
 
-        {/* Options with improved spacing */}
         <View className="space-y-6">
           {levels.map((level, index) => (
             <Animated.View 
@@ -61,9 +85,7 @@ export default function ExpertiseLevel() {
                 </Text>
                 {selectedLevel === level.id && (
                   <Text className="text-[#4ADE80]/60 text-center text-sm mt-2">
-                    {level.id === 'beginner' && "New to fitness or returning after a long break"}
-                    {level.id === 'intermediate' && "Regular workout routine for 6+ months"}
-                    {level.id === 'advanced' && "Consistent training for 2+ years"}
+                    {level.description}
                   </Text>
                 )}
               </TouchableOpacity>
@@ -72,20 +94,16 @@ export default function ExpertiseLevel() {
         </View>
       </View>
 
-      {/* Next Button with improved positioning */}
       <Animated.View 
         entering={FadeInDown.delay(700)}
-        className="p-8"
+        className="p-6"
       >
-        <Text className="text-[#4ADE80] text-center font-medium">
-          STEP 1/8
-        </Text>
         <TouchableOpacity
-          onPress={() => router.push('/onboarding/age')}
+          onPress={handleNext}
           className="w-full bg-[#4ADE80] p-4 rounded-2xl"
         >
           <Text className="text-center text-[#1A1B1E] font-semibold text-lg">
-            Continue
+            Next
           </Text>
         </TouchableOpacity>
       </Animated.View>

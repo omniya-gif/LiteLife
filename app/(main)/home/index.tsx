@@ -18,6 +18,7 @@ import { Header } from './components/Header'; // Import the reusable header
 import { MealPlanSection } from './components/MealPlanSection';
 import { MetricsOverview } from './components/MetricsOverview';
 import { TabBar } from './components/TabBar';
+import { AchievementScore } from './components/AchievementScore';
 
 export default function HomePage() {
   const headerScale = useSharedValue(0.8);
@@ -49,17 +50,25 @@ export default function HomePage() {
       <ScrollView className="flex-1">
         {/* Header Section - Animated */}
         <Animated.View style={headerAnimatedStyle}>
-          <Header
-            title="Hassan Mdala"
-            imageUrl="https://images.unsplash.com/photo-1599566150163-29194dcaad36"
-          />
+          <Header userName="Amelia" />
         </Animated.View>
 
         <TabBar activeTab="home" />
 
-        {/* Stats Section - Fade in with delay */}
-        <FadeInView delay={200}>
-          <View className="px-6 pt-4">
+        {/* Achievement Score - Now First */}
+        <Animated.View 
+          entering={FadeInRight.delay(200).springify()}
+          className="mt-6 px-6"
+        >
+          <View className="mb-8">
+            <Text className="mb-4 text-2xl font-bold text-white">Achievements</Text>
+            <AchievementScore />
+          </View>
+        </Animated.View>
+
+        {/* Stats Section - Now Second */}
+        <FadeInView delay={300}>
+          <View className="px-6">
             {/* Today's Overview */}
             <View className="mb-8">
               <Text className="mb-4 text-2xl font-bold text-white">Today's Overview</Text>
@@ -69,30 +78,6 @@ export default function HomePage() {
             </View>
           </View>
         </FadeInView>
-
-        {/* Weekly Progress - Updated with unique keys */}
-        <Animated.View 
-          entering={FadeInRight.delay(300).springify()}
-          className="mt-6 px-6"
-        >
-          <View className="mb-8">
-            <Text className="mb-4 text-2xl font-bold text-white">Weekly Progress</Text>
-            <View className="rounded-3xl bg-[#25262B] p-6">
-              <View className="flex-row justify-between">
-                {weekDays.map((day, index) => (
-                  <View key={day.id} className="items-center">
-                    <View
-                      className={`mb-2 h-16 w-1.5 rounded-full ${
-                        index <= 3 ? 'bg-[#4ADE80]' : 'bg-[#2C2D32]'
-                      }`}
-                    />
-                    <Text className="text-sm font-medium text-gray-400">{day.label}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          </View>
-        </Animated.View>
 
         {/* Recent Trainings */}
         <Animated.View 

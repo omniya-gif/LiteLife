@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, TouchableOpacity, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Bell, Zap, PersonStanding } from 'lucide-react-native';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
+import { useOnboardingStore } from '../../../stores/onboardingStore';
+import { useOnboardingSubmit } from '../../../hooks/useOnboardingSubmit';
 
 const features = [
   {
@@ -24,11 +26,21 @@ const features = [
 
 export default function NotificationsPage() {
   const router = useRouter();
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const { formData, updateFormData } = useOnboardingStore();
+  const onboardingSubmit = useOnboardingSubmit();
+
+  const handleSubmit = async () => {
+    try {
+      await onboardingSubmit.mutateAsync(formData as any);
+      router.push('/(main)/home');
+    } catch (error) {
+      console.error('Error saving onboarding data:', error);
+      // Handle error appropriately
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-[#1A1B1E]">
-      {/* Header */}
       <Animated.View 
         entering={FadeInDown.springify()}
         className="flex-row items-center justify-between px-6 pt-4"
@@ -39,74 +51,71 @@ export default function NotificationsPage() {
         <View className="h-2 flex-1 mx-4 rounded-full bg-[#2C2D32]">
           <View className="h-2 w-full rounded-full bg-[#4ADE80]" />
         </View>
-        <TouchableOpacity>
-          <Text className="text-[#4ADE80] font-medium">Skip</Text>
-        </TouchableOpacity>
+        <Text className="text-[#4ADE80] font-medium">STEP 8/8</Text>
       </Animated.View>
 
-      {/* Title Section */}
       <Animated.View 
         entering={FadeInDown.delay(200)}
         className="px-6 mt-12"
       >
-        <Text className="text-[#4ADE80] text-center font-medium">
-          STEP 8/8
-        </Text>
-        <Text className="text-white text-center text-2xl font-bold mt-4">
-          Do you want to turn on notification?
-        </Text>
-      </Animated.View>
-
-      {/* Illustration - Now Clickable */}
-      <Animated.View 
-        entering={FadeInDown.delay(300)}
-        className="items-center justify-center mt-12"
-      >
-        <TouchableOpacity
-          onPress={() => setNotificationsEnabled(!notificationsEnabled)}
-          className={`w-48 h-48 rounded-full items-center justify-center ${
-            notificationsEnabled ? 'bg-[#4ADE80]/10' : 'bg-red-500/10'
-          }`}
+        <Animated.Text 
+          entering={FadeInDown.delay(200)}
+          className="text-4xl font-bold text-[#4ADE80] mb-4"
         >
-          <Bell 
-            size={80} 
-            color={notificationsEnabled ? "#4ADE80" : "#EF4444"}
-          />
-        </TouchableOpacity>
+          Turn on notifications?
+        </Animated.Text>
+        
+        <Animated.Text 
+          entering={FadeInDown.delay(300)}
+          className="text-gray-400 text-lg mb-8"
+        >
+          Get updates and reminders to stay on track
+        </Animated.Text>
       </Animated.View>
 
-      {/* Features */}
-      <View className="px-12 mt-12">
+      <View className="flex-1 px-6">
         {features.map((feature, index) => (
           <Animated.View
             key={index}
             entering={FadeInDown.delay(400 + index * 100)}
-            className="flex-row items-center mb-6"
+            className="flex-row items-center space-x-4 mb-6"
           >
-            <View className="w-10 h-10 rounded-full bg-[#4ADE80]/10 items-center justify-center">
+            <View className="h-12 w-12 rounded-full bg-[#4ADE80]/10 items-center justify-center">
               {feature.icon}
             </View>
-            <View className="ml-4 flex-1">
-              <Text className="text-white font-medium">{feature.title}</Text>
-              <Text className="text-gray-400 text-sm">{feature.description}</Text>
+            <View className="flex-1">
+              <Text className="text-lg font-medium text-white">{feature.title}</Text>
+              <Text className="text-gray-400">{feature.description}</Text>
             </View>
           </Animated.View>
         ))}
       </View>
 
-      {/* Allow Button */}
       <Animated.View 
         entering={FadeIn.delay(700)}
         className="px-6 mt-auto mb-6"
       >
         <TouchableOpacity
-          onPress={() => router.push('/(main)/home')}
-          className={`w-full h-14 rounded-2xl items-center justify-center ${
-            notificationsEnabled ? 'bg-[#4ADE80]' : 'bg-gray-600'
-          }`}
+          onPress={() => {
+            updateFormData({ notifications_enabled: true });
+            handleSubmit();
+          }}
+          className="w-full h-14 rounded-2xl items-center justify-center bg-[#4ADE80]"
         >
           <Text className="text-[#1A1B1E] font-semibold text-lg">
-            {notificationsEnabled ? 'Allow' : 'Continue without notifications'}
+            Allow
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => {
+            updateFormData({ notifications_enabled: false });
+            handleSubmit();
+          }}
+          className="w-full h-14 rounded-2xl items-center justify-center mt-4"
+        >
+          <Text className="text-gray-400 font-semibold">
+            Skip for now
           </Text>
         </TouchableOpacity>
       </Animated.View>
