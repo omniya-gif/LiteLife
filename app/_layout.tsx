@@ -2,10 +2,14 @@ import '../global.css';
 import { Stack } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClient, QueryClientProvider } from 'react-query';
+import { usePushNotifications } from '../hooks/usePushNotifications';
 
 const queryClient = new QueryClient();
 
 export default function RootLayout() {
+  // Initialize push notifications
+  usePushNotifications();
+
   return (
     <QueryClientProvider client={queryClient}>
       <GestureHandlerRootView style={{ flex: 1 }}>

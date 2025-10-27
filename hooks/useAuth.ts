@@ -1,21 +1,35 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { AuthError, SignUpData, SignInData } from '../types/auth';
+import * as Notifications from 'expo-notifications';
 
 export function useAuth() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-
+    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user ?? null);
+      
+      // Send welcome notification when user signs up
+      if (_event === 'SIGNED_IN') {
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: "Welcome to MealPlanner! 🎉",
+            body: "Thanks for joining us! Let's start your health journey together.",
+            sound: 'notification.wav',
+            data: { type: 'welcome' },
+          },
+          trigger: { seconds: 2 }, // Show notification 2 seconds after sign in
+        });
+      }
     });
 
     return () => subscription.unsubscribe();

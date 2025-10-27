@@ -1,15 +1,18 @@
 import { useRouter } from 'expo-router';
-import { Bell, Sun } from 'lucide-react-native';
+import { Sun } from 'lucide-react-native';
 import React from 'react';
-import { View, Text, TouchableOpacity, Image } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
+import { useAuth } from '../../../../hooks/useAuth';
+import { NotificationBell } from '../../../../components/notifications/NotificationBell';
 
 interface HeaderProps {
   userName?: string;
 }
 
-export const Header = ({ userName = 'Amelia' }: HeaderProps) => {
+export const Header = ({ userName }: HeaderProps) => {
   const router = useRouter();
+  const { user } = useAuth();
   const date = new Date();
   const formattedDate = date
     .toLocaleDateString('en-US', {
@@ -18,6 +21,15 @@ export const Header = ({ userName = 'Amelia' }: HeaderProps) => {
       month: 'short',
     })
     .toUpperCase();
+
+  // Get the first letter of the email for the profile avatar
+  const getProfileInitial = () => {
+    if (!user?.email) return '?';
+    return user.email[0].toUpperCase();
+  };
+
+  // Get username from user metadata
+  const username = user?.user_metadata?.username || 'User';
 
   return (
     <View className="px-6 pb-2 pt-4">
@@ -33,26 +45,20 @@ export const Header = ({ userName = 'Amelia' }: HeaderProps) => {
 
           {/* Greeting */}
           <Animated.Text entering={FadeIn.delay(400)} className="mt-1.5 text-2xl text-white">
-            Hi, <Text className="font-bold">{userName}</Text>
+            Hi, <Text className="font-bold">{username}</Text>
           </Animated.Text>
         </View>
 
-        {/* Right side icons - Updated sizes and replaced Settings with Profile */}
-        <View className="flex-row items-center space-x-4">
-          <TouchableOpacity className="h-12 w-12 items-center justify-center rounded-full bg-[#25262B]">
-            <Bell size={24} color="#4ADE80" />
-            <View className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-[#4ADE80]" />
-          </TouchableOpacity>
+        {/* Right side icons with increased spacing */}
+        <View className="flex-row items-center space-x-6">
+          <NotificationBell />
           <TouchableOpacity
             onPress={() => router.push('/profile')}
-            className="h-12 w-12 items-center justify-center rounded-full bg-[#25262B] overflow-hidden">
-            <Image
-              source={{ 
-                uri: 'https://lh3.googleusercontent.com/a/ACg8ocKNBFWV69JbUEJ0vivGR40_Ml5lhEhSm0aA19tZhT5C=s96-c'
-              }}
-              className="h-full w-full"
-              resizeMode="cover"
-            />
+            className="h-12 w-12 items-center justify-center rounded-full bg-[#4ADE80] overflow-hidden"
+          >
+            <Text className="text-xl font-bold text-[#1A1B1E]">
+              {getProfileInitial()}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
