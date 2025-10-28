@@ -14,7 +14,7 @@ import Animated, {
 import { FadeInView } from '../../../components/animations/FadeInView';
 
 import { BottomNavigation } from './components/BottomNavigation';
-import { Header } from './components/Header'; // Import the reusable header
+import { Header } from '../../../components/home/Header'; // Import the reusable header
 import { MealPlanSection } from './components/MealPlanSection';
 import { MetricsOverview } from './components/MetricsOverview';
 import { TabBar } from './components/TabBar';
