@@ -17,19 +17,6 @@ export function useAuth() {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user ?? null);
-      
-      // Send welcome notification when user signs up
-      if (_event === 'SIGNED_IN') {
-        await Notifications.scheduleNotificationAsync({
-          content: {
-            title: "Welcome to MealPlanner! 🎉",
-            body: "Thanks for joining us! Let's start your health journey together.",
-            sound: 'notification.wav',
-            data: { type: 'welcome' },
-          },
-          trigger: { seconds: 2 }, // Show notification 2 seconds after sign in
-        });
-      }
     });
 
     return () => subscription.unsubscribe();

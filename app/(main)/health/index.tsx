@@ -5,7 +5,7 @@ import { Activity, Droplets, Scale, Scale3D, Flame, Moon } from 'lucide-react-na
 import { useRouter } from 'expo-router';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
-import { Header } from '../home/components/Header';
+import { Header } from '../../../components/home/Header';
 import { TabBar } from '../home/components/TabBar';
 import { BottomNavigation } from '../home/components/BottomNavigation';
 

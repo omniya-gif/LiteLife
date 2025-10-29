@@ -8,17 +8,12 @@ export interface HealthCoins {
 }
 
 export interface Badge {
-  id: string;
+  id: string; // UUID string
   name: string;
   description: string;
-  icon: string;
   cost: number;
-  category: 'fitness' | 'nutrition' | 'wellness';
-  requirements?: {
-    min_workouts?: number;
-    min_healthy_meals?: number;
-    min_meditation_minutes?: number;
-  };
+  image_url: string;
+  created_at: string;
 }
 
 export interface UserBadge {

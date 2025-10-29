@@ -18,7 +18,7 @@ import { Header } from '../../../components/home/Header'; // Import the reusable
 import { MealPlanSection } from './components/MealPlanSection';
 import { MetricsOverview } from './components/MetricsOverview';
 import { TabBar } from './components/TabBar';
-import { AchievementScore } from './components/AchievementScore';
+import { AchievementScore } from '../../../components/home/AchievementScore';
 
 export default function HomePage() {
   const headerScale = useSharedValue(0.8);
