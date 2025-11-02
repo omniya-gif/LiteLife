@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
@@ -18,12 +18,22 @@ export default function InterestsPage() {
   const router = useRouter();
   const { formData, updateFormData } = useOnboardingStore();
   const selectedInterests = formData.interests || [];
+  const [showError, setShowError] = useState(false);
 
   const toggleInterest = (interest: Interest) => {
     const newInterests = selectedInterests.includes(interest)
       ? selectedInterests.filter(i => i !== interest)
       : [...selectedInterests, interest];
     updateFormData({ interests: newInterests });
+    setShowError(false);
+  };
+
+  const handleContinue = () => {
+    if (selectedInterests.length === 0) {
+      setShowError(true);
+      return;
+    }
+    router.push('/onboarding/notifications');
   };
 
   return (
@@ -81,6 +91,15 @@ export default function InterestsPage() {
             </Animated.View>
           ))}
         </View>
+
+        {showError && (
+          <Animated.Text
+            entering={FadeIn}
+            className="text-red-500 text-center mb-4"
+          >
+            Please select at least one interest
+          </Animated.Text>
+        )}
       </View>
 
       <Animated.View 
@@ -88,10 +107,19 @@ export default function InterestsPage() {
         className="p-6"
       >
         <TouchableOpacity
-          onPress={() => router.push('/onboarding/notifications')}
-          className="w-full bg-[#4ADE80] h-14 rounded-2xl items-center justify-center"
+          onPress={handleContinue}
+          disabled={selectedInterests.length === 0}
+          className={`w-full ${
+            selectedInterests.length > 0 
+              ? 'bg-[#4ADE80]' 
+              : 'bg-[#4ADE80]/50'
+          } h-14 rounded-2xl items-center justify-center`}
         >
-          <Text className="text-[#1A1B1E] font-semibold text-lg">
+          <Text className={`font-semibold text-lg ${
+            selectedInterests.length > 0 
+              ? 'text-[#1A1B1E]'
+              : 'text-[#1A1B1E]/50'
+          }`}>
             Continue
           </Text>
         </TouchableOpacity>

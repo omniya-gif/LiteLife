@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import { CircularProgress } from '../../../components/CircularProgress';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
+import { initialize, requestPermission, readRecords } from 'react-native-health-connect';
+import { Platform } from 'react-native';
 
 const MacroRow = ({ name, amount, percentage, color, index }) => (
   <Animated.View 
@@ -15,7 +17,7 @@ const MacroRow = ({ name, amount, percentage, color, index }) => (
       <Text className="text-lg font-medium text-white">{name}</Text>
     </View>
     <View className="flex-row items-center space-x-6">
-      <Text className="text-lg text-white">{amount}g</Text>
+      <Text className="text-lg text-white">{amount}</Text>
       <Text className="w-12 text-right text-lg text-white">{percentage}%</Text>
     </View>
   </Animated.View>
@@ -23,14 +25,95 @@ const MacroRow = ({ name, amount, percentage, color, index }) => (
 
 export default function CalorieTrackerPage() {
   const router = useRouter();
-  const [calories] = React.useState(500);
-  const [dailyGoal] = React.useState(1250);
-  const percentage = Math.round((calories / dailyGoal) * 100);
+  const [steps, setSteps] = useState(0);
+  const [distance, setDistance] = useState(0);
+  const [floors, setFloors] = useState(0);
+  const [estimatedCalories, setEstimatedCalories] = useState(0);
+  const [dailyGoal] = useState(2500);
 
-  const macros = [
-    { name: 'Carbs', amount: 100, percentage: 32, color: '#3B82F6' },
-    { name: 'Protein', amount: 100, percentage: 32, color: '#4ADE80' },
-    { name: 'Fat', amount: 100, percentage: 32, color: '#06B6D4' }
+  const percentage = Math.round((estimatedCalories / dailyGoal) * 100);
+
+  useEffect(() => {
+    const initializeHealthConnect = async () => {
+      if (Platform.OS !== 'android') return;
+
+      try {
+        const isInitialized = await initialize();
+        if (!isInitialized) return;
+
+        const granted = await requestPermission([
+          { accessType: 'read', recordType: 'Steps' },
+          { accessType: 'read', recordType: 'Distance' },
+          { accessType: 'read', recordType: 'FloorsClimbed' }
+        ]);
+
+        if (granted) {
+          const now = new Date();
+          const startOfDay = new Date(now.setHours(0, 0, 0, 0));
+          const endOfDay = new Date(now.setHours(23, 59, 59, 999));
+
+          const timeRangeFilter = {
+            operator: 'between',
+            startTime: startOfDay.toISOString(),
+            endTime: endOfDay.toISOString(),
+          };
+
+          // Get steps
+          const stepsRecords = await readRecords('Steps', { timeRangeFilter });
+          const totalSteps = stepsRecords.reduce((sum, record) => sum + record.count, 0);
+          setSteps(totalSteps);
+
+          // Get distance
+          const distanceRecords = await readRecords('Distance', { timeRangeFilter });
+          const totalDistance = distanceRecords.reduce((sum, record) => 
+            sum + record.distance.inMeters, 0);
+          setDistance(totalDistance);
+
+          // Get floors climbed
+          const floorsRecords = await readRecords('FloorsClimbed', { timeRangeFilter });
+          const totalFloors = floorsRecords.reduce((sum, record) => sum + record.floors, 0);
+          setFloors(totalFloors);
+
+          // Estimate calories based on activity
+          // Rough estimation: 
+          // - 0.04 calories per step
+          // - 0.17 calories per meter
+          // - 0.17 calories per floor climbed
+          const estimatedCals = Math.round(
+            (totalSteps * 0.04) + 
+            (totalDistance * 0.17) + 
+            (totalFloors * 0.17)
+          );
+          setEstimatedCalories(estimatedCals);
+
+        }
+      } catch (error) {
+        console.error('Health Connect error:', error);
+      }
+    };
+
+    initializeHealthConnect();
+  }, []);
+
+  const metrics = [
+    { 
+      name: 'Steps', 
+      amount: steps.toLocaleString(), 
+      percentage: Math.round((steps / 10000) * 100), 
+      color: '#3B82F6' 
+    },
+    { 
+      name: 'Distance', 
+      amount: `${(distance / 1000).toFixed(2)} km`, 
+      percentage: Math.round((distance / 5000) * 100), 
+      color: '#4ADE80' 
+    },
+    { 
+      name: 'Floors', 
+      amount: floors.toString(), 
+      percentage: Math.round((floors / 10) * 100), 
+      color: '#06B6D4' 
+    }
   ];
 
   return (
@@ -51,15 +134,15 @@ export default function CalorieTrackerPage() {
         </TouchableOpacity>
       </Animated.View>
 
-      {/* Daily Intake */}
+      {/* Daily Activity */}
       <Animated.View 
         entering={FadeIn.delay(300).springify()}
         className="px-6 pt-12"
       >
-        <Text className="text-center text-lg font-medium text-[#4ADE80]">DAILY INTAKE</Text>
+        <Text className="text-center text-lg font-medium text-[#4ADE80]">DAILY ACTIVITY</Text>
         <Text className="mt-4 text-center text-3xl font-bold text-white">
-          Today you have consumed{' '}
-          <Text className="text-[#4ADE80]">{calories}</Text>
+          Estimated calories burned{' '}
+          <Text className="text-[#4ADE80]">{estimatedCalories}</Text>
           <Text className="text-[#4ADE80]"> cal</Text>
         </Text>
       </Animated.View>
@@ -83,20 +166,25 @@ export default function CalorieTrackerPage() {
         </View>
       </Animated.View>
 
-      {/* Macros */}
+      {/* Metrics */}
       <View className="flex-1 px-6">
-        {macros.map((macro, index) => (
-          <MacroRow key={index} {...macro} index={index} />
+        {metrics.map((metric, index) => (
+          <MacroRow key={index} {...metric} index={index} />
         ))}
       </View>
 
-      {/* Add Meal Button */}
+      {/* Add Activity Button */}
       <Animated.View 
         entering={FadeInUp.delay(600).springify()}
         className="p-6"
       >
-        <TouchableOpacity className="w-full rounded-xl bg-[#4ADE80] py-4">
-          <Text className="text-center text-lg font-semibold text-white">Add Meal</Text>
+        <TouchableOpacity 
+          onPress={() => router.push('/journal')}
+          className="w-full rounded-xl bg-[#4ADE80] py-4"
+        >
+          <Text className="text-center text-lg font-semibold text-white">
+            Add Manual Activity
+          </Text>
         </TouchableOpacity>
       </Animated.View>
     </SafeAreaView>

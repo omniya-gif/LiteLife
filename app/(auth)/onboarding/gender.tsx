@@ -19,7 +19,7 @@ export default function GenderPage() {
 
   const handleNext = () => {
     updateFormData({ gender: selectedGender });
-    router.push('/onboarding/goal');
+    router.push('/onboarding/calories');
   };
 
   return (

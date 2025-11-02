@@ -119,7 +119,7 @@ export default function CaloriesPage() {
         className="px-6 mt-auto mb-6"
       >
         <TouchableOpacity
-          onPress={() => router.push('/onboarding/gender')}
+          onPress={() => router.push('/onboarding/goal')} // Changed from gender to goal
           className="w-full bg-[#4ADE80] h-14 rounded-2xl items-center justify-center"
         >
           <Text className="text-[#1A1B1E] font-semibold text-lg">

@@ -1,28 +1,48 @@
 import { LinearGradient } from 'expo-linear-gradient';
+import { usePathname } from 'expo-router';
 import { Bell, Settings } from 'lucide-react-native'; // Updated import
 import React, { useEffect } from 'react';
-import { ScrollView, View, Text, TouchableOpacity, Image } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { 
-  FadeInDown, 
+import { ScrollView, View, Text, TouchableOpacity, Image, BackHandler } from 'react-native';
+import Animated, {
+  FadeInDown,
   FadeInRight,
-  useAnimatedStyle, 
-  useSharedValue, 
+  useAnimatedStyle,
+  useSharedValue,
   withSpring,
-  withDelay
+  withDelay,
 } from 'react-native-reanimated';
-import { FadeInView } from '../../../components/animations/FadeInView';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
 
 import { BottomNavigation } from './components/BottomNavigation';
-import { Header } from '../../../components/home/Header'; // Import the reusable header
 import { MealPlanSection } from './components/MealPlanSection';
 import { MetricsOverview } from './components/MetricsOverview';
 import { TabBar } from './components/TabBar';
+import { FadeInView } from '../../../components/animations/FadeInView';
 import { AchievementScore } from '../../../components/home/AchievementScore';
+import { Header } from '../../../components/home/Header'; // Import the reusable header
+import { useAuth } from '../../../hooks/useAuth';
+import { useUserStore } from '../../../lib/store/userStore';
 
 export default function HomePage() {
   const headerScale = useSharedValue(0.8);
   const headerOpacity = useSharedValue(0);
+  const pathname = usePathname();
+  const { user } = useAuth();
+  const { fetchUserData } = useUserStore();
+
+  useEffect(() => {
+    headerScale.value = withDelay(100, withSpring(1));
+    headerOpacity.value = withDelay(100, withSpring(1));
+  }, []);
+
+  // Fetch user data when component mounts or user changes
+  useEffect(() => {
+    if (user?.id) {
+      console.log('Home Page - Fetching user data for ID:', user.id);
+      fetchUserData(user.id);
+    }
+  }, [user?.id, fetchUserData]);
 
   useEffect(() => {
     headerScale.value = withDelay(100, withSpring(1));
@@ -31,7 +51,7 @@ export default function HomePage() {
 
   const headerAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: headerScale.value }],
-    opacity: headerOpacity.value
+    opacity: headerOpacity.value,
   }));
 
   // Add unique identifiers for days
@@ -45,6 +65,39 @@ export default function HomePage() {
     { id: 'sun', label: 'S' },
   ];
 
+  useEffect(() => {
+    let lastBackPress = 0;
+
+    const handleBackPress = () => {
+      // Only handle double-tap-to-exit on main home page
+      if (pathname !== '/home') {
+        return false; // Let the default back behavior work
+      }
+
+      const currentTime = new Date().getTime();
+
+      if (currentTime - lastBackPress < 2000) {
+        BackHandler.exitApp();
+        return true;
+      }
+
+      lastBackPress = currentTime;
+      Toast.show({
+        type: 'info',
+        text1: 'Press back again to exit',
+        position: 'bottom',
+        visibilityTime: 2000,
+      });
+      return true;
+    };
+
+    BackHandler.addEventListener('hardwareBackPress', handleBackPress);
+
+    return () => {
+      BackHandler.removeEventListener('hardwareBackPress', handleBackPress);
+    };
+  }, [pathname]);
+
   return (
     <SafeAreaView className="flex-1 bg-[#1A1B1E]">
       <ScrollView className="flex-1">
@@ -56,10 +109,7 @@ export default function HomePage() {
         <TabBar activeTab="home" />
 
         {/* Achievement Score - Now First */}
-        <Animated.View 
-          entering={FadeInRight.delay(200).springify()}
-          className="mt-6 px-6"
-        >
+        <Animated.View entering={FadeInRight.delay(200).springify()} className="mt-6 px-6">
           <View className="mb-8">
             <Text className="mb-4 text-2xl font-bold text-white">Achievements</Text>
             <AchievementScore />
@@ -80,10 +130,7 @@ export default function HomePage() {
         </FadeInView>
 
         {/* Recent Trainings */}
-        <Animated.View 
-          entering={FadeInDown.delay(400).springify()}
-          className="mt-6 px-6"
-        >
+        <Animated.View entering={FadeInDown.delay(400).springify()} className="mt-6 px-6">
           <View className="mb-8">
             <Text className="mb-4 text-2xl font-bold text-white">Recent Trainings</Text>
             <View className="rounded-3xl bg-[#25262B] p-6">
@@ -101,10 +148,7 @@ export default function HomePage() {
         </Animated.View>
 
         {/* Today's Meals */}
-        <Animated.View 
-          entering={FadeInDown.delay(500).springify()}
-          className="mt-6 px-6 pb-20"
-        >
+        <Animated.View entering={FadeInDown.delay(500).springify()} className="mt-6 px-6 pb-20">
           <View className="mb-8">
             <View className="mb-4 flex-row items-center justify-between">
               <Text className="text-2xl font-bold text-white">Today's Meals</Text>

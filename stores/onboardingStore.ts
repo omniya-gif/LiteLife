@@ -15,11 +15,18 @@ const initialFormData: Partial<OnboardingFormData> = {
   reason: '',
 };
 
-export const useOnboardingStore = create<OnboardingStore>((set) => ({
+export const useOnboardingStore = create<OnboardingStore & OnboardingState>((set) => ({
   formData: initialFormData,
   updateFormData: (data) => 
     set((state) => ({ 
       formData: { ...state.formData, ...data } 
     })),
   resetFormData: () => set({ formData: initialFormData }),
+  completed: null,
+  setCompleted: (status) => set({ completed: status }),
 }));
+
+interface OnboardingState {
+  completed: boolean | null;
+  setCompleted: (status: boolean) => void;
+}

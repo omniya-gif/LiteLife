@@ -1,9 +1,9 @@
 {
   "expo": {
-    "name": "my-expo-app",
-    "slug": "my-expo-app",
+    "name": "fithass",
+    "slug": "fithass",
     "version": "1.0.0",
-    "scheme": "my-expo-app",
+    "scheme": "myexpoapp",
     "web": {
       "bundler": "metro",
       "output": "static",
@@ -22,13 +22,34 @@
         {
           "icon": "./assets/notification-icon.png",
           "color": "#4ADE80",
-          "sounds": ["./assets/notification.wav"]
+          "sounds": [
+            "./assets/notification.wav"
+          ]
+        }
+      ],
+      "react-native-health",
+      "react-native-health-connect",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 34,
+            "minSdkVersion": 26
+          }
         }
       ]
     ],
     "experiments": {
       "typedRoutes": true,
       "tsconfigPaths": true
+    },
+    "updates": {
+      "enabled": true,
+      "fallbackToCacheTimeout": 0
+    },
+    "runtimeVersion": {
+      "policy": "sdkVersion"
     },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -43,23 +64,43 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.hass12.myexpoapp"
+      "bundleIdentifier": "com.hass12.myexpoapp",
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "infoPlist": {
+        "NSHealthShareUsageDescription": "Allow this app to access your health data for tracking steps, distance and flights climbed",
+        "NSHealthUpdateUsageDescription": "Allow this app to write health data for tracking your fitness progress"
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.hass12.myexpoapp",
-      "googleServicesFile": "./google-services.json"
+      "package": "com.fithass.app",
+      "permissions": [
+        "android.permission.health.READ_STEPS",
+        "android.permission.health.READ_FLOORS_CLIMBED",
+        "android.permission.health.READ_DISTANCE",
+        "android.permission.health.READ_HEART_RATE",
+        "android.permission.health.READ_EXERCISE",
+        "android.permission.health.READ_SPEED",
+        "android.permission.health.READ_TOTAL_CALORIES_BURNED",
+        "android.permission.health.READ_ACTIVE_CALORIES_BURNED",
+        "android.permission.ACTIVITY_RECOGNITION"
+      ]
     },
     "extra": {
       "router": {
         "origin": false
       },
       "eas": {
-        "projectId": "d1964840-6955-401e-8e63-4241db37ae7a"
-      }
-    }
+        "projectId": "ce7f6b25-f00d-4d0d-b769-c6bd5e34bc3b"
+      },
+      "supabaseUrl": "https://jpxnwplnexcevvlezoaf.supabase.co",
+      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpweG53cGxuZXhjZXZ2bGV6b2FmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk4MzU0MTAsImV4cCI6MjA2NTQxMTQxMH0.78HfwQ1r0uKcKgfOlwdYca21SIfUm8vMsj0fbvhlLIk"
+    },
+    "owner": "hass12"
   }
 }

@@ -45,7 +45,7 @@ const calculators = [
     description: 'Track your daily steps and activity',
     icon: <Activity size={24} color="#7165E3" />,
     color: '#7165E3',
-    route: '/calculators/steps'
+    route: '/calculators/steps/'
   },
   {
     title: 'BMI Calculator',

@@ -1,9 +1,7 @@
+import { useRouter } from 'expo-router';
+import { ChevronRight, Trophy, Medal, Award } from 'lucide-react-native';
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { ChevronRight, Trophy, Medal, Award } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
-import { useQuery } from 'react-query';
-import { supabase } from '../../lib/supabase';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
@@ -13,24 +11,59 @@ import Animated, {
   FadeInUp,
   withTiming
 } from 'react-native-reanimated';
+import { useQuery, useQueryClient } from 'react-query';
+
+import { supabase } from '../../lib/supabase';
+
 
 export const AchievementScore = () => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const rotation = useSharedValue(0);
   const scale = useSharedValue(1);
 
-  const { data: badgeCount } = useQuery('user-badge-count', async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return 0;
+  const { data: badgeCount, isLoading } = useQuery(
+    'user-badge-count',
+    async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return 0;
 
-    const { count, error } = await supabase
-      .from('user_badges')
-      .select('*', { count: 'exact' })
-      .eq('user_id', user.id);
+      const { count, error } = await supabase
+        .from('user_badges')
+        .select('*', { count: 'exact' })
+        .eq('user_id', user.id);
 
-    if (error) throw error;
-    return count || 0;
-  });
+      if (error) throw error;
+      return count || 0;
+    },
+    {
+      staleTime: 1000 * 30, // 30 seconds
+      cacheTime: 1000 * 60 * 5, // 5 minutes
+    }
+  );
+
+  // Subscribe to real-time changes
+  React.useEffect(() => {
+    const channel = supabase
+      .channel('user_badges_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_badges'
+        },
+        () => {
+          // Invalidate and refetch the badge count
+          queryClient.invalidateQueries('user-badge-count');
+        }
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, []);
 
   React.useEffect(() => {
     rotation.value = withRepeat(
@@ -59,6 +92,10 @@ export const AchievementScore = () => {
       { scale: scale.value }
     ]
   }));
+
+  if (isLoading) {
+    return null;
+  }
 
   return (
     <TouchableOpacity 

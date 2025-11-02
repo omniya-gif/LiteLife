@@ -2,27 +2,50 @@ import { useQuery } from 'react-query';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './useAuth';
 import { UserOnboarding } from '../types/onboarding';
+import { useOnboardingStore } from '../stores/onboardingStore';
 
 export function useOnboarding() {
   const { user } = useAuth();
+  const setCompleted = useOnboardingStore(state => state.setCompleted);
 
   return useQuery<UserOnboarding | null>(
     ['onboarding', user?.id],
     async () => {
-      if (!user) return null;
+      if (!user) {
+        console.log('[useOnboarding] No user found, returning null');
+        return null;
+      }
 
+      console.log('[useOnboarding] Fetching onboarding data for user:', user.id);
       const { data, error } = await supabase
         .from('user_onboarding')
         .select('*')
         .eq('user_id', user.id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useOnboarding] Error fetching data:', error);
+        if (error.code === 'PGRST116') {
+          return null;
+        }
+        throw error;
+      }
+
+      console.log('[useOnboarding] Fetched onboarding data:', data);
+      if (data) {
+        setCompleted(data.completed);
+      }
       return data;
     },
     {
       enabled: !!user,
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: 1000, // Reduce stale time to ensure fresher data
+      cacheTime: 0, // Disable caching to always get fresh data
+      retry: 2,
+      onError: (error) => {
+        console.error('[useOnboarding] Query error:', error);
+        setCompleted(false);
+      }
     }
   );
 }

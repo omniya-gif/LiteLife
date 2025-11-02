@@ -1,7 +1,8 @@
-import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { supabase } from '../lib/supabase';
-import { useAuth } from './useAuth';
 import * as Notifications from 'expo-notifications';
+import { useQuery, useMutation, useQueryClient } from 'react-query';
+
+import { useAuth } from './useAuth';
+import { supabase } from '../lib/supabase';
 
 interface HealthCoins {
   user_id: string;
@@ -26,14 +27,16 @@ export function useHealthCoins() {
         .single();
 
       if (error) throw error;
-      
+
       // Return default values if no record exists
-      return data || {
-        user_id: user.id,
-        balance: 0,
-        total_earned: 0,
-        updated_at: new Date().toISOString()
-      };
+      return (
+        data || {
+          user_id: user.id,
+          balance: 0,
+          total_earned: 0,
+          updated_at: new Date().toISOString(),
+        }
+      );
     },
     {
       enabled: !!user,
@@ -42,16 +45,26 @@ export function useHealthCoins() {
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     }
   );
-
   const earnCoins = useMutation(
     async ({ amount, reason }: { amount: number; reason: string }) => {
-      if (!user) throw new Error('User not authenticated');
+      // Get the current session directly from Supabase to ensure we have the latest auth state
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      if (sessionError || !session?.user) {
+        throw new Error('User not authenticated');
+      }
+
+      const currentUser = session.user;
+
       if (amount <= 0) throw new Error('Amount must be positive');
 
       // Use RPC call to handle the transaction server-side
       const { data, error } = await supabase.rpc('award_coins', {
-        award_user_id: user.id,
-        amount
+        award_user_id: currentUser.id,
+        amount,
       });
 
       if (error) throw error;
@@ -91,7 +104,7 @@ export function useHealthCoins() {
       // Use RPC call to handle the transaction server-side
       const { data, error } = await supabase.rpc('purchase_badge', {
         badge_id: id, // id should already be a UUID string
-        badge_cost: badgeCost
+        badge_cost: badgeCost,
       });
 
       if (error) {

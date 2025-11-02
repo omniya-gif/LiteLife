@@ -1,16 +1,98 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, Image, ScrollView, Dimensions } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, TouchableOpacity, Image, ScrollView, Dimensions, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Camera, Star, StarHalf } from 'lucide-react-native';
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
+import { ArrowLeft, Camera } from 'lucide-react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { CircularProgress } from '../../../components/CircularProgress';
+import { useUserStore } from '../../../lib/store/userStore';
+import { useAuth } from '../../../hooks/useAuth';
+import { LoadingScreen } from '../../../components/LoadingScreen';
+import { HEALTH_SERVICE_ICONS } from '../../../assets/icons/health';
 
 const { width } = Dimensions.get('window');
 
 export default function ProfilePage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const { profile, onboarding, fetchUserData, isLoading } = useUserStore();
+
+  useEffect(() => {
+    if (user?.id) {
+      console.log('Profile Page - User ID:', user.id);
+      fetchUserData(user.id);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    console.log('Profile Page - Current profile:', profile);
+    console.log('Profile Page - Current onboarding:', onboarding);
+  }, [profile, onboarding]);
+
+  if (isLoading) {
+    return <LoadingScreen />; // You'll need to create this component
+  }
+
+  const renderHealthServices = () => {
+    const services = [];
+
+    // Add platform-specific health service
+    if (Platform.OS === 'ios') {
+      services.push(
+        <TouchableOpacity 
+          key="apple-health"
+          onPress={() => {/* Handle Apple Health */}}
+          className="flex-1 items-center py-4 bg-[#1C6B48]/30 rounded-2xl mx-1"
+        >
+          <Image 
+            source={HEALTH_SERVICE_ICONS.APPLE_HEALTH}
+            className="w-8 h-8"
+            resizeMode="contain"
+          />
+          <Text className="text-white text-xs font-medium mt-2">
+            APPLE HEALTH
+          </Text>
+        </TouchableOpacity>
+      );
+    } else if (Platform.OS === 'android') {
+      services.push(
+        <TouchableOpacity 
+          key="google-fit"
+          onPress={() => {/* Handle Google Fit */}}
+          className="flex-1 items-center py-4 bg-[#1C6B48]/30 rounded-2xl mx-1"
+        >
+          <Image 
+            source={HEALTH_SERVICE_ICONS.GOOGLE_FIT}
+            className="w-8 h-8"
+            resizeMode="contain"
+          />
+          <Text className="text-white text-xs font-medium mt-2">
+            GOOGLE FIT
+          </Text>
+        </TouchableOpacity>
+      );
+    }
+
+    // Always add Spoonacular
+    services.push(
+      <TouchableOpacity 
+        key="spoonacular"
+        onPress={() => {/* Handle Spoonacular */}}
+        className="flex-1 items-center py-4 bg-[#1C6B48]/30 rounded-2xl mx-1"
+      >
+        <Image 
+          source={HEALTH_SERVICE_ICONS.SPOONACULAR}
+          className="w-8 h-8"
+          resizeMode="contain"
+        />
+        <Text className="text-white text-xs font-medium mt-2">
+          SPOONACULAR
+        </Text>
+      </TouchableOpacity>
+    );
+
+    return services;
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-[#1A1B1E]">
@@ -44,7 +126,7 @@ export default function ProfilePage() {
             {/* Profile Image */}
             <View className="absolute -top-8 left-6">
               <Image 
-                source={{ uri: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=688&q=80' }}
+                source={{ uri: profile?.avatar_url || 'https://via.placeholder.com/60' }}
                 className="w-[60px] h-[60px] rounded-2xl border-2 border-white"
               />
             </View>
@@ -55,10 +137,15 @@ export default function ProfilePage() {
               className="flex-row items-center justify-between mt-6"
             >
               <View>
-                <Text className="text-xl font-bold text-white">Amelia Sarkar</Text>
-                <Text className="text-[#4ADE80] text-sm font-medium mt-1">BASIC MEMBER</Text>
+                <Text className="text-xl font-bold text-white">{profile?.username || 'User'}</Text>
+                <Text className="text-[#4ADE80] text-sm font-medium mt-1">
+                  {onboarding?.expertise?.toUpperCase() || 'BASIC'} MEMBER
+                </Text>
               </View>
-              <TouchableOpacity className="bg-[#4ADE80]/10 px-6 py-3 rounded-xl">
+              <TouchableOpacity 
+                onPress={() => router.push('/profile/edit')}
+                className="bg-[#4ADE80]/10 px-6 py-3 rounded-xl"
+              >
                 <Text className="text-[#4ADE80] font-medium">Edit</Text>
               </TouchableOpacity>
             </Animated.View>
@@ -68,8 +155,28 @@ export default function ProfilePage() {
               entering={FadeInDown.delay(400)}
               className="text-gray-400 mt-6 leading-5"
             >
-              I decided I was going to actively pursue a better life, and take better care of my mind, body and soul
+              {profile?.bio}
             </Animated.Text>
+
+            {/* Goal Section - Updated styling */}
+            <Animated.View 
+              entering={FadeInDown.delay(400)}
+              className="mt-6 bg-[#4ADE80]/10 p-4 rounded-2xl"
+            >
+              <Text className="text-[#4ADE80] text-xs font-medium tracking-wider">
+                GOAL
+              </Text>
+              <View className="flex-row items-center mt-2">
+                <Text className="text-xl font-bold text-white">
+                  {onboarding?.goal || 'Improve Health'}
+                </Text>
+                {onboarding?.reason && (
+                  <Text className="text-gray-400 ml-2 flex-1">
+                    • {onboarding.reason}
+                  </Text>
+                )}
+              </View>
+            </Animated.View>
 
             {/* Stats */}
             <Animated.View 
@@ -79,7 +186,9 @@ export default function ProfilePage() {
               <View>
                 <Text className="text-[#4ADE80] text-xs font-medium tracking-wider">WEIGHT</Text>
                 <View className="flex-row items-baseline mt-2">
-                  <Text className="text-2xl font-bold text-white">58</Text>
+                  <Text className="text-2xl font-bold text-white">
+                    {onboarding?.current_weight || '--'}
+                  </Text>
                   <Text className="text-gray-400 ml-1">kg</Text>
                 </View>
               </View>
@@ -87,74 +196,49 @@ export default function ProfilePage() {
               <View>
                 <Text className="text-[#4ADE80] text-xs font-medium tracking-wider">AGE</Text>
                 <View className="flex-row items-baseline mt-2">
-                  <Text className="text-2xl font-bold text-white">23</Text>
+                  <Text className="text-2xl font-bold text-white">
+                    {onboarding?.age || '--'}
+                  </Text>
                   <Text className="text-gray-400 ml-1">yo</Text>
                 </View>
               </View>
               <View className="h-12 w-[1px] bg-[#2C2D32]" />
               <View>
-                <Text className="text-[#4ADE80] text-xs font-medium tracking-wider">CURRENT</Text>
+                <Text className="text-[#4ADE80] text-xs font-medium tracking-wider">HEIGHT</Text>
                 <View className="flex-row items-baseline mt-2">
-                  <Text className="text-2xl font-bold text-white">176</Text>
+                  <Text className="text-2xl font-bold text-white">
+                    {onboarding?.height || '--'}
+                  </Text>
                   <Text className="text-gray-400 ml-1">cm</Text>
                 </View>
               </View>
             </Animated.View>
 
-            {/* Activity Cards */}
+            {/* Health Integrations */}
             <Animated.View 
-              entering={FadeInDown.delay(800)}
-              className="flex-row justify-between mt-9"
+              entering={FadeInDown.delay(700)}
+              className="mt-12 mb-9"
             >
-              {/* Steps Card */}
-              <TouchableOpacity 
-                onPress={() => router.push('/steps')}
-                className="w-[162px] h-[216px] bg-[#4ADE80] rounded-2xl p-4"
-              >
-                <Text className="text-white text-xs font-medium tracking-wider">STEPS</Text>
-                <View className="flex-1 items-center justify-center">
-                  <View className="relative">
-                    <CircularProgress 
-                      size={96}
-                      strokeWidth={12}
-                      progress={0.4}
-                      colors={['#34D399']}
-                    />
-                    <View className="absolute inset-0 items-center justify-center">
-                      <StarHalf size={36} color="white" />
-                    </View>
-                  </View>
-                </View>
-                <View>
-                  <Text className="text-2xl font-medium text-white">9,890</Text>
-                  <Text className="text-white/60 text-sm">last update 3m</Text>
-                </View>
-              </TouchableOpacity>
-
-              {/* Weight Card */}
-              <TouchableOpacity 
-                onPress={() => router.push('/weight')}
-                className="w-[162px] h-[216px] bg-[#34D399] rounded-2xl p-4"
-              >
-                <Text className="text-white text-xs font-medium tracking-wider">WEIGHT</Text>
-                <View className="flex-1 items-center justify-center">
-                  <View className="h-[72px] w-full bg-white/10 rounded-xl" />
-                </View>
-                <View>
-                  <Text className="text-2xl font-medium text-white">58 kg</Text>
-                  <Text className="text-white/60 text-sm">last update 3m</Text>
-                </View>
-              </TouchableOpacity>
+              <Text className="text-white text-lg font-bold mb-4">
+                Connect Health Services
+              </Text>
+              <View className="flex-row justify-between">
+                {renderHealthServices()}
+              </View>
             </Animated.View>
 
-            {/* Premium Card */}
+            {/* Premium Card - Updated with darker green background */}
             <Animated.View 
-              entering={FadeInDown.delay(1000)}
-              className="mt-9 mb-6 bg-white rounded-3xl p-6"
+              entering={FadeInDown.delay(800)}
+              className="mt-9 mb-6 bg-[#1C6B48] rounded-3xl p-6"
             >
               <Text className="text-[#4ADE80] text-xs font-medium">GO PREMIUM</Text>
-              <Text className="text-xl font-medium mt-2">Unlock all features to improve your health</Text>
-              <Text className="text-gray-600 mt-1">Be a part of our healthy group</Text>
+              <Text className="text-white text-xl font-medium mt-2">
+                Unlock all features to improve your health
+              </Text>
+              <Text className="text-white/60 mt-1">
+                Be a part of our healthy group
+              </Text>
 
               {/* Member Images */}
               <View className="flex-row mt-6">

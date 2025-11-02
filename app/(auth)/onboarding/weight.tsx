@@ -18,7 +18,7 @@ export default function WeightSelection() {
       current_weight: currentWeight,
       target_weight: targetWeight 
     });
-    router.push('/onboarding/calories');
+    router.push('/onboarding/gender'); // Changed from calories to gender
   };
 
   const SliderThumb = () => (

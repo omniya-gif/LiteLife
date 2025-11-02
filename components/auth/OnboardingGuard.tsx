@@ -1,17 +1,19 @@
 import React from 'react';
 import { Redirect } from 'expo-router';
 import { useOnboarding } from '../../hooks/useOnboarding';
+import { useAuth } from '../../hooks/useAuth';
 import Loader from '../Loader';
 
-interface OnboardingGuardProps {
-  children: React.ReactNode;
-}
+export default function OnboardingGuard({ children }) {
+  const { user, loading: authLoading } = useAuth();
+  const { data: onboarding, isLoading: onboardingLoading } = useOnboarding();
 
-export default function OnboardingGuard({ children }: OnboardingGuardProps) {
-  const { data: onboarding, isLoading } = useOnboarding();
-
-  if (isLoading) {
+  if (authLoading || onboardingLoading) {
     return <Loader />;
+  }
+
+  if (!user) {
+    return <Redirect href="/signin" />;
   }
 
   if (!onboarding?.completed) {

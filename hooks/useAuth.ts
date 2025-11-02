@@ -1,26 +1,43 @@
+import type { User } from '@supabase/supabase-js';
+import * as Notifications from 'expo-notifications';
 import { useState, useEffect } from 'react';
+
+import { useUserStore } from '../lib/store/userStore';
 import { supabase } from '../lib/supabase';
 import { AuthError, SignUpData, SignInData } from '../types/auth';
-import * as Notifications from 'expo-notifications';
 
 export function useAuth() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { clearUserData } = useUserStore();
 
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
-    });
+    }); // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const newUser = session?.user ?? null;
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setUser(session?.user ?? null);
+      // If user changed (including logout), clear cached user data
+      if (user?.id !== newUser?.id) {
+        console.log(
+          'User changed, clearing cached data. Old user:',
+          user?.id,
+          'New user:',
+          newUser?.id
+        );
+        clearUserData();
+      }
+
+      setUser(newUser);
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [user?.id, clearUserData]);
 
   const validateEmail = (email: string): string | null => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -46,7 +63,6 @@ export function useAuth() {
     }
     return null;
   };
-
   const signUp = async ({ email, password, username }: SignUpData): Promise<AuthError | null> => {
     // Validate inputs
     const emailError = validateEmail(email);
@@ -59,22 +75,30 @@ export function useAuth() {
     if (usernameError) return { message: usernameError, field: 'username' };
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            username
-          }
-        }
+            username,
+          },
+        },
       });
 
       if (error) throw error;
+
+      // Wait for the session to be properly established
+      if (data.session) {
+        setUser(data.session.user);
+        // Add a small delay to ensure state is updated
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+
       return null;
     } catch (error: any) {
-      return { 
+      return {
         message: error.message || 'An error occurred during sign up',
-        field: error.field
+        field: error.field,
       };
     }
   };
@@ -83,20 +107,21 @@ export function useAuth() {
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
-        password
+        password,
       });
 
       if (error) throw error;
       return null;
     } catch (error: any) {
-      return { 
+      return {
         message: error.message || 'Invalid email or password',
-        field: error.field
+        field: error.field,
       };
     }
   };
-
   const signOut = async (): Promise<void> => {
+    console.log('Signing out, clearing user data');
+    clearUserData(); // Clear cached data before sign out
     await supabase.auth.signOut();
   };
 
@@ -105,6 +130,6 @@ export function useAuth() {
     loading,
     signUp,
     signIn,
-    signOut
+    signOut,
   };
 }
