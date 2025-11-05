@@ -17,6 +17,7 @@ import Animated, {
 import Svg, { Path } from 'react-native-svg';
 
 import { CircularProgress } from '../../../components/CircularProgress';
+import { useTheme } from '../../../hooks/useTheme';
 
 const { width } = Dimensions.get('window');
 
@@ -45,6 +46,7 @@ const createWavePath = (width: number, amplitude: number, frequency: number, pha
 
 export default function WaterTrackerPage() {
   const router = useRouter();
+  const theme = useTheme();
   const [waterAmount, setWaterAmount] = useState(750);
   const [selectedAmount, setSelectedAmount] = useState(0.2); // Default to 200ml
   const [goal] = useState(2500);
@@ -108,7 +110,7 @@ export default function WaterTrackerPage() {
     const d = createWavePath(width * 0.6 + 200, 30, 2, wave1Offset.value);
     return (
       <Svg height={200} width={width * 0.6 + 200} style={{ position: 'absolute', top: -50 }}>
-        <Path d={d} fill="rgba(74, 222, 128, 0.4)" />
+        <Path d={d} fill={`${theme.primary}66`} />
       </Svg>
     );
   });
@@ -117,7 +119,7 @@ export default function WaterTrackerPage() {
     const d = createWavePath(width * 0.6 + 200, 35, 1.5, wave2Offset.value);
     return (
       <Svg height={200} width={width * 0.6 + 200} style={{ position: 'absolute', top: -30 }}>
-        <Path d={d} fill="rgba(74, 222, 128, 0.6)" />
+        <Path d={d} fill={`${theme.primary}99`} />
       </Svg>
     );
   });
@@ -132,7 +134,7 @@ export default function WaterTrackerPage() {
           <Wave2Component />
         </Animated.View>
         <View style={{ 
-          backgroundColor: 'rgba(74, 222, 128, 0.8)', 
+          backgroundColor: `${theme.primary}CC`, 
           height: 1000,
           marginTop: 50 
         }} />
@@ -156,7 +158,7 @@ export default function WaterTrackerPage() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#1A1B1E]">
+    <SafeAreaView className="flex-1" style={{ backgroundColor: theme.background }}>
       {/* Header */}
       <Animated.View
         entering={FadeInDown.springify()}
@@ -164,7 +166,7 @@ export default function WaterTrackerPage() {
         <TouchableOpacity onPress={() => router.back()}>
           <ArrowLeft size={24} color="#fff" />
         </TouchableOpacity>
-        <Text className="ml-4 text-lg font-medium text-[#4ADE80]">HYDRATION</Text>
+        <Text className="ml-4 text-lg font-medium" style={{ color: theme.primary }}>HYDRATION</Text>
       </Animated.View>
 
       {/* Main Content */}
@@ -172,7 +174,7 @@ export default function WaterTrackerPage() {
         {/* Water Intake Summary */}
         <Animated.View entering={FadeIn.delay(300).springify()} className="items-center">
           <Text className="text-center text-3xl font-bold text-white">
-            You drank <Text className="text-[#4ADE80]">{waterAmount}ml</Text> of{' '}
+            You drank <Text style={{ color: theme.primary }}>{waterAmount}ml</Text> of{' '}
             <Text className="text-gray-400">{goal}ml</Text>
           </Text>
           <Text className="mt-2 text-gray-400">
@@ -183,14 +185,14 @@ export default function WaterTrackerPage() {
         {/* Progress Circle with Liquid Animation */}
         <Animated.View entering={FadeInUp.delay(400).springify()} className="items-center py-8">
           <View className="relative" style={{ width: width * 0.6, height: width * 0.6 }}>
-            <View className="absolute inset-0 overflow-hidden rounded-full bg-[#25262B]">
+            <View className="absolute inset-0 overflow-hidden rounded-full" style={{ backgroundColor: theme.backgroundLight }}>
               <WavesContainer />
             </View>
             <CircularProgress
               size={width * 0.6}
               strokeWidth={16}
               progress={progress}
-              colors={['#4ADE80', '#4ADE80', '#4ADE80']}
+              colors={[theme.primary, theme.primary, theme.primary]}
             />
             <Animated.View
               entering={FadeIn.delay(500)}
@@ -208,9 +210,10 @@ export default function WaterTrackerPage() {
               <TouchableOpacity
                 key={cup.id}
                 onPress={() => handleCupSelection(cup.amount)}
-                className={`h-16 w-16 items-center justify-center rounded-full ${
-                  selectedAmount === cup.amount ? 'bg-[#4ADE80]' : 'bg-[#25262B]'
-                }`}>
+                className="h-16 w-16 items-center justify-center rounded-full"
+                style={{ 
+                  backgroundColor: selectedAmount === cup.amount ? theme.primary : theme.backgroundLight 
+                }}>
                 <GlassWater size={24} color="white" />
                 <Text className="mt-1 text-xs text-white">{cup.label}</Text>
               </TouchableOpacity>
@@ -220,20 +223,22 @@ export default function WaterTrackerPage() {
       </View>
 
       {/* Bottom Controls */}
-      <Animated.View entering={FadeInUp.delay(700)} className="bg-[#1A1B1E] px-6 pb-8 pt-4">
-        <View className="flex-row items-center justify-between rounded-2xl bg-[#25262B] p-4">
+      <Animated.View entering={FadeInUp.delay(700)} className="px-6 pb-8 pt-4" style={{ backgroundColor: theme.background }}>
+        <View className="flex-row items-center justify-between rounded-2xl p-4" style={{ backgroundColor: theme.backgroundLight }}>
           <TouchableOpacity
             onPress={removeWater}
-            className="h-12 w-12 items-center justify-center rounded-full bg-[#2C2D32]">
-            <Minus size={24} color="#4ADE80" />
+            className="h-12 w-12 items-center justify-center rounded-full"
+            style={{ backgroundColor: theme.backgroundDark }}>
+            <Minus size={24} color={theme.primary} />
           </TouchableOpacity>
           <View className="items-center">
             <Text className="text-lg text-white">Add {selectedAmount * 1000}ml</Text>
           </View>
           <TouchableOpacity
             onPress={addWater}
-            className="h-12 w-12 items-center justify-center rounded-full bg-[#2C2D32]">
-            <Plus size={24} color="#4ADE80" />
+            className="h-12 w-12 items-center justify-center rounded-full"
+            style={{ backgroundColor: theme.backgroundDark }}>
+            <Plus size={24} color={theme.primary} />
           </TouchableOpacity>
         </View>
       </Animated.View>

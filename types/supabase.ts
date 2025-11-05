@@ -79,6 +79,20 @@ export interface Database {
         Insert: Omit<Database['public']['Tables']['recipe_favorites']['Row'], 'id' | 'created_at'>;
         Update: Partial<Omit<Database['public']['Tables']['recipe_favorites']['Row'], 'id'>>;
       };
+      bmi_history: {
+        Row: {
+          id: string;
+          user_id: string;
+          bmi: number;
+          height: number;
+          weight: number;
+          category: string;
+          notes?: string;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['bmi_history']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Omit<Database['public']['Tables']['bmi_history']['Row'], 'id'>>;
+      };
     };
     Functions: {
       connect_spoonacular_user: {

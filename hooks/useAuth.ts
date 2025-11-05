@@ -1,9 +1,10 @@
 import type { User } from '@supabase/supabase-js';
-import * as Notifications from 'expo-notifications';
 import { useState, useEffect } from 'react';
 
 import { useUserStore } from '../lib/store/userStore';
 import { supabase } from '../lib/supabase';
+import { useOnboardingStore } from '../stores/onboardingStore';
+import { useThemeStore } from '../stores/themeStore';
 import { AuthError, SignUpData, SignInData } from '../types/auth';
 
 export function useAuth() {
@@ -54,16 +55,7 @@ export function useAuth() {
     return null;
   };
 
-  const validateUsername = (username: string): string | null => {
-    if (username.length < 3) {
-      return 'Username must be at least 3 characters long';
-    }
-    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-      return 'Username can only contain letters, numbers, and underscores';
-    }
-    return null;
-  };
-  const signUp = async ({ email, password, username }: SignUpData): Promise<AuthError | null> => {
+  const signUp = async ({ email, password }: SignUpData): Promise<AuthError | null> => {
     // Validate inputs
     const emailError = validateEmail(email);
     if (emailError) return { message: emailError, field: 'email' };
@@ -71,18 +63,10 @@ export function useAuth() {
     const passwordError = validatePassword(password);
     if (passwordError) return { message: passwordError, field: 'password' };
 
-    const usernameError = validateUsername(username);
-    if (usernameError) return { message: usernameError, field: 'username' };
-
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          data: {
-            username,
-          },
-        },
       });
 
       if (error) throw error;
@@ -120,8 +104,21 @@ export function useAuth() {
     }
   };
   const signOut = async (): Promise<void> => {
-    console.log('Signing out, clearing user data');
-    clearUserData(); // Clear cached data before sign out
+    console.log('🚪 Signing out, clearing all user data');
+    
+    // Clear user data
+    clearUserData();
+    
+    // Reset onboarding form
+    const { resetFormData } = useOnboardingStore.getState();
+    resetFormData();
+    console.log('🧹 Onboarding form cleared');
+    
+    // Reset theme to default (green/male)
+    const { setGender } = useThemeStore.getState();
+    setGender('male');
+    console.log('🎨 Theme reset to default (green)');
+    
     await supabase.auth.signOut();
   };
 

@@ -13,9 +13,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Header } from '../../../components/home/Header';
 import { BottomNavigation } from '../home/components/BottomNavigation';
-import { Header } from '../home/components/Header';
 import { TabBar } from '../home/components/TabBar';
+import { useTheme } from '../../../hooks/useTheme';
 
 const categories = [
   {
@@ -82,16 +83,18 @@ const featuredRecipes = [
 
 export default function RecipesPage() {
   const router = useRouter();
+  const theme = useTheme();
   const [searchVisible, setSearchVisible] = useState(false);
   const [favorites, setFavorites] = useState<number[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredRecipes = useMemo(() => {
     if (!searchQuery) return [];
-    return featuredRecipes.filter(recipe => 
-      recipe.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      recipe.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      recipe.dishTypes.some(type => type.toLowerCase().includes(searchQuery.toLowerCase()))
+    return featuredRecipes.filter(
+      (recipe) =>
+        recipe.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        recipe.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        recipe.dishTypes.some((type) => type.toLowerCase().includes(searchQuery.toLowerCase()))
     );
   }, [searchQuery]);
 
@@ -196,8 +199,9 @@ export default function RecipesPage() {
                       setSearchVisible(false);
                       setSearchQuery('');
                     }}
-                    className="rounded-full bg-[#4ADE80]/20 px-4 py-2">
-                    <Text className="text-base font-medium text-[#4ADE80]">Cancel</Text>
+                    className="rounded-full px-4 py-2"
+                    style={{ backgroundColor: `${theme.primary}20` }}>
+                    <Text className="text-base font-medium" style={{ color: theme.primary }}>Cancel</Text>
                   </TouchableOpacity>
                 </View>
 
@@ -216,7 +220,7 @@ export default function RecipesPage() {
                           />
                           <View className="flex-1 justify-between p-4">
                             <View>
-                              <Text className="mb-1 text-sm font-medium text-[#4ADE80]">
+                              <Text className="mb-1 text-sm font-medium" style={{ color: theme.primary }}>
                                 {recipe.dishTypes[0]?.toUpperCase()}
                               </Text>
                               <Text className="mb-2 text-lg font-medium text-white">
@@ -226,7 +230,7 @@ export default function RecipesPage() {
                                 {recipe.summary}
                               </Text>
                             </View>
-                            
+
                             <View className="flex-row items-center justify-between">
                               <Text className="text-sm text-gray-400">{recipe.duration}</Text>
                               <TouchableOpacity
@@ -234,8 +238,8 @@ export default function RecipesPage() {
                                 className="h-8 w-8 items-center justify-center rounded-full bg-[#2C2D32]">
                                 <Heart
                                   size={16}
-                                  color={favorites.includes(recipe.id) ? '#4ADE80' : 'white'}
-                                  fill={favorites.includes(recipe.id) ? '#4ADE80' : 'transparent'}
+                                  color={favorites.includes(recipe.id) ? theme.primary : 'white'}
+                                  fill={favorites.includes(recipe.id) ? theme.primary : 'transparent'}
                                 />
                               </TouchableOpacity>
                             </View>
@@ -243,7 +247,7 @@ export default function RecipesPage() {
                         </View>
                       </TouchableOpacity>
                     ))}
-                    
+
                     {filteredRecipes.length === 0 && (
                       <View className="items-center py-8">
                         <Text className="text-gray-400">No recipes found</Text>
@@ -256,7 +260,7 @@ export default function RecipesPage() {
               <TouchableOpacity
                 onPress={() => setSearchVisible(true)}
                 className="flex-row items-center rounded-2xl bg-[#2C2D32] px-6 py-4 shadow-lg">
-                <Search size={24} color="#4ADE80" />
+                <Search size={24} color={theme.primary} />
                 <Text className="ml-3 text-lg text-gray-400">What would you like to cook?</Text>
               </TouchableOpacity>
             )}
@@ -269,7 +273,7 @@ export default function RecipesPage() {
               <View className="mb-4 flex-row items-center justify-between">
                 <Text className="text-2xl font-bold text-white">Featured Recipes</Text>
                 <TouchableOpacity>
-                  <Text className="text-base font-medium text-[#4ADE80]">See All</Text>
+                  <Text className="text-base font-medium" style={{ color: theme.primary }}>See All</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -308,14 +312,14 @@ export default function RecipesPage() {
                         className="absolute right-4 top-4 h-10 w-10 items-center justify-center rounded-full bg-black/20">
                         <Heart
                           size={20}
-                          color={favorites.includes(recipe.id) ? '#4ADE80' : 'white'}
-                          fill={favorites.includes(recipe.id) ? '#4ADE80' : 'transparent'}
+                          color={favorites.includes(recipe.id) ? theme.primary : 'white'}
+                          fill={favorites.includes(recipe.id) ? theme.primary : 'transparent'}
                         />
                       </TouchableOpacity>
                     </View>
 
                     <View className="p-4">
-                      <Text className="mb-2 text-sm font-medium text-[#4ADE80]">
+                      <Text className="mb-2 text-sm font-medium" style={{ color: theme.primary }}>
                         {recipe.dishTypes[0]?.toUpperCase()}
                       </Text>
                       <Text className="mb-2 text-lg font-medium text-white">{recipe.title}</Text>
@@ -327,20 +331,21 @@ export default function RecipesPage() {
                       <View className="flex-row justify-between">
                         <TouchableOpacity
                           onPress={() => router.push('/journal')}
-                          className="mr-2 h-12 flex-1 items-center justify-center rounded-xl bg-[#4ADE80]">
+                          className="mr-2 h-12 flex-1 items-center justify-center rounded-xl"
+                          style={{ backgroundColor: theme.primary }}>
                           <Text className="font-medium text-white">Add to Journal</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
                           onPress={() => router.push(`/recipes/${recipe.id}/nutrition`)}
                           className="mx-2 h-12 w-12 items-center justify-center rounded-xl bg-[#2C2D32]">
-                          <Info size={20} color="#4ADE80" />
+                          <Info size={20} color={theme.primary} />
                         </TouchableOpacity>
 
                         <TouchableOpacity
                           onPress={() => router.push(`/recipes/${recipe.id}`)}
                           className="h-12 w-12 items-center justify-center rounded-xl bg-[#2C2D32]">
-                          <ChevronRight size={20} color="#4ADE80" />
+                          <ChevronRight size={20} color={theme.primary} />
                         </TouchableOpacity>
                       </View>
                     </View>

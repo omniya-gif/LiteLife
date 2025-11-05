@@ -13,20 +13,20 @@ import Animated, {
   useSharedValue 
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTheme } from '../../../hooks/useTheme';
 
 const { width } = Dimensions.get('window');
 
-const SleepQualityIndicator = ({ quality, description, isActive }) => (
+const SleepQualityIndicator = ({ quality, description, isActive, theme }) => (
   <Animated.View
     entering={FadeIn}
     className="items-center"
   >
     <TouchableOpacity 
-      className={`items-center rounded-2xl p-4 ${
-        isActive ? 'bg-[#4ADE80]/10' : 'bg-[#25262B]'
-      }`}
+      className="items-center rounded-2xl p-4"
+      style={{ backgroundColor: isActive ? `${theme.primary}10` : theme.backgroundLight }}
     >
-      <Text className={`text-2xl ${isActive ? 'text-[#4ADE80]' : 'text-white'}`}>
+      <Text className="text-2xl" style={{ color: isActive ? theme.primary : 'white' }}>
         {quality}
       </Text>
       <Text className="mt-1 text-xs text-gray-400">{description}</Text>
@@ -34,10 +34,11 @@ const SleepQualityIndicator = ({ quality, description, isActive }) => (
   </Animated.View>
 );
 
-const SleepStatBox = ({ icon, value, label, color }) => (
+const SleepStatBox = ({ icon, value, label, color, theme }) => (
   <Animated.View
     entering={FadeIn}
-    className="items-center rounded-2xl bg-[#25262B] p-4"
+    className="items-center rounded-2xl p-4"
+    style={{ backgroundColor: theme.backgroundLight }}
   >
     <LinearGradient
       colors={[color, color + '40']}
@@ -54,6 +55,7 @@ const SleepStatBox = ({ icon, value, label, color }) => (
 
 export default function SleepTrackerPage() {
   const router = useRouter();
+  const theme = useTheme();
   const [sleepQuality] = useState('Good');
   const starScale = useSharedValue(1);
 
@@ -76,13 +78,13 @@ export default function SleepTrackerPage() {
     labels: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     datasets: [{
       data: [7.2, 8.1, 6.5, 7.8, 8.2, 7.9, 7.5],
-      color: () => '#4ADE80',
+      color: () => theme.primary,
       strokeWidth: 2
     }]
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#1A1B1E]">
+    <SafeAreaView className="flex-1" style={{ backgroundColor: theme.background }}>
       <Animated.View
         entering={FadeInDown.springify()}
         className="flex-row items-center justify-between px-6 pt-4"
@@ -101,7 +103,7 @@ export default function SleepTrackerPage() {
             className="rounded-3xl p-6"
           >
             <LinearGradient
-              colors={['#4ADE80', '#22C55E']}
+              colors={[theme.primary, theme.primaryDark]}
               className="rounded-3xl p-6"
             >
               <View className="flex-row items-center justify-between">
@@ -138,6 +140,7 @@ export default function SleepTrackerPage() {
                 quality={quality === 'Good' ? '😴' : quality === 'Excellent' ? '🌟' : quality === 'Fair' ? '😐' : '😫'}
                 description={quality}
                 isActive={quality === sleepQuality}
+                theme={theme}
               />
             ))}
           </View>
@@ -150,41 +153,44 @@ export default function SleepTrackerPage() {
               icon={<Bed size={24} color="white" />}
               value="85%"
               label="Sleep Efficiency"
-              color="#4ADE80"
+              color={theme.primary}
+              theme={theme}
             />
             <SleepStatBox
               icon={<Activity size={24} color="white" />}
               value="96%"
               label="Deep Sleep"
               color="#3B82F6"
+              theme={theme}
             />
             <SleepStatBox
               icon={<Timer size={24} color="white" />}
               value="23m"
               label="Time to Sleep"
               color="#A78BFA"
+              theme={theme}
             />
           </View>
         </View>
 
         <View className="mt-8 px-6">
           <Text className="mb-4 text-lg font-bold text-white">Weekly Overview</Text>
-          <View className="rounded-2xl bg-[#25262B] p-4">
+          <View className="rounded-2xl p-4" style={{ backgroundColor: theme.backgroundLight }}>
             <LineChart
               data={sleepData}
               width={width - 60}
               height={200}
               chartConfig={{
-                backgroundColor: '#25262B',
-                backgroundGradientFrom: '#25262B',
-                backgroundGradientTo: '#25262B',
+                backgroundColor: theme.backgroundLight,
+                backgroundGradientFrom: theme.backgroundLight,
+                backgroundGradientTo: theme.backgroundLight,
                 decimalPlaces: 1,
-                color: () => '#4ADE80',
+                color: () => theme.primary,
                 labelColor: () => '#9CA3AF',
                 propsForDots: {
                   r: '6',
                   strokeWidth: '2',
-                  stroke: '#4ADE80'
+                  stroke: theme.primary
                 }
               }}
               bezier

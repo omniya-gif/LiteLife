@@ -6,21 +6,23 @@ import { ArrowLeft } from 'lucide-react-native';
 import { format } from 'date-fns';
 import { useNotifications } from '../../../hooks/useNotifications';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-
-const getNotificationColor = (type: string) => {
-  switch (type) {
-    case 'celebration':
-      return 'bg-[#4ADE80]/10';
-    case 'welcome':
-      return 'bg-[#25262B]';
-    default:
-      return '';
-  }
-};
+import { useTheme } from '../../../hooks/useTheme';
 
 export default function NotificationsPage() {
   const router = useRouter();
   const { notifications, unreadCount, markAllAsRead, markAsRead } = useNotifications();
+  const theme = useTheme();
+
+  const getNotificationColor = (type: string) => {
+    switch (type) {
+      case 'celebration':
+        return `${theme.primary}10`;
+      case 'welcome':
+        return theme.backgroundLight;
+      default:
+        return 'transparent';
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-[#1A1B1E]">
@@ -31,7 +33,7 @@ export default function NotificationsPage() {
         <Text className="text-xl font-bold text-white">Notifications</Text>
         {unreadCount > 0 && (
           <TouchableOpacity onPress={markAllAsRead}>
-            <Text className="text-[#4ADE80]">Mark all read</Text>
+            <Text style={{ color: theme.primary }}>Mark all read</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -49,9 +51,8 @@ export default function NotificationsPage() {
             >
               <TouchableOpacity
                 onPress={() => markAsRead(notification.id)}
-                className={`border-b border-[#2C2D32] px-6 py-4 ${
-                  !notification.read ? getNotificationColor(notification.type) : ''
-                }`}
+                className="border-b border-[#2C2D32] px-6 py-4"
+                style={{ backgroundColor: !notification.read ? getNotificationColor(notification.type) : 'transparent' }}
               >
                 <View className="flex-row items-start justify-between">
                   <View className="flex-1">
@@ -66,9 +67,7 @@ export default function NotificationsPage() {
                     </Text>
                   </View>
                   {!notification.read && (
-                    <View className={`h-3 w-3 rounded-full ${
-                      notification.type === 'celebration' ? 'bg-[#4ADE80]' : 'bg-[#4ADE80]'
-                    }`} />
+                    <View className="h-3 w-3 rounded-full" style={{ backgroundColor: theme.primary }} />
                   )}
                 </View>
               </TouchableOpacity>

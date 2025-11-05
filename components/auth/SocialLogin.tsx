@@ -13,12 +13,13 @@ import { useOnboardingStore } from '../../stores/onboardingStore';
 
 WebBrowser.maybeCompleteAuthSession();
 
-const redirectTo = __DEV__
-  ? `${Constants.expoConfig?.scheme}://auth/callback`
-  : makeRedirectUri({
-      scheme: 'myexpoapp',
-      path: 'auth/callback',
-    });
+// Generate redirect URI - use native scheme for development builds
+const redirectTo = makeRedirectUri({
+  scheme: 'fithass',
+  path: 'auth/callback',
+});
+
+console.log('[SocialLogin] Redirect URI configured as:', redirectTo);
 
 interface SocialLoginProps {
   isSignUp?: boolean;
@@ -31,18 +32,33 @@ export const SocialLogin = ({ isSignUp = false }: SocialLoginProps) => {
 
   const createSessionFromUrl = async (url: string) => {
     try {
+      console.log('[SocialLogin] ====== AUTH CALLBACK STARTED ======');
+      console.log('[SocialLogin] Callback URL received:', url);
+      
       const { params, errorCode } = QueryParams.getQueryParams(url);
+      console.log('[SocialLogin] Query params:', params);
+      console.log('[SocialLogin] Error code:', errorCode);
+      
       if (errorCode) throw new Error(errorCode);
       const { access_token, refresh_token } = params;
 
-      if (!access_token) return;
+      if (!access_token) {
+        console.log('[SocialLogin] No access token found in URL');
+        return;
+      }
 
+      console.log('[SocialLogin] Setting session with access token...');
       const { data, error } = await supabase.auth.setSession({
         access_token,
         refresh_token,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[SocialLogin] Session error:', error);
+        throw error;
+      }
+
+      console.log('[SocialLogin] Session set successfully, user ID:', data.session.user.id);
 
       // After setting session, fetch onboarding status with retry
       const checkOnboardingStatus = async (userId: string, retryCount = 0): Promise<boolean> => {
@@ -81,6 +97,7 @@ export const SocialLogin = ({ isSignUp = false }: SocialLoginProps) => {
           .single();
 
         setOnboardingCompleted(false);
+        console.log('[SocialLogin] Redirecting new user to: /onboarding/expertise');
         router.replace('/onboarding/expertise');
       } else {
         // Existing user login flow
@@ -93,12 +110,15 @@ export const SocialLogin = ({ isSignUp = false }: SocialLoginProps) => {
         await queryClient.invalidateQueries(['onboarding', data.session.user.id]);
 
         if (isCompleted) {
+          console.log('[SocialLogin] Redirecting existing user to: /(main)/home');
           router.replace('/(main)/home');
         } else {
+          console.log('[SocialLogin] Redirecting incomplete user to: /onboarding/expertise');
           router.replace('/onboarding/expertise');
         }
       }
 
+      console.log('[SocialLogin] ====== AUTH CALLBACK COMPLETED ======');
       return data.session;
     } catch (error) {
       console.error('[SocialLogin] Error:', error);
@@ -108,10 +128,21 @@ export const SocialLogin = ({ isSignUp = false }: SocialLoginProps) => {
 
   const handleGoogleSignIn = async () => {
     try {
+      console.log('[SocialLogin] Starting Google Sign In...');
+      console.log('[SocialLogin] Using redirect URI:', redirectTo);
+      console.log('');
+      console.log('═══════════════════════════════════════════════════════');
+      console.log('⚠️  IMPORTANT: Add this URL to Supabase Redirect URLs:');
+      console.log('═══════════════════════════════════════════════════════');
+      console.log(redirectTo);
+      console.log('═══════════════════════════════════════════════════════');
+      console.log('Go to: Supabase Dashboard → Authentication → URL Configuration');
+      console.log('');
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo,
+          redirectTo: redirectTo,
           skipBrowserRedirect: true,
           queryParams: {
             access_type: 'offline',
@@ -120,16 +151,38 @@ export const SocialLogin = ({ isSignUp = false }: SocialLoginProps) => {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[SocialLogin] OAuth error:', error);
+        throw error;
+      }
 
-      const res = await WebBrowser.openAuthSessionAsync(data?.url ?? '', redirectTo, {
-        showInRecents: true,
-        createTask: false,
-        enableDefaultShareMenuItem: false,
-      });
+      console.log('[SocialLogin] Opening auth session with URL:', data?.url);
+      const res = await WebBrowser.openAuthSessionAsync(
+        data?.url ?? '', 
+        redirectTo,
+        {
+          showInRecents: true,
+          createTask: false,
+          enableDefaultShareMenuItem: false,
+          // This is important for Android to return to the app
+          preferEphemeralSession: false,
+        }
+      );
 
+      console.log('[SocialLogin] Auth session result:', res);
+      console.log('[SocialLogin] Auth session type:', res.type);
+      
       if (res.type === 'success') {
+        console.log('[SocialLogin] Auth session successful, processing URL...');
+        console.log('[SocialLogin] Returned URL:', res.url);
         await createSessionFromUrl(res.url);
+      } else if (res.type === 'cancel') {
+        console.log('[SocialLogin] User cancelled the auth flow');
+        Alert.alert('Cancelled', 'Authentication was cancelled');
+      } else if (res.type === 'dismiss') {
+        console.log('[SocialLogin] User dismissed the auth flow');
+      } else {
+        console.log('[SocialLogin] Auth session not successful, type:', res.type);
       }
     } catch (error: any) {
       if (error.message.includes('Failed to download remote update')) {
@@ -142,6 +195,7 @@ export const SocialLogin = ({ isSignUp = false }: SocialLoginProps) => {
 
   React.useEffect(() => {
     const handleDeepLink = (event: { url: string }) => {
+      console.log('[SocialLogin] Deep link received:', event.url);
       if (event.url) {
         createSessionFromUrl(event.url);
       }
@@ -156,15 +210,13 @@ export const SocialLogin = ({ isSignUp = false }: SocialLoginProps) => {
     <View className="w-full">
       <TouchableOpacity
         onPress={handleGoogleSignIn}
-        className="h-14 w-full flex-row items-center justify-center space-x-3 rounded-full border border-[#4ADE80]/20 bg-[#162116] shadow-lg shadow-[#4ADE80]/10">
+        className="h-14 w-full flex-row items-center justify-center space-x-3 rounded-full border border-gray-600 bg-gray-800 shadow-lg">
         <Image
           source={require('../../assets/images/social/google.png')}
-          className="h-5 w-5"
+          className="h-6 w-6"
           resizeMode="contain"
         />
-        <Text className="font-medium text-gray-300">
-          {isSignUp ? 'Sign up with Google' : 'Sign in with Google'}
-        </Text>
+        <Text className="text-lg font-semibold text-white">Continue with Google</Text>
       </TouchableOpacity>
     </View>
   );

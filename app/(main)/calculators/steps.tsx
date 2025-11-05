@@ -17,6 +17,7 @@ import { CircularProgress } from '../../../components/CircularProgress';
 import { LinearGradient } from 'expo-linear-gradient';
 import { initialize, requestPermission, readRecords } from 'react-native-health-connect';
 import { Platform } from 'react-native';
+import { useTheme } from '../../../hooks/useTheme';
 
 const { width } = Dimensions.get('window');
 
@@ -28,26 +29,32 @@ interface StatsItemProps {
   delay: number;
 }
 
-const StatsItem = ({ icon, value, label, gradient, delay }: StatsItemProps) => (
-  <Animated.View
-    entering={FadeInUp.delay(delay)}
-    className="items-center rounded-2xl bg-[#25262B] p-4"
-  >
-    <LinearGradient
-      colors={gradient}
-      className="mb-2 rounded-full p-3"
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
+const StatsItem = ({ icon, value, label, gradient, delay }: StatsItemProps) => {
+  const theme = useTheme();
+  
+  return (
+    <Animated.View
+      entering={FadeInUp.delay(delay)}
+      className="items-center rounded-2xl p-4"
+      style={{ backgroundColor: theme.backgroundLight }}
     >
-      {icon}
-    </LinearGradient>
-    <Text className="text-xl font-bold text-white">{value}</Text>
-    <Text className="text-xs text-gray-400">{label}</Text>
-  </Animated.View>
-);
+      <LinearGradient
+        colors={gradient}
+        className="mb-2 rounded-full p-3"
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        {icon}
+      </LinearGradient>
+      <Text className="text-xl font-bold text-white">{value}</Text>
+      <Text className="text-xs text-gray-400">{label}</Text>
+    </Animated.View>
+  );
+};
 
 export default function StepsTrackerPage() {
   const router = useRouter();
+  const theme = useTheme();
   const [steps, setSteps] = useState(0);
   const [distance, setDistance] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -176,27 +183,27 @@ export default function StepsTrackerPage() {
     datasets: [
       {
         data: [6000, 7500, 5000, 8000, steps, 0, 0],
-        color: () => '#4ADE80',
+        color: () => theme.primary,
         strokeWidth: 2
       },
       {
         data: [5000, 6500, 4000, 7000, steps - 1000, 0, 0],
-        color: () => '#22C55E',
+        color: () => theme.primaryDark,
         strokeWidth: 2
       }
     ]
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#1A1B1E]">
+    <SafeAreaView className="flex-1" style={{ backgroundColor: theme.background }}>
       <Animated.View
         entering={FadeInDown.springify()}
         className="flex-row items-center justify-between px-6 pt-4">
         <TouchableOpacity onPress={() => router.back()}>
           <ArrowLeft size={24} color="white" />
         </TouchableOpacity>
-        <TouchableOpacity className="rounded-lg bg-[#4ADE80]/10 px-6 py-2">
-          <Text className="text-[#4ADE80]">Insight</Text>
+        <TouchableOpacity className="rounded-lg px-6 py-2" style={{ backgroundColor: `${theme.primary}10` }}>
+          <Text style={{ color: theme.primary }}>Insight</Text>
         </TouchableOpacity>
       </Animated.View>
 
@@ -205,7 +212,7 @@ export default function StepsTrackerPage() {
           entering={FadeIn.delay(300)}
           className="items-center"
         >
-          <Text className="text-center text-sm font-medium text-[#4ADE80]">
+          <Text className="text-center text-sm font-medium" style={{ color: theme.primary }}>
             DAILY STEPS
           </Text>
           <Text className="mt-2 text-center text-2xl text-white">
@@ -220,7 +227,7 @@ export default function StepsTrackerPage() {
             size={200}
             strokeWidth={20}
             progress={progress}
-            colors={['#4ADE80', '#22C55E', '#16A34A']}
+            colors={[theme.primary, theme.primaryDark, theme.primaryDark]}
             gradientStops={[0, 0.5, 1]}
           />
           <Animated.View 
@@ -237,7 +244,7 @@ export default function StepsTrackerPage() {
               }
             ]}
           >
-            <Footprints size={40} color="#4ADE80" />
+            <Footprints size={40} color={theme.primary} />
             <Text className="mt-2 text-4xl font-bold text-white">{steps}</Text>
             <Text className="text-gray-400">steps</Text>
           </Animated.View>
@@ -249,7 +256,7 @@ export default function StepsTrackerPage() {
           icon={<TrendingUp size={24} color="white" />}
           value={`${calories} kcal`}
           label="Calories"
-          gradient={['#4ADE80', '#22C55E']}
+          gradient={[theme.primary, theme.primaryDark]}
           delay={300}
         />
         <StatsItem
@@ -268,15 +275,15 @@ export default function StepsTrackerPage() {
         />
       </View>
 
-      <View className="mt-9 flex-1 rounded-t-[36px] bg-[#25262B] px-6 pt-6">
+      <View className="mt-9 flex-1 rounded-t-[36px] px-6 pt-6" style={{ backgroundColor: theme.backgroundLight }}>
         <View className="flex-row justify-between">
           {['DAY', 'WEEK', 'MONTH'].map((tab) => (
             <TouchableOpacity
               key={tab}
               onPress={() => setActiveTab(tab)}
-              className={`rounded-xl px-6 py-3 ${
-                activeTab === tab ? 'bg-[#4ADE80]' : 'bg-transparent'
-              }`}>
+              className="rounded-xl px-6 py-3"
+              style={{ backgroundColor: activeTab === tab ? theme.primary : 'transparent' }}
+            >
               <Text className="text-white">{tab}</Text>
             </TouchableOpacity>
           ))}
@@ -290,17 +297,17 @@ export default function StepsTrackerPage() {
             width={width - 48}
             height={180}
             chartConfig={{
-              backgroundColor: '#25262B',
-              backgroundGradientFrom: '#25262B',
-              backgroundGradientTo: '#25262B',
+              backgroundColor: theme.backgroundLight,
+              backgroundGradientFrom: theme.backgroundLight,
+              backgroundGradientTo: theme.backgroundLight,
               decimalPlaces: 0,
-              color: () => '#4ADE80',
+              color: () => theme.primary,
               labelColor: () => '#9CA3AF',
               style: { borderRadius: 16 },
               propsForDots: {
                 r: '6',
                 strokeWidth: '2',
-                stroke: '#4ADE80'
+                stroke: theme.primary
               }
             }}
             bezier

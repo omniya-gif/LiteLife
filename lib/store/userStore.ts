@@ -4,6 +4,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { supabase } from '../supabase';
 import { Profile, UserOnboarding } from '../types/database';
+import { useThemeStore } from '../../stores/themeStore';
 
 interface UserStore {
   profile: Profile | null;
@@ -126,6 +127,13 @@ export const useUserStore = create(
 
           set({ profile: profileData, onboarding: onboardingData, isLoading: false });
           console.log('State updated with:', { profile: profileData, onboarding: onboardingData });
+
+          // 🎨 Sync theme with gender from database
+          if (onboardingData?.gender) {
+            const { setGender } = useThemeStore.getState();
+            console.log('🎨 Syncing theme with database gender:', onboardingData.gender);
+            setGender(onboardingData.gender as 'male' | 'female');
+          }
         } catch (error) {
           console.error('Query Error:', error);
           set({ error: (error as Error).message, isLoading: false });
@@ -164,6 +172,13 @@ export const useUserStore = create(
 
           if (error) throw error;
           set({ onboarding: updatedOnboarding });
+
+          // 🎨 Sync theme when gender is updated
+          if (data.gender) {
+            const { setGender } = useThemeStore.getState();
+            console.log('🎨 Syncing theme after onboarding update, gender:', data.gender);
+            setGender(data.gender as 'male' | 'female');
+          }
         } catch (error) {
           set({ error: (error as Error).message });
         }

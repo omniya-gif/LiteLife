@@ -6,6 +6,7 @@ import { CircularProgress } from '../../../components/CircularProgress';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { initialize, requestPermission, readRecords } from 'react-native-health-connect';
 import { Platform } from 'react-native';
+import { useTheme } from '../../../hooks/useTheme';
 
 const MacroRow = ({ name, amount, percentage, color, index }) => (
   <Animated.View 
@@ -25,6 +26,7 @@ const MacroRow = ({ name, amount, percentage, color, index }) => (
 
 export default function CalorieTrackerPage() {
   const router = useRouter();
+  const theme = useTheme();
   const [steps, setSteps] = useState(0);
   const [distance, setDistance] = useState(0);
   const [floors, setFloors] = useState(0);
@@ -106,7 +108,7 @@ export default function CalorieTrackerPage() {
       name: 'Distance', 
       amount: `${(distance / 1000).toFixed(2)} km`, 
       percentage: Math.round((distance / 5000) * 100), 
-      color: '#4ADE80' 
+      color: theme.primary 
     },
     { 
       name: 'Floors', 
@@ -117,20 +119,22 @@ export default function CalorieTrackerPage() {
   ];
 
   return (
-    <SafeAreaView className="flex-1 bg-[#1A1B1E]">
+    <SafeAreaView className="flex-1" style={{ backgroundColor: theme.background }}>
       {/* Header */}
       <Animated.View 
         entering={FadeInDown.springify()}
-        className="flex-row items-center justify-between px-6 pt-4 bg-[#25262B]"
+        className="flex-row items-center justify-between px-6 pt-4"
+        style={{ backgroundColor: theme.backgroundLight }}
       >
         <TouchableOpacity onPress={() => router.back()}>
           <ArrowLeft size={24} color="#fff" />
         </TouchableOpacity>
         <TouchableOpacity 
           onPress={() => router.push('/journal')} 
-          className="rounded-full bg-[#4ADE80]/10 px-6 py-2"
+          className="rounded-full px-6 py-2"
+          style={{ backgroundColor: `${theme.primary}10` }}
         >
-          <Text className="font-medium text-[#4ADE80]">Journal</Text>
+          <Text className="font-medium" style={{ color: theme.primary }}>Journal</Text>
         </TouchableOpacity>
       </Animated.View>
 
@@ -139,11 +143,11 @@ export default function CalorieTrackerPage() {
         entering={FadeIn.delay(300).springify()}
         className="px-6 pt-12"
       >
-        <Text className="text-center text-lg font-medium text-[#4ADE80]">DAILY ACTIVITY</Text>
+        <Text className="text-center text-lg font-medium" style={{ color: theme.primary }}>DAILY ACTIVITY</Text>
         <Text className="mt-4 text-center text-3xl font-bold text-white">
           Estimated calories burned{' '}
-          <Text className="text-[#4ADE80]">{estimatedCalories}</Text>
-          <Text className="text-[#4ADE80]"> cal</Text>
+          <Text style={{ color: theme.primary }}>{estimatedCalories}</Text>
+          <Text style={{ color: theme.primary }}> cal</Text>
         </Text>
       </Animated.View>
 
@@ -157,7 +161,7 @@ export default function CalorieTrackerPage() {
             size={240}
             strokeWidth={24}
             progress={percentage / 100}
-            colors={['#3B82F6', '#4ADE80', '#06B6D4']}
+            colors={['#3B82F6', theme.primary, '#06B6D4']}
           />
           <View className="absolute inset-0 items-center justify-center">
             <Text className="text-4xl font-bold text-white">{percentage}%</Text>
@@ -180,7 +184,8 @@ export default function CalorieTrackerPage() {
       >
         <TouchableOpacity 
           onPress={() => router.push('/journal')}
-          className="w-full rounded-xl bg-[#4ADE80] py-4"
+          className="w-full rounded-xl py-4"
+          style={{ backgroundColor: theme.primary }}
         >
           <Text className="text-center text-lg font-semibold text-white">
             Add Manual Activity

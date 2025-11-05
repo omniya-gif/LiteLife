@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft, Heart, Clock, Users, ChefHat, Star, Info } from 'lucide-react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useTheme } from '../../../../hooks/useTheme';
 
 const { width } = Dimensions.get('window');
 
@@ -120,6 +121,7 @@ const tabs = [
 
 export default function RecipeDetailsPage() {
   const router = useRouter();
+  const theme = useTheme();
   const [activeTab, setActiveTab] = useState('overview');
   const [isFavorite, setIsFavorite] = useState(false);
 
@@ -147,11 +149,11 @@ export default function RecipeDetailsPage() {
                 <Text className="text-white font-medium mb-1">{recipe.title}</Text>
                 <View className="flex-row items-center justify-between">
                   <View className="flex-row items-center">
-                    <Clock size={14} color="#4ADE80" />
+                    <Clock size={14} color={theme.primary} />
                     <Text className="text-gray-400 text-sm ml-1">{recipe.duration}</Text>
                   </View>
                   <View className="flex-row items-center">
-                    <Star size={14} color="#4ADE80" />
+                    <Star size={14} color={theme.primary} />
                     <Text className="text-gray-400 text-sm ml-1">{recipe.rating}</Text>
                   </View>
                 </View>
@@ -203,7 +205,7 @@ export default function RecipeDetailsPage() {
       {mockRecipe.instructions.map((instruction, index) => (
         <View key={index} className="space-y-4">
           <View className="flex-row">
-            <View className="h-8 w-8 rounded-full bg-[#4ADE80] items-center justify-center mr-4">
+            <View className="h-8 w-8 rounded-full items-center justify-center mr-4" style={{ backgroundColor: theme.primary }}>
               <Text className="text-[#1A1B1E] font-medium">{index + 1}</Text>
             </View>
             <Text className="text-gray-400 flex-1">{instruction.step}</Text>
@@ -231,28 +233,28 @@ export default function RecipeDetailsPage() {
             <View className="flex-row flex-wrap">
               <View className="w-1/2 p-4 border-r border-b border-[#2C2D32]">
                 <View className="flex-row items-center">
-                  <Clock size={20} color="#4ADE80" />
+                  <Clock size={20} color={theme.primary} />
                   <Text className="text-white ml-2">Prep Time</Text>
                 </View>
                 <Text className="text-gray-400 mt-1">{mockRecipe.prepTime}</Text>
               </View>
               <View className="w-1/2 p-4 border-b border-[#2C2D32]">
                 <View className="flex-row items-center">
-                  <Users size={20} color="#4ADE80" />
+                  <Users size={20} color={theme.primary} />
                   <Text className="text-white ml-2">Servings</Text>
                 </View>
                 <Text className="text-gray-400 mt-1">{mockRecipe.servings} People</Text>
               </View>
               <View className="w-1/2 p-4 border-r border-[#2C2D32]">
                 <View className="flex-row items-center">
-                  <Star size={20} color="#4ADE80" />
+                  <Star size={20} color={theme.primary} />
                   <Text className="text-white ml-2">Rating</Text>
                 </View>
                 <Text className="text-gray-400 mt-1">{mockRecipe.rating}/5</Text>
               </View>
               <View className="w-1/2 p-4">
                 <View className="flex-row items-center">
-                  <Info size={20} color="#4ADE80" />
+                  <Info size={20} color={theme.primary} />
                   <Text className="text-white ml-2">Price</Text>
                 </View>
                 <Text className="text-gray-400 mt-1">${mockRecipe.pricePerServing}/serving</Text>
@@ -293,11 +295,11 @@ export default function RecipeDetailsPage() {
             <Text className="text-white text-lg font-medium mb-4">Nutrition Facts</Text>
             <View className="flex-row justify-between mb-4">
               <Text className="text-gray-400">Health Score</Text>
-              <Text className="text-[#4ADE80]">{mockRecipe.healthScore}/100</Text>
+              <Text style={{ color: theme.primary }}>{mockRecipe.healthScore}/100</Text>
             </View>
             <View className="flex-row justify-between">
               <Text className="text-gray-400">Spoonacular Score</Text>
-              <Text className="text-[#4ADE80]">{mockRecipe.spoonacularScore}/100</Text>
+              <Text style={{ color: theme.primary }}>{mockRecipe.spoonacularScore}/100</Text>
             </View>
             <Text className="text-gray-400 text-sm mt-4">
               Tap to view detailed nutrition information
@@ -330,8 +332,8 @@ export default function RecipeDetailsPage() {
             >
               <Heart 
                 size={16} 
-                color="#4ADE80"
-                fill={isFavorite ? "#4ADE80" : "transparent"}
+                color={theme.primary}
+                fill={isFavorite ? theme.primary : "transparent"}
               />
             </TouchableOpacity>
           </View>
@@ -344,8 +346,8 @@ export default function RecipeDetailsPage() {
         >
           {/* Author */}
           <View className="flex-row items-center mb-4">
-            <ChefHat size={16} color="#4ADE80" />
-            <Text className="text-[#4ADE80] text-sm font-medium ml-2">{mockRecipe.author}</Text>
+            <ChefHat size={16} color={theme.primary} />
+            <Text className="text-sm font-medium ml-2" style={{ color: theme.primary }}>{mockRecipe.author}</Text>
           </View>
 
           {/* Title */}
@@ -362,17 +364,10 @@ export default function RecipeDetailsPage() {
                 <TouchableOpacity
                   key={tab.id}
                   onPress={() => setActiveTab(tab.id)}
-                  className={`mr-4 pb-2 border-b-2 ${
-                    activeTab === tab.id 
-                      ? 'border-[#4ADE80]' 
-                      : 'border-transparent'
-                  }`}
+                  className="mr-4 pb-2 border-b-2"
+                  style={{ borderBottomColor: activeTab === tab.id ? theme.primary : 'transparent' }}
                 >
-                  <Text className={
-                    activeTab === tab.id 
-                      ? 'text-[#4ADE80]' 
-                      : 'text-gray-400'
-                  }>
+                  <Text style={{ color: activeTab === tab.id ? theme.primary : '#9CA3AF' }}>
                     {tab.label}
                   </Text>
                 </TouchableOpacity>
@@ -391,7 +386,8 @@ export default function RecipeDetailsPage() {
       <View className="p-6 bg-[#1A1B1E] border-t border-[#2C2D32]">
         <TouchableOpacity 
           onPress={() => router.push('/journal')}
-          className="w-full h-[54px] bg-[#4ADE80] rounded-2xl items-center justify-center"
+          className="w-full h-[54px] rounded-2xl items-center justify-center"
+          style={{ backgroundColor: theme.primary }}
         >
           <Text className="text-white font-medium">Add to Journal</Text>
         </TouchableOpacity>

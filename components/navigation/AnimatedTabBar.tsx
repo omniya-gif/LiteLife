@@ -7,6 +7,7 @@ import Animated, {
   withSequence 
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '../../hooks/useTheme';
 
 const { width } = Dimensions.get('window');
 
@@ -19,6 +20,7 @@ interface TabBarProps {
 export const AnimatedTabBar = ({ state, descriptors, navigation }: TabBarProps) => {
   const insets = useSafeAreaInsets();
   const translateY = useSharedValue(0);
+  const theme = useTheme();
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }]
@@ -70,14 +72,14 @@ export const AnimatedTabBar = ({ state, descriptors, navigation }: TabBarProps) 
           >
             {options.tabBarIcon?.({ 
               focused: isFocused, 
-              color: isFocused ? '#84C94B' : '#9CA3AF', 
+              color: isFocused ? theme.primary : '#9CA3AF', 
               size: 24 
             })}
             <Text
               style={{
                 marginTop: 4,
                 fontSize: 12,
-                color: isFocused ? '#84C94B' : '#9CA3AF'
+                color: isFocused ? theme.primary : '#9CA3AF'
               }}
             >
               {label}

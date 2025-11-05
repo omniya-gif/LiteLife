@@ -1,21 +1,24 @@
-import React, { useEffect } from 'react';
-import { View, Text, TouchableOpacity, Image, ScrollView, Dimensions, Platform } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, Image, ScrollView, Dimensions, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Camera } from 'lucide-react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { CircularProgress } from '../../../components/CircularProgress';
 import { useUserStore } from '../../../lib/store/userStore';
 import { useAuth } from '../../../hooks/useAuth';
 import { LoadingScreen } from '../../../components/LoadingScreen';
 import { HEALTH_SERVICE_ICONS } from '../../../assets/icons/health';
+import { useTheme } from '../../../hooks/useTheme';
 
 const { width } = Dimensions.get('window');
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { profile, onboarding, fetchUserData, isLoading } = useUserStore();
+  const theme = useTheme();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     if (user?.id) {
@@ -42,7 +45,8 @@ export default function ProfilePage() {
         <TouchableOpacity 
           key="apple-health"
           onPress={() => {/* Handle Apple Health */}}
-          className="flex-1 items-center py-4 bg-[#1C6B48]/30 rounded-2xl mx-1"
+          className="flex-1 items-center py-4 rounded-2xl mx-1"
+          style={{ backgroundColor: `${theme.primary}30` }}
         >
           <Image 
             source={HEALTH_SERVICE_ICONS.APPLE_HEALTH}
@@ -59,7 +63,8 @@ export default function ProfilePage() {
         <TouchableOpacity 
           key="google-fit"
           onPress={() => {/* Handle Google Fit */}}
-          className="flex-1 items-center py-4 bg-[#1C6B48]/30 rounded-2xl mx-1"
+          className="flex-1 items-center py-4 rounded-2xl mx-1"
+          style={{ backgroundColor: `${theme.primary}30` }}
         >
           <Image 
             source={HEALTH_SERVICE_ICONS.GOOGLE_FIT}
@@ -78,7 +83,8 @@ export default function ProfilePage() {
       <TouchableOpacity 
         key="spoonacular"
         onPress={() => {/* Handle Spoonacular */}}
-        className="flex-1 items-center py-4 bg-[#1C6B48]/30 rounded-2xl mx-1"
+        className="flex-1 items-center py-4 rounded-2xl mx-1"
+        style={{ backgroundColor: `${theme.primary}30` }}
       >
         <Image 
           source={HEALTH_SERVICE_ICONS.SPOONACULAR}
@@ -95,13 +101,13 @@ export default function ProfilePage() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#1A1B1E]">
+    <SafeAreaView className="flex-1" style={{ backgroundColor: theme.background }}>
       <ScrollView className="flex-1">
         <View>
-          {/* Header Image */}
+          {/* Header Image - Local workout composition image */}
           <View className="h-[300px]">
             <Image 
-              source={{ uri: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2670&q=80' }}
+              source={require('../../../assets/images/background-image/workout-composition-with-clipboard.jpg')}
               className="absolute w-full h-full"
               resizeMode="cover"
             />
@@ -121,14 +127,19 @@ export default function ProfilePage() {
           {/* Profile Content */}
           <Animated.View 
             entering={FadeInDown.springify()}
-            className="bg-[#1A1B1E] -mt-10 rounded-t-[36px] pt-12 px-6"
+            className="-mt-10 rounded-t-[36px] pt-12 px-6"
+            style={{ backgroundColor: theme.background }}
           >
-            {/* Profile Image */}
+            {/* Profile Avatar with First Letter */}
             <View className="absolute -top-8 left-6">
-              <Image 
-                source={{ uri: profile?.avatar_url || 'https://via.placeholder.com/60' }}
-                className="w-[60px] h-[60px] rounded-2xl border-2 border-white"
-              />
+              <View 
+                className="w-[60px] h-[60px] rounded-2xl border-2 border-white items-center justify-center"
+                style={{ backgroundColor: theme.primary }}
+              >
+                <Text className="text-white text-2xl font-bold">
+                  {(profile?.username || user?.email || 'U').charAt(0).toUpperCase()}
+                </Text>
+              </View>
             </View>
 
             {/* Profile Info */}
@@ -137,16 +148,17 @@ export default function ProfilePage() {
               className="flex-row items-center justify-between mt-6"
             >
               <View>
-                <Text className="text-xl font-bold text-white">{profile?.username || 'User'}</Text>
-                <Text className="text-[#4ADE80] text-sm font-medium mt-1">
-                  {onboarding?.expertise?.toUpperCase() || 'BASIC'} MEMBER
+                <Text className="text-xl font-bold text-white">{profile?.username || user?.email?.split('@')[0] || 'User'}</Text>
+                <Text className="text-sm font-medium mt-1" style={{ color: theme.primary }}>
+                  {onboarding?.expertise?.toUpperCase() || 'BEGINNER'} MEMBER
                 </Text>
               </View>
               <TouchableOpacity 
                 onPress={() => router.push('/profile/edit')}
-                className="bg-[#4ADE80]/10 px-6 py-3 rounded-xl"
+                className="px-6 py-3 rounded-xl"
+                style={{ backgroundColor: `${theme.primary}10` }}
               >
-                <Text className="text-[#4ADE80] font-medium">Edit</Text>
+                <Text className="font-medium" style={{ color: theme.primary }}>Edit</Text>
               </TouchableOpacity>
             </Animated.View>
 
@@ -161,9 +173,10 @@ export default function ProfilePage() {
             {/* Goal Section - Updated styling */}
             <Animated.View 
               entering={FadeInDown.delay(400)}
-              className="mt-6 bg-[#4ADE80]/10 p-4 rounded-2xl"
+              className="mt-6 p-4 rounded-2xl"
+              style={{ backgroundColor: `${theme.primary}10` }}
             >
-              <Text className="text-[#4ADE80] text-xs font-medium tracking-wider">
+              <Text className="text-xs font-medium tracking-wider" style={{ color: theme.primary }}>
                 GOAL
               </Text>
               <View className="flex-row items-center mt-2">
@@ -184,7 +197,7 @@ export default function ProfilePage() {
               className="flex-row justify-between mt-12"
             >
               <View>
-                <Text className="text-[#4ADE80] text-xs font-medium tracking-wider">WEIGHT</Text>
+                <Text className="text-xs font-medium tracking-wider" style={{ color: theme.primary }}>WEIGHT</Text>
                 <View className="flex-row items-baseline mt-2">
                   <Text className="text-2xl font-bold text-white">
                     {onboarding?.current_weight || '--'}
@@ -192,9 +205,9 @@ export default function ProfilePage() {
                   <Text className="text-gray-400 ml-1">kg</Text>
                 </View>
               </View>
-              <View className="h-12 w-[1px] bg-[#2C2D32]" />
+              <View className="h-12 w-[1px]" style={{ backgroundColor: theme.backgroundDark }} />
               <View>
-                <Text className="text-[#4ADE80] text-xs font-medium tracking-wider">AGE</Text>
+                <Text className="text-xs font-medium tracking-wider" style={{ color: theme.primary }}>AGE</Text>
                 <View className="flex-row items-baseline mt-2">
                   <Text className="text-2xl font-bold text-white">
                     {onboarding?.age || '--'}
@@ -202,9 +215,9 @@ export default function ProfilePage() {
                   <Text className="text-gray-400 ml-1">yo</Text>
                 </View>
               </View>
-              <View className="h-12 w-[1px] bg-[#2C2D32]" />
+              <View className="h-12 w-[1px]" style={{ backgroundColor: theme.backgroundDark }} />
               <View>
-                <Text className="text-[#4ADE80] text-xs font-medium tracking-wider">HEIGHT</Text>
+                <Text className="text-xs font-medium tracking-wider" style={{ color: theme.primary }}>HEIGHT</Text>
                 <View className="flex-row items-baseline mt-2">
                   <Text className="text-2xl font-bold text-white">
                     {onboarding?.height || '--'}
@@ -226,13 +239,35 @@ export default function ProfilePage() {
                 {renderHealthServices()}
               </View>
             </Animated.View>
+            <Animated.View 
+              entering={FadeInDown.delay(750)}
+              className="mt-6 mb-6"
+            >
+              <TouchableOpacity 
+                onPress={async () => {
+                  setIsLoggingOut(true);
+                  // Small delay to show loading state
+                  await new Promise(resolve => setTimeout(resolve, 300));
+                  await signOut();
+                  router.replace('/signin');
+                }}
+                disabled={isLoggingOut}
+                className="w-full h-[54px] bg-red-500/20 rounded-2xl items-center justify-center"
+                style={{ opacity: isLoggingOut ? 0.7 : 1 }}
+              >
+                <Text className="text-red-500 font-medium">
+                  {isLoggingOut ? 'Logging out...' : 'Log Out'}
+                </Text>
+              </TouchableOpacity>
+            </Animated.View>
 
             {/* Premium Card - Updated with darker green background */}
             <Animated.View 
               entering={FadeInDown.delay(800)}
-              className="mt-9 mb-6 bg-[#1C6B48] rounded-3xl p-6"
+              className="mt-9 mb-6 rounded-3xl p-6"
+              style={{ backgroundColor: theme.primaryDark }}
             >
-              <Text className="text-[#4ADE80] text-xs font-medium">GO PREMIUM</Text>
+              <Text className="text-xs font-medium" style={{ color: theme.primary }}>GO PREMIUM</Text>
               <Text className="text-white text-xl font-medium mt-2">
                 Unlock all features to improve your health
               </Text>
@@ -254,7 +289,8 @@ export default function ProfilePage() {
               {/* Unlock Button */}
               <TouchableOpacity 
                 onPress={() => router.push('/subscription')}
-                className="w-full h-[54px] bg-[#4ADE80] rounded-2xl mt-6 items-center justify-center"
+                className="w-full h-[54px] rounded-2xl mt-6 items-center justify-center"
+                style={{ backgroundColor: theme.primary }}
               >
                 <Text className="text-white font-medium">Unlock now</Text>
               </TouchableOpacity>
@@ -262,6 +298,14 @@ export default function ProfilePage() {
           </Animated.View>
         </View>
       </ScrollView>
+
+      {/* Full-screen loading overlay for logout */}
+      {isLoggingOut && (
+        <View className="absolute inset-0 items-center justify-center" style={{ backgroundColor: '#1A1B1E' }}>
+          <ActivityIndicator size="large" color="#EF4444" />
+          <Text className="mt-4 text-lg text-white">Logging out...</Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 }

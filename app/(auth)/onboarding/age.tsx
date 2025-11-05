@@ -6,6 +6,9 @@ import { Slider } from '@miblanchard/react-native-slider';
 import { ArrowLeft } from 'lucide-react-native';
 import { useOnboardingStore } from '../../../stores/onboardingStore';
 
+// Hard-coded green color for pages BEFORE gender selection
+const PRIMARY_COLOR = '#4ADE80';
+
 export default function AgeSelection() {
   const router = useRouter();
   const updateFormData = useOnboardingStore(state => state.updateFormData);
@@ -31,9 +34,9 @@ export default function AgeSelection() {
           <ArrowLeft size={24} color="white" />
         </TouchableOpacity>
         <View className="h-2 flex-1 mx-4 rounded-full bg-[#2C2D32]">
-          <View className="h-2 w-[25%] bg-[#4ADE80] rounded-full" />
+          <View className="h-2 w-[37.5%] bg-[#4ADE80] rounded-full" />
         </View>
-        <Text className="text-[#4ADE80] font-medium">STEP 2/8</Text>
+        <Text className="text-[#4ADE80] font-medium">STEP 3/8</Text>
       </Animated.View>
 
       <View className="flex-1 px-6 pt-12">

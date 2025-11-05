@@ -1,26 +1,28 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, TouchableOpacity, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { Slider } from '@miblanchard/react-native-slider';
+import { useUserStore } from '../../../lib/store/userStore';
+import { useTheme } from '../../../hooks/useTheme';
 
-const BMICategory = ({ bmi }) => {
+const BMICategory = ({ bmi, theme }) => {
   let category = '';
   let color = '';
 
   if (bmi < 18.5) {
     category = 'Underweight';
-    color = '#3B82F6'; // blue
+    color = '#3B82F6'; 
   } else if (bmi >= 18.5 && bmi < 25) {
     category = 'Normal';
-    color = '#4ADE80'; // green
+    color = theme.primary; 
   } else if (bmi >= 25 && bmi < 30) {
     category = 'Overweight';
-    color = '#FBBF24'; // yellow
+    color = '#FBBF24'; 
   } else {
     category = 'Obese';
-    color = '#EF4444'; // red
+    color = '#EF4444'; 
   }
 
   return (
@@ -35,8 +37,18 @@ const BMICategory = ({ bmi }) => {
 
 export default function BMICalculator() {
   const router = useRouter();
-  const [height, setHeight] = useState(170);
-  const [weight, setWeight] = useState(70);
+  const { onboarding } = useUserStore();
+  const theme = useTheme();
+  
+  const [height, setHeight] = useState(onboarding?.height || 170);
+  const [weight, setWeight] = useState(onboarding?.current_weight || 70);
+
+  useEffect(() => {
+    if (onboarding) {
+      if (onboarding.height) setHeight(onboarding.height);
+      if (onboarding.current_weight) setWeight(onboarding.current_weight);
+    }
+  }, [onboarding]);
 
   const calculateBMI = useCallback(() => {
     const heightInMeters = height / 100;
@@ -47,11 +59,14 @@ export default function BMICalculator() {
   const bmi = calculateBMI();
 
   const SliderThumb = () => (
-    <View className="h-6 w-6 rounded-full bg-[#4ADE80] shadow-lg shadow-green-500" />
+    <View 
+      className="h-6 w-6 rounded-full shadow-lg" 
+      style={{ backgroundColor: theme.primary, shadowColor: theme.primary }}
+    />
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-[#1A1B1E]">
+    <SafeAreaView className="flex-1" style={{ backgroundColor: theme.background }}>
       <Animated.View
         entering={FadeInDown.springify()}
         className="flex-row items-center justify-between px-6 pt-4">
@@ -59,19 +74,22 @@ export default function BMICalculator() {
           <ArrowLeft size={24} color="white" />
         </TouchableOpacity>
         <Text className="text-xl font-bold text-white">BMI Calculator</Text>
-        <View className="w-6" /> {/* Spacer for alignment */}
+        <View className="w-6" /> 
       </Animated.View>
 
       <View className="flex-1">
         <Animated.View 
           entering={FadeIn.delay(300)}
           className="items-center justify-center px-6 py-12">
-          <View className="h-48 w-48 items-center justify-center rounded-full border-8 border-[#4ADE80]/20">
-            <Text className="text-5xl font-bold text-[#4ADE80]">{bmi}</Text>
+          <View 
+            className="h-48 w-48 items-center justify-center rounded-full border-8"
+            style={{ borderColor: `${theme.primary}20` }}
+          >
+            <Text className="text-5xl font-bold" style={{ color: theme.primary }}>{bmi}</Text>
             <Text className="mt-2 text-gray-400">BMI</Text>
           </View>
           <View className="mt-6">
-            <BMICategory bmi={parseFloat(bmi)} />
+            <BMICategory bmi={parseFloat(bmi)} theme={theme} />
           </View>
         </Animated.View>
 
@@ -81,7 +99,7 @@ export default function BMICalculator() {
             <View>
               <View className="flex-row items-center justify-between">
                 <Text className="text-lg text-white">Height</Text>
-                <Text className="text-lg text-[#4ADE80]">{height} cm</Text>
+                <Text className="text-lg" style={{ color: theme.primary }}>{height} cm</Text>
               </View>
               <Slider
                 value={height}
@@ -89,7 +107,7 @@ export default function BMICalculator() {
                 minimumValue={120}
                 maximumValue={220}
                 step={1}
-                minimumTrackTintColor="#4ADE80"
+                minimumTrackTintColor={theme.primary}
                 maximumTrackTintColor="#2D2F34"
                 renderThumbComponent={SliderThumb}
               />
@@ -99,7 +117,7 @@ export default function BMICalculator() {
             <View>
               <View className="flex-row items-center justify-between">
                 <Text className="text-lg text-white">Weight</Text>
-                <Text className="text-lg text-[#4ADE80]">{weight} kg</Text>
+                <Text className="text-lg" style={{ color: theme.primary }}>{weight} kg</Text>
               </View>
               <Slider
                 value={weight}
@@ -107,14 +125,14 @@ export default function BMICalculator() {
                 minimumValue={30}
                 maximumValue={150}
                 step={1}
-                minimumTrackTintColor="#4ADE80"
+                minimumTrackTintColor={theme.primary}
                 maximumTrackTintColor="#2D2F34"
                 renderThumbComponent={SliderThumb}
               />
             </View>
           </View>
 
-          <View className="mt-8 space-y-4 rounded-xl bg-[#25262B] p-6">
+          <View className="mt-8 space-y-4 rounded-xl p-6" style={{ backgroundColor: theme.backgroundLight }}>
             <Text className="text-lg font-semibold text-white">BMI Categories:</Text>
             <View className="space-y-2">
               <View className="flex-row justify-between">
@@ -123,7 +141,7 @@ export default function BMICalculator() {
               </View>
               <View className="flex-row justify-between">
                 <Text className="text-gray-400">Normal</Text>
-                <Text className="text-[#4ADE80]">18.5 - 24.9</Text>
+                <Text style={{ color: theme.primary }}>18.5 - 24.9</Text>
               </View>
               <View className="flex-row justify-between">
                 <Text className="text-gray-400">Overweight</Text>
@@ -139,9 +157,9 @@ export default function BMICalculator() {
 
         <Animated.View entering={FadeInUp.delay(500)} className="p-6">
           <TouchableOpacity
-            className="w-full rounded-xl bg-[#4ADE80] py-4"
+            className="w-full rounded-xl py-4"
+            style={{ backgroundColor: theme.primary }}
             onPress={() => {
-              // Add logic to save BMI history
             }}>
             <Text className="text-center text-lg font-semibold text-white">Save to History</Text>
           </TouchableOpacity>

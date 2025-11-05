@@ -5,6 +5,7 @@ export type Goal = 'weight_loss' | 'muscle_gain' | 'maintain' | 'improve_health'
 
 export interface OnboardingFormData {
   // Required fields
+  username?: string;
   age: number;
   gender: Gender;
   goal: Goal;

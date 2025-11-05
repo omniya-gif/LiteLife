@@ -42,7 +42,6 @@ export default function MainLayout() {
           <Stack.Screen name="notifications" />
           <Stack.Screen name="cart" />
           <Stack.Screen name="calculators/bmr" />
-          <Stack.Screen name="calculators/tdee" />
         </Stack>
       </OnboardingGuard>
     </AuthGuard>

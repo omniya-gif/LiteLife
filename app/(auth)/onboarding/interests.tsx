@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { useOnboardingStore } from '../../../stores/onboardingStore';
+import { useTheme } from '../../../hooks/useTheme';
 import { Interest } from '../../../types/onboarding';
 
 const interests: { id: Interest; icon: string; label: string }[] = [
@@ -16,6 +17,7 @@ const interests: { id: Interest; icon: string; label: string }[] = [
 
 export default function InterestsPage() {
   const router = useRouter();
+  const theme = useTheme();
   const { formData, updateFormData } = useOnboardingStore();
   const selectedInterests = formData.interests || [];
   const [showError, setShowError] = useState(false);
@@ -46,15 +48,16 @@ export default function InterestsPage() {
           <ArrowLeft size={24} color="white" />
         </TouchableOpacity>
         <View className="h-2 flex-1 mx-4 rounded-full bg-[#2C2D32]">
-          <View className="h-2 w-[87.5%] rounded-full bg-[#4ADE80]" />
+          <View className="h-2 w-[87.5%] rounded-full" style={{ backgroundColor: theme.primary }} />
         </View>
-        <Text className="text-[#4ADE80] font-medium">STEP 7/8</Text>
+        <Text className="font-medium" style={{ color: theme.primary }}>STEP 7/8</Text>
       </Animated.View>
 
       <View className="flex-1 px-6 pt-12">
         <Animated.Text 
           entering={FadeInDown.delay(200)}
-          className="text-4xl font-bold text-[#4ADE80] mb-4"
+          className="text-4xl font-bold mb-4"
+          style={{ color: theme.primary }}
         >
           Time to customize your interest
         </Animated.Text>
@@ -79,9 +82,13 @@ export default function InterestsPage() {
               >
                 <View className={`w-20 h-20 rounded-2xl items-center justify-center mb-2 ${
                   selectedInterests.includes(interest.id)
-                    ? 'bg-[#4ADE80]/20 border-2 border-[#4ADE80]'
-                    : 'bg-[#25262B]'
-                }`}>
+                    ? 'border-2'
+                    : 'bg-[#2C2D32]'
+                }`}
+                style={selectedInterests.includes(interest.id) ? { 
+                  backgroundColor: `${theme.primary}20`, 
+                  borderColor: theme.primary 
+                } : {}}>
                   <Text className="text-3xl">{interest.icon}</Text>
                 </View>
                 <Text className="text-white text-sm text-center">
@@ -109,11 +116,11 @@ export default function InterestsPage() {
         <TouchableOpacity
           onPress={handleContinue}
           disabled={selectedInterests.length === 0}
-          className={`w-full ${
-            selectedInterests.length > 0 
-              ? 'bg-[#4ADE80]' 
-              : 'bg-[#4ADE80]/50'
-          } h-14 rounded-2xl items-center justify-center`}
+          className="w-full h-14 rounded-2xl items-center justify-center"
+          style={{ 
+            backgroundColor: selectedInterests.length > 0 ? theme.primary : `${theme.primary}80`,
+            opacity: selectedInterests.length > 0 ? 1 : 0.5 
+          }}
         >
           <Text className={`font-semibold text-lg ${
             selectedInterests.length > 0 

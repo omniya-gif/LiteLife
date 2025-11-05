@@ -1,54 +1,55 @@
+import { useRouter } from 'expo-router';
+import { Dumbbell, ChevronRight, Filter } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, Modal } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { Header } from '../home/components/Header';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { PageHeader } from '../../../components/common/PageHeader';
 import { BottomNavigation } from '../home/components/BottomNavigation';
-import { Dumbbell, ChevronRight, Filter } from 'lucide-react-native';
 
 const bodyParts = [
-  { 
-    id: 'all', 
+  {
+    id: 'all',
     name: 'All Exercises',
     icon: '💪',
-    count: 24
+    count: 24,
   },
-  { 
-    id: 'chest', 
+  {
+    id: 'chest',
     name: 'Chest',
     icon: '🏋️',
-    count: 8
+    count: 8,
   },
-  { 
-    id: 'back', 
+  {
+    id: 'back',
     name: 'Back',
     icon: '🔙',
-    count: 6
+    count: 6,
   },
-  { 
-    id: 'shoulders', 
+  {
+    id: 'shoulders',
     name: 'Shoulders',
     icon: '🎯',
-    count: 4
+    count: 4,
   },
-  { 
-    id: 'arms', 
+  {
+    id: 'arms',
     name: 'Arms',
     icon: '💪',
-    count: 10
+    count: 10,
   },
-  { 
-    id: 'legs', 
+  {
+    id: 'legs',
     name: 'Legs',
     icon: '🦵',
-    count: 8
+    count: 8,
   },
-  { 
-    id: 'core', 
+  {
+    id: 'core',
     name: 'Core',
     icon: '⭐',
-    count: 6
+    count: 6,
   },
 ];
 
@@ -59,7 +60,7 @@ const exercises = [
     bodyPart: 'chest',
     sets: '4 sets',
     duration: '15 mins',
-    image: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b'
+    image: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b',
   },
   {
     id: 'deadlift',
@@ -67,7 +68,7 @@ const exercises = [
     bodyPart: 'back',
     sets: '3 sets',
     duration: '20 mins',
-    image: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61'
+    image: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61',
   },
   // Add more exercises here
 ];
@@ -76,36 +77,34 @@ export default function ExercisesPage() {
   const router = useRouter();
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [showFilterModal, setShowFilterModal] = useState(false);
-  const selectedCategory = bodyParts.find(part => part.id === selectedFilter);
+  const selectedCategory = bodyParts.find((part) => part.id === selectedFilter);
 
-  const filteredExercises = selectedFilter === 'all' 
-    ? exercises 
-    : exercises.filter(ex => ex.bodyPart === selectedFilter);
+  const filteredExercises =
+    selectedFilter === 'all' ? exercises : exercises.filter((ex) => ex.bodyPart === selectedFilter);
 
   return (
     <SafeAreaView className="flex-1 bg-[#1A1B1E]">
       <ScrollView className="flex-1">
         <Animated.View entering={FadeInDown.springify()}>
-          <Header 
-            title="Exercises" 
+          <PageHeader
+            title="Exercises"
             imageUrl="https://images.unsplash.com/photo-1583454110551-21f2fa2afe61"
           />
         </Animated.View>
 
         {/* Filter Button */}
-        <View className="px-6 py-4 flex-row items-center justify-between">
+        <View className="flex-row items-center justify-between px-6 py-4">
           <View>
             <Text className="text-sm text-gray-400">Category</Text>
             <Text className="text-xl font-bold text-white">
               {selectedCategory?.name || 'All Exercises'}
             </Text>
           </View>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => setShowFilterModal(true)}
-            className="flex-row items-center bg-[#25262B] px-4 py-2 rounded-full"
-          >
+            className="flex-row items-center rounded-full bg-[#25262B] px-4 py-2">
             <Filter size={20} color="#4ADE80" />
-            <Text className="text-[#4ADE80] ml-2">Filter</Text>
+            <Text className="ml-2 text-[#4ADE80]">Filter</Text>
           </TouchableOpacity>
         </View>
 
@@ -115,27 +114,16 @@ export default function ExercisesPage() {
             <Animated.View
               key={exercise.id}
               entering={FadeInDown.delay(index * 100)}
-              className="mb-4"
-            >
-              <TouchableOpacity 
+              className="mb-4">
+              <TouchableOpacity
                 onPress={() => router.push(`/workouts/exercise/${exercise.id}`)}
-                className="bg-[#25262B] rounded-2xl overflow-hidden"
-              >
+                className="overflow-hidden rounded-2xl bg-[#25262B]">
                 <View className="flex-row">
-                  <Image 
-                    source={{ uri: exercise.image }} 
-                    className="w-24 h-24"
-                  />
+                  <Image source={{ uri: exercise.image }} className="h-24 w-24" />
                   <View className="flex-1 p-4">
-                    <Text className="text-white text-lg font-semibold">
-                      {exercise.name}
-                    </Text>
-                    <Text className="text-gray-400">
-                      {exercise.sets}
-                    </Text>
-                    <Text className="text-gray-400">
-                      {exercise.duration}
-                    </Text>
+                    <Text className="text-lg font-semibold text-white">{exercise.name}</Text>
+                    <Text className="text-gray-400">{exercise.sets}</Text>
+                    <Text className="text-gray-400">{exercise.duration}</Text>
                   </View>
                 </View>
               </TouchableOpacity>
@@ -149,17 +137,14 @@ export default function ExercisesPage() {
         visible={showFilterModal}
         transparent
         animationType="slide"
-        onRequestClose={() => setShowFilterModal(false)}
-      >
+        onRequestClose={() => setShowFilterModal(false)}>
         <View className="flex-1 justify-end bg-black/50">
-          <View className="bg-[#1A1B1E] rounded-t-3xl">
-            <View className="w-12 h-1 bg-gray-600 rounded-full mx-auto mt-4" />
-            
+          <View className="rounded-t-3xl bg-[#1A1B1E]">
+            <View className="mx-auto mt-4 h-1 w-12 rounded-full bg-gray-600" />
+
             <View className="p-6">
-              <Text className="text-xl font-bold text-white mb-4">
-                Filter by Category
-              </Text>
-              
+              <Text className="mb-4 text-xl font-bold text-white">Filter by Category</Text>
+
               <ScrollView className="max-h-[400]">
                 {bodyParts.map((part) => (
                   <TouchableOpacity
@@ -168,21 +153,20 @@ export default function ExercisesPage() {
                       setSelectedFilter(part.id);
                       setShowFilterModal(false);
                     }}
-                    className={`flex-row items-center justify-between p-4 mb-2 rounded-xl ${
+                    className={`mb-2 flex-row items-center justify-between rounded-xl p-4 ${
                       selectedFilter === part.id ? 'bg-[#4ADE80]' : 'bg-[#25262B]'
-                    }`}
-                  >
+                    }`}>
                     <View className="flex-row items-center">
-                      <Text className="text-2xl mr-3">{part.icon}</Text>
-                      <Text className={`font-semibold ${
-                        selectedFilter === part.id ? 'text-[#1A1B1E]' : 'text-white'
-                      }`}>
+                      <Text className="mr-3 text-2xl">{part.icon}</Text>
+                      <Text
+                        className={`font-semibold ${
+                          selectedFilter === part.id ? 'text-[#1A1B1E]' : 'text-white'
+                        }`}>
                         {part.name}
                       </Text>
                     </View>
-                    <Text className={
-                      selectedFilter === part.id ? 'text-[#1A1B1E]' : 'text-gray-400'
-                    }>
+                    <Text
+                      className={selectedFilter === part.id ? 'text-[#1A1B1E]' : 'text-gray-400'}>
                       {part.count}
                     </Text>
                   </TouchableOpacity>

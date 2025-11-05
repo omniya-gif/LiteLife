@@ -6,7 +6,6 @@ export interface AuthError {
 export interface SignUpData {
   email: string;
   password: string;
-  username: string;
 }
 
 export interface SignInData {

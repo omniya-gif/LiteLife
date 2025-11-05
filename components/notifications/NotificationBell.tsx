@@ -4,10 +4,12 @@ import { Bell } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useNotifications } from '../../hooks/useNotifications';
 import * as Notifications from 'expo-notifications';
+import { useTheme } from '../../hooks/useTheme';
 
 export function NotificationBell() {
   const router = useRouter();
   const { unreadCount } = useNotifications();
+  const theme = useTheme();
 
   // Test notification function
   const sendTestNotification = async () => {
@@ -28,9 +30,9 @@ export function NotificationBell() {
       onLongPress={sendTestNotification} // Add long press to test notifications
       className="h-12 w-12 items-center justify-center rounded-full bg-[#25262B]"
     >
-      <Bell size={24} color="#4ADE80" />
+      <Bell size={24} color={theme.primary} />
       {unreadCount > 0 && (
-        <View className="absolute -right-1 -top-1 h-5 w-5 items-center justify-center rounded-full bg-[#4ADE80]">
+        <View className="absolute -right-1 -top-1 h-5 w-5 items-center justify-center rounded-full" style={{ backgroundColor: theme.primary }}>
           <Text className="text-xs font-bold text-[#1A1B1E]">
             {unreadCount > 99 ? '99+' : unreadCount}
           </Text>
