@@ -55,14 +55,18 @@ export default function HomePage() {
     mealScale.value = withDelay(700, withSpring(1, { damping: 15, stiffness: 120 }));
   }, []);
 
-  // Fetch user data when component mounts or user changes
+  // Fetch user data only if not already cached
   useEffect(() => {
-    if (user?.id) {
-      console.log('🏠 Home Page - Fetching user data for ID:', user.id);
-      console.log('🎨 Theme will sync from database gender after fetch');
+    const { profile } = useUserStore.getState();
+    
+    // Only fetch if we don't have profile data or it doesn't match current user
+    if (user?.id && (!profile || profile.id !== user.id)) {
+      console.log('🏠 Home Page - Profile not cached, fetching for ID:', user.id);
       fetchUserData(user.id);
+    } else if (profile) {
+      console.log('🏠 Home Page - Profile already cached for user:', profile.username);
     }
-  }, [user?.id, fetchUserData]);
+  }, [user?.id]);
 
   const headerAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: headerScale.value }],

@@ -45,12 +45,6 @@ export const Header = ({ userName }: HeaderProps) => {
     }
   );
 
-  // Add debugging logs
-  console.log('Header - Current user:', user);
-  console.log('Header - Current profile:', profile);
-  console.log('Header - Profile username:', profile?.username);
-  console.log('Header - User metadata username:', user?.user_metadata?.username);
-
   const date = useMemo(() => {
     return new Date()
       .toLocaleDateString('en-US', {
@@ -62,42 +56,57 @@ export const Header = ({ userName }: HeaderProps) => {
   }, []);
 
   const getProfileInitial = useMemo(() => {
-    if (!user?.email) return '?';
-    return user.email[0].toUpperCase();
-  }, [user?.email]);
-  const username = useMemo(() => {
-    console.log(
-      'Header - Computing username with profile:',
-      profile?.username,
-      'user metadata:',
-      user?.user_metadata?.username
-    );
+    // First priority: username from profile (but not default "User")
+    if (profile?.username && profile.username !== 'User') {
+      return profile.username[0].toUpperCase();
+    }
 
-    // First priority: username from database profile
-    if (profile?.username) {
+    // Second priority: full name from metadata (Google Auth)
+    if (user?.user_metadata?.full_name) {
+      return user.user_metadata.full_name[0].toUpperCase();
+    }
+
+    // Third priority: name from metadata
+    if (user?.user_metadata?.name) {
+      return user.user_metadata.name[0].toUpperCase();
+    }
+
+    // Fallback: email
+    if (user?.email) {
+      return user.email[0].toUpperCase();
+    }
+
+    return '?';
+  }, [profile?.username, user?.user_metadata?.full_name, user?.user_metadata?.name, user?.email]);
+
+  const username = useMemo(() => {
+    // If we have a user but profile is still loading or doesn't match current user
+    // Show "there" as a friendly placeholder
+    if (!profile || profile.id !== user?.id) {
+      return 'there';
+    }
+
+    // First priority: username from database profile (but not the default "User")
+    if (profile.username && profile.username !== 'User') {
       return profile.username;
     }
 
-    // Second priority: user metadata username
-    if (user?.user_metadata?.username) {
-      return user.user_metadata.username;
-    }
-
-    // Third priority: full name from metadata (Google Auth)
+    // Second priority: full name from metadata (Google Auth)
     if (user?.user_metadata?.full_name) {
       return user.user_metadata.full_name.split(' ')[0];
     }
 
-    // Fourth priority: name from metadata
+    // Third priority: name from metadata
     if (user?.user_metadata?.name) {
       return user.user_metadata.name.split(' ')[0];
     }
 
-    // Fallback to 'User' - no email processing
-    return 'User';
+    // Fallback to 'there'
+    return 'there';
   }, [
+    profile?.id,
     profile?.username,
-    user?.user_metadata?.username,
+    user?.id,
     user?.user_metadata?.full_name,
     user?.user_metadata?.name,
   ]);

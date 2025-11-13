@@ -25,12 +25,16 @@ export const useUserStore = create(
       isLoading: false,
       error: null,
       fetchUserData: async (userId: string) => {
+        // Check if we already have valid cached data for this user
+        const { profile, onboarding } = get();
+        if (profile?.id === userId && onboarding?.user_id === userId) {
+          console.log('✅ Using cached profile data for user:', userId);
+          return; // Data already loaded for this user
+        }
+
         set({ isLoading: true, error: null });
         try {
-          console.log('Fetching user data for ID:', userId);
-
-          // Clear any existing data first to prevent stale data issues
-          set({ profile: null, onboarding: null });
+          console.log('📥 Fetching user data from database for ID:', userId);
 
           // Try to fetch profile
           let profileData: Profile | null = null;
@@ -184,19 +188,34 @@ export const useUserStore = create(
         }
       },
 
-      clearUserData: () => {
-        console.log('Clearing user data from store');
+      clearUserData: async () => {
+        console.log('🧹 Clearing user data from store and AsyncStorage');
+        
+        // Clear the state
         set({
           profile: null,
           onboarding: null,
           isLoading: false,
           error: null,
         });
+        
+        // Also clear from AsyncStorage to prevent stale data
+        try {
+          await AsyncStorage.removeItem('user-storage-v2');
+          await AsyncStorage.removeItem('user-storage'); // Clear old key too
+          console.log('✅ AsyncStorage cleared successfully');
+        } catch (error) {
+          console.error('❌ Error clearing AsyncStorage:', error);
+        }
       },
     }),
     {
-      name: 'user-storage',
+      name: 'user-storage-v2', // Changed version to force fresh storage
       storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        profile: state.profile,
+        onboarding: state.onboarding,
+      }),
     }
   )
 );

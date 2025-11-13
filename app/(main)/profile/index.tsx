@@ -148,7 +148,11 @@ export default function ProfilePage() {
               className="flex-row items-center justify-between mt-6"
             >
               <View>
-                <Text className="text-xl font-bold text-white">{profile?.username || user?.email?.split('@')[0] || 'User'}</Text>
+                <Text className="text-xl font-bold text-white">
+                  {profile?.username && profile.username !== 'User' 
+                    ? profile.username 
+                    : user?.user_metadata?.full_name?.split(' ')[0] || user?.user_metadata?.name?.split(' ')[0] || 'User'}
+                </Text>
                 <Text className="text-sm font-medium mt-1" style={{ color: theme.primary }}>
                   {onboarding?.expertise?.toUpperCase() || 'BEGINNER'} MEMBER
                 </Text>

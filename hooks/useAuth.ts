@@ -17,17 +17,20 @@ export function useAuth() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
-    }); // Listen for auth changes
+    }); 
+    
+    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       const newUser = session?.user ?? null;
+      const currentUserId = user?.id;
 
       // If user changed (including logout), clear cached user data
-      if (user?.id !== newUser?.id) {
+      if (currentUserId !== newUser?.id) {
         console.log(
           'User changed, clearing cached data. Old user:',
-          user?.id,
+          currentUserId,
           'New user:',
           newUser?.id
         );
@@ -38,7 +41,7 @@ export function useAuth() {
     });
 
     return () => subscription.unsubscribe();
-  }, [user?.id, clearUserData]);
+  }, [clearUserData]);
 
   const validateEmail = (email: string): string | null => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

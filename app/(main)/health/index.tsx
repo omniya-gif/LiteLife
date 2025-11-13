@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Activity, Droplets, Scale, Scale3D, Flame, Moon } from 'lucide-react-native';
@@ -6,9 +6,10 @@ import { useRouter } from 'expo-router';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
 import { Header } from '../../../components/home/Header';
-import { TabBar } from '../home/components/TabBar';
 import { BottomNavigation } from '../home/components/BottomNavigation';
 import { useTheme } from '../../../hooks/useTheme';
+import { useAuth } from '../../../hooks/useAuth';
+import { useUserStore } from '../../../lib/store/userStore';
 
 const CalculatorCard = ({ title, description, icon, color, onPress, index }) => (
   <Animated.View 
@@ -36,6 +37,16 @@ const CalculatorCard = ({ title, description, icon, color, onPress, index }) => 
 export default function HealthPage() {
   const router = useRouter();
   const theme = useTheme();
+  const { user } = useAuth();
+  const { profile, fetchUserData } = useUserStore();
+
+  // Ensure profile is loaded
+  useEffect(() => {
+    if (user?.id && (!profile || profile.id !== user.id)) {
+      console.log('Health Page - Fetching profile for user:', user.id);
+      fetchUserData(user.id);
+    }
+  }, [user?.id]);
 
   const calculators = [
     {
@@ -93,12 +104,8 @@ export default function HealthPage() {
     <SafeAreaView className="flex-1 bg-[#1A1B1E]">
       <ScrollView className="flex-1">
         <Animated.View entering={FadeInDown.springify()}>
-          <Header 
-            title="Health" 
-            imageUrl="https://images.unsplash.com/photo-1599566150163-29194dcaad36" 
-          />
+          <Header />
         </Animated.View>
-        <TabBar activeTab="health" />
         <View className="p-6">
           <Animated.Text 
             entering={FadeInDown.delay(200)} 

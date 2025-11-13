@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from 'react-query';
 import { useAuth } from './useAuth';
 import { useHealthCoins } from './useHealthCoins';
 import { supabase } from '../lib/supabase';
+import { useUserStore } from '../lib/store/userStore';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useThemeStore } from '../stores/themeStore';
 import { OnboardingFormData } from '../types/onboarding';
@@ -14,6 +15,7 @@ export function useOnboardingSubmit() {
   const queryClient = useQueryClient();
   const setCompleted = useOnboardingStore((state) => state.setCompleted);
   const resetFormData = useOnboardingStore((state) => state.resetFormData);
+  const { fetchUserData } = useUserStore();
   return useMutation(
     async (formData: OnboardingFormData) => {
       // Get the current session directly from Supabase to ensure we have the latest auth state
@@ -71,19 +73,19 @@ export function useOnboardingSubmit() {
         setGender(formData.gender as 'male' | 'female');
       }
 
+      // ✅ IMMEDIATELY fetch and cache user data after onboarding
+      console.log('📥 Fetching user profile data immediately after onboarding...');
+      await fetchUserData(currentUser.id);
+      console.log('✅ User profile data cached successfully');
+
       // Invalidate queries to ensure fresh data is fetched
       await queryClient.invalidateQueries(['onboarding', currentUser.id]);
       // Update the onboarding store to reflect completion
       setCompleted(true);
       
-      // 🧹 Clear onboarding form data after successful completion
-      console.log('🧹 Clearing onboarding form data for next user');
+      // 🧹 Clear onboarding form data (for memory, not for next user)
+      console.log('🧹 Clearing onboarding form data from memory');
       resetFormData();
-      
-      // 🎨 Reset theme to default (male/green) for next user
-      const { setGender } = useThemeStore.getState();
-      setGender('male');
-      console.log('🎨 Theme reset to default (green) for next user');
 
       // Send welcome notification
       await Notifications.scheduleNotificationAsync({

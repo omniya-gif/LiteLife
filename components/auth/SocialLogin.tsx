@@ -9,6 +9,7 @@ import { View, TouchableOpacity, Image, Alert, Text } from 'react-native';
 import { useQueryClient } from 'react-query';
 
 import { supabase } from '../../lib/supabase';
+import { useUserStore } from '../../lib/store/userStore';
 import { useOnboardingStore } from '../../stores/onboardingStore';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -29,6 +30,7 @@ export const SocialLogin = ({ isSignUp = false }: SocialLoginProps) => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const setOnboardingCompleted = useOnboardingStore((state) => state.setCompleted);
+  const { fetchUserData } = useUserStore();
 
   const createSessionFromUrl = async (url: string) => {
     try {
@@ -106,8 +108,11 @@ export const SocialLogin = ({ isSignUp = false }: SocialLoginProps) => {
         console.log('[SocialLogin] Onboarding completed:', isCompleted);
 
         setOnboardingCompleted(isCompleted);
-        // Invalidate the onboarding query to force a fresh fetch
-        await queryClient.invalidateQueries(['onboarding', data.session.user.id]);
+        
+        // ✅ IMMEDIATELY fetch user data and cache it before navigation
+        console.log('[SocialLogin] 📥 Fetching user profile data immediately...');
+        await fetchUserData(data.session.user.id);
+        console.log('[SocialLogin] ✅ User profile data cached successfully');
 
         if (isCompleted) {
           console.log('[SocialLogin] Redirecting existing user to: /(main)/home');
