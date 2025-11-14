@@ -22,15 +22,15 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (user?.id) {
-      console.log('Profile Page - User ID:', user.id);
+      // Always fetch to ensure data is current for this user
       fetchUserData(user.id);
     }
   }, [user?.id]);
 
-  useEffect(() => {
-    console.log('Profile Page - Current profile:', profile);
-    console.log('Profile Page - Current onboarding:', onboarding);
-  }, [profile, onboarding]);
+  // Don't render profile data if it doesn't match current user
+  const isProfileValid = profile?.id === user?.id;
+  const displayProfile = isProfileValid ? profile : null;
+  const displayOnboarding = isProfileValid ? onboarding : null;
 
   if (isLoading) {
     return <LoadingScreen />; // You'll need to create this component
@@ -149,12 +149,12 @@ export default function ProfilePage() {
             >
               <View>
                 <Text className="text-xl font-bold text-white">
-                  {profile?.username && profile.username !== 'User' 
-                    ? profile.username 
+                  {displayProfile?.username && displayProfile.username !== 'User' 
+                    ? displayProfile.username 
                     : user?.user_metadata?.full_name?.split(' ')[0] || user?.user_metadata?.name?.split(' ')[0] || 'User'}
                 </Text>
                 <Text className="text-sm font-medium mt-1" style={{ color: theme.primary }}>
-                  {onboarding?.expertise?.toUpperCase() || 'BEGINNER'} MEMBER
+                  {displayOnboarding?.expertise?.toUpperCase() || 'BEGINNER'} MEMBER
                 </Text>
               </View>
               <TouchableOpacity 
@@ -171,7 +171,7 @@ export default function ProfilePage() {
               entering={FadeInDown.delay(400)}
               className="text-gray-400 mt-6 leading-5"
             >
-              {profile?.bio}
+              {displayProfile?.bio}
             </Animated.Text>
 
             {/* Goal Section - Updated styling */}
@@ -185,9 +185,9 @@ export default function ProfilePage() {
               </Text>
               <View className="flex-row items-center mt-2">
                 <Text className="text-xl font-bold text-white">
-                  {onboarding?.goal || 'Improve Health'}
+                  {displayOnboarding?.goal || 'Improve Health'}
                 </Text>
-                {onboarding?.reason && (
+                {displayOnboarding?.reason && (
                   <Text className="text-gray-400 ml-2 flex-1">
                     • {onboarding.reason}
                   </Text>
@@ -204,7 +204,7 @@ export default function ProfilePage() {
                 <Text className="text-xs font-medium tracking-wider" style={{ color: theme.primary }}>WEIGHT</Text>
                 <View className="flex-row items-baseline mt-2">
                   <Text className="text-2xl font-bold text-white">
-                    {onboarding?.current_weight || '--'}
+                    {displayOnboarding?.current_weight || '--'}
                   </Text>
                   <Text className="text-gray-400 ml-1">kg</Text>
                 </View>
@@ -214,7 +214,7 @@ export default function ProfilePage() {
                 <Text className="text-xs font-medium tracking-wider" style={{ color: theme.primary }}>AGE</Text>
                 <View className="flex-row items-baseline mt-2">
                   <Text className="text-2xl font-bold text-white">
-                    {onboarding?.age || '--'}
+                    {displayOnboarding?.age || '--'}
                   </Text>
                   <Text className="text-gray-400 ml-1">yo</Text>
                 </View>
@@ -224,7 +224,7 @@ export default function ProfilePage() {
                 <Text className="text-xs font-medium tracking-wider" style={{ color: theme.primary }}>HEIGHT</Text>
                 <View className="flex-row items-baseline mt-2">
                   <Text className="text-2xl font-bold text-white">
-                    {onboarding?.height || '--'}
+                    {displayOnboarding?.height || '--'}
                   </Text>
                   <Text className="text-gray-400 ml-1">cm</Text>
                 </View>
