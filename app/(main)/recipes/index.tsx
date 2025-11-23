@@ -10,16 +10,19 @@ import {
   Easing,
   ActivityIndicator,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import { Search, Heart, ChevronRight, AlertCircle } from 'lucide-react-native';
+import { Search, Heart, AlertCircle } from 'lucide-react-native';
 
 import { useTheme } from '../../../hooks/useTheme';
 import { searchRecipes, getFeaturedRecipes, Recipe } from '../../../services/recipeService';
 import { Header } from '../../../components/home/Header';
 import { BottomNavigation } from '../home/components/BottomNavigation';
+import { useHealthConnect } from '../../../hooks/useHealthConnect';
+import { useHealthConnectWrite } from '../../../hooks/useHealthConnectWrite';
 
 const categories = [
   {
@@ -67,6 +70,14 @@ export default function RecipesPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  
+  // Health Connect
+  const nutritionPermissions = [
+    { accessType: 'write' as const, recordType: 'Nutrition' },
+    { accessType: 'read' as const, recordType: 'Nutrition' },
+  ];
+  const healthConnect = useHealthConnect(nutritionPermissions);
+  const { writeMealToHealthConnect, isWriting } = useHealthConnectWrite();
 
   // Animation values
   const headerAnim = useRef(new Animated.Value(0)).current;
@@ -183,6 +194,71 @@ export default function RecipesPage() {
       await AsyncStorage.setItem('favoriteRecipes', JSON.stringify(newFavorites));
     } catch (error) {
       console.error('Error saving favorites:', error);
+    }
+  };
+
+  const handleAddCalories = async (recipe: Recipe) => {
+    // Check if Health Connect is available
+    if (!healthConnect.isAvailable) {
+      Alert.alert(
+        'Health Connect Not Available',
+        'Health Connect is only available on Android 14+. This feature requires Health Connect to track nutrition data.'
+      );
+      return;
+    }
+
+    // Check if we have permissions
+    if (!healthConnect.hasPermissions) {
+      Alert.alert(
+        'Permission Required',
+        'LiteLife needs permission to write nutrition data to Health Connect. Would you like to grant permissions?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Grant Permission',
+            onPress: async () => {
+              await healthConnect.requestHealthPermissions();
+            },
+          },
+        ]
+      );
+      return;
+    }
+
+    // Get nutrition info from recipe
+    const calories = recipe.calories || 0;
+    const recipeWithNutrition = recipe as any;
+    const protein =
+      recipeWithNutrition.nutrition?.nutrients?.find((n: any) => n.name === 'Protein')?.amount || 0;
+    const carbs =
+      recipeWithNutrition.nutrition?.nutrients?.find((n: any) => n.name === 'Carbohydrates')?.amount ||
+      0;
+    const fat = recipeWithNutrition.nutrition?.nutrients?.find((n: any) => n.name === 'Fat')?.amount || 0;
+
+    if (calories === 0) {
+      Alert.alert('No Nutrition Data', 'This recipe does not have calorie information available.');
+      return;
+    }
+
+    // Write to Health Connect
+    const success = await writeMealToHealthConnect({
+      name: recipe.title,
+      calories,
+      protein: protein > 0 ? protein : undefined,
+      carbs: carbs > 0 ? carbs : undefined,
+      fat: fat > 0 ? fat : undefined,
+    });
+
+    if (success) {
+      Alert.alert(
+        'Success! ✅',
+        `Added ${Math.round(calories)} calories from "${recipe.title}" to Health Connect`
+      );
+    } else {
+      Alert.alert(
+        'Error',
+        'Failed to add calories to Health Connect. Please check your permissions and try again.'
+      );
     }
   };
 
@@ -456,8 +532,7 @@ export default function RecipesPage() {
                         <Text className="text-xs text-gray-500">🍽️ {recipe.servings} servings</Text>
                       </View>
                       
-                      {/* Calorie Badge */}
-                      {recipe.calories && recipe.calories > 0 && (
+                      {recipe.calories && recipe.calories > 0 ? (
                         <View 
                           className="mb-4 self-start px-3 py-1.5 rounded-full"
                           style={{ backgroundColor: `${getCalorieColor(recipe.calories)}20` }}
@@ -466,26 +541,31 @@ export default function RecipesPage() {
                             className="text-sm font-semibold"
                             style={{ color: getCalorieColor(recipe.calories) }}
                           >
-                            🔥 {Math.round(recipe.calories)} cal
-                            {recipe.calories > 600 && ' • High'}
-                            {recipe.calories > 400 && recipe.calories <= 600 && ' • Medium'}
+                            {recipe.calories > 600 
+                              ? `🔥 ${Math.round(recipe.calories)} cal • High`
+                              : recipe.calories > 400 
+                              ? `🔥 ${Math.round(recipe.calories)} cal • Medium`
+                              : `🔥 ${Math.round(recipe.calories)} cal`}
                           </Text>
                         </View>
-                      )}
+                      ) : null}
 
-                      {/* Action Buttons */}
-                      <View className="flex-row justify-between">
+                      <View className="flex-row gap-2">
                         <TouchableOpacity
-                          onPress={() => router.push(`/recipes/${recipe.id}`)}
-                          className="mr-2 h-12 flex-1 items-center justify-center rounded-xl"
-                          style={{ backgroundColor: theme.primary }}>
-                          <Text className="font-medium text-white">View Recipe</Text>
+                          onPress={() => handleAddCalories(recipe)}
+                          disabled={isWriting}
+                          className="h-12 px-4 items-center justify-center rounded-xl flex-row"
+                          style={{ backgroundColor: `${theme.primary}20` }}>
+                          <Text className="font-semibold text-sm" style={{ color: theme.primary }}>
+                            {isWriting ? 'Adding...' : '+ Add Calories'}
+                          </Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
                           onPress={() => router.push(`/recipes/${recipe.id}`)}
-                          className="h-12 w-12 items-center justify-center rounded-xl bg-[#2C2D32]">
-                          <ChevronRight size={20} color={theme.primary} />
+                          className="h-12 flex-1 items-center justify-center rounded-xl"
+                          style={{ backgroundColor: theme.primary }}>
+                          <Text className="font-medium text-white">View Recipe</Text>
                         </TouchableOpacity>
                       </View>
                     </View>

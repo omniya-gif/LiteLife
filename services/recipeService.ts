@@ -139,6 +139,7 @@ export const getFeaturedRecipes = async (limit = 6, tags?: string): Promise<Reci
 
     const params = new URLSearchParams({
       number: limit.toString(),
+      includeNutrition: 'true',
     });
 
     if (tags) params.append('tags', tags);
@@ -165,15 +166,23 @@ export const getFeaturedRecipes = async (limit = 6, tags?: string): Promise<Reci
     const data = await response.json();
     console.log('✅ Received recipes:', data.recipes?.length || 0);
 
-    return data.recipes.map((recipe: any) => ({
-      id: recipe.id,
-      title: recipe.title,
-      image: recipe.image,
-      readyInMinutes: recipe.readyInMinutes,
-      servings: recipe.servings,
-      dishTypes: recipe.dishTypes || [],
-      summary: recipe.summary ? recipe.summary.replace(/<[^>]*>?/gm, '').substring(0, 120) + '...' : '',
-    }));
+    return data.recipes.map((recipe: any) => {
+      // Extract calories from nutrition data if available
+      const calories = recipe.nutrition?.nutrients?.find(
+        (nutrient: any) => nutrient.name === 'Calories'
+      );
+
+      return {
+        id: recipe.id,
+        title: recipe.title,
+        image: recipe.image,
+        readyInMinutes: recipe.readyInMinutes,
+        servings: recipe.servings,
+        calories: calories?.amount || 0,
+        dishTypes: recipe.dishTypes || [],
+        summary: recipe.summary ? recipe.summary.replace(/<[^>]*>?/gm, '').substring(0, 120) + '...' : '',
+      };
+    });
   } catch (error) {
     console.error('Error getting featured recipes:', error);
     throw error;

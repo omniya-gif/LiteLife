@@ -31,7 +31,6 @@ interface RecipeDetails {
 
 export const searchRecipes = async (query: string, mealType?: string, limit = 9): Promise<Recipe[]> => {
   try {
-    // Check if query contains non-halal terms - simple prevention approach
     if (containsNonHalalTerms(query)) {
       const warning = getNonHalalWarning(query);
       throw new Error(warning || 'Your search contains non-halal terms which are not permitted.');
@@ -53,7 +52,6 @@ export const searchRecipes = async (query: string, mealType?: string, limit = 9)
         tags,
         addRecipeNutrition: 'true',
         fillIngredients: 'true',
-        // Add exclusion parameter for common non-halal ingredients
         excludeIngredients: 'pork,bacon,ham,alcohol,wine,beer',
       },
       headers: {
@@ -64,7 +62,6 @@ export const searchRecipes = async (query: string, mealType?: string, limit = 9)
 
     const response = await axios.request(options);
     
-    // Transform the response to match our Recipe interface
     return response.data.results.map((recipe: any) => {
       const calories = recipe.nutrition?.nutrients?.find(
         (nutrient: any) => nutrient.name === "Calories"
@@ -105,7 +102,6 @@ export const getFeaturedRecipes = async (limit = 3): Promise<FeaturedRecipe[]> =
     const response = await axios.request(options);
     
     return response.data.recipes.map((recipe: any) => {
-      // Randomly assign as suhoor or iftar for demonstration
       const type = Math.random() > 0.5 ? 'suhoor' : 'iftar';
       
       return {
@@ -142,7 +138,6 @@ export const getRecipeDetails = async (id: number): Promise<any> => {
     
     const recipeData = response.data;
     
-    // Determine if recipe is likely for suhoor or iftar based on dish types
     let type = 'iftar';
     if (recipeData.dishTypes) {
       const breakfastTypes = ['breakfast', 'brunch', 'morning meal'];
@@ -177,7 +172,6 @@ export const getSimilarRecipes = async (id: number, limit = 3): Promise<any[]> =
 
     const response = await axios.request(options);
     
-    // Transform response to include additional details
     return response.data.map((item: any) => ({
       ...item,
       image: item.image || `https://spoonacular.com/recipeImages/${item.id}-312x231.jpg`
