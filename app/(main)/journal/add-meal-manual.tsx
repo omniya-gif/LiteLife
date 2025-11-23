@@ -1,3 +1,5 @@
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { ArrowLeft, Calendar, Clock, ChevronDown } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
   View,
@@ -10,8 +12,6 @@ import {
   Modal,
   Platform,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft, Calendar, Clock, ChevronDown } from 'lucide-react-native';
 
 import { useTheme } from '../../../hooks/useTheme';
 
@@ -19,7 +19,7 @@ export default function AddMealManual() {
   const router = useRouter();
   const theme = useTheme();
   const params = useLocalSearchParams();
-  const mealType = params.mealType as string || 'Not set';
+  const mealType = (params.mealType as string) || 'Not set';
 
   const [date, setDate] = useState(new Date());
   const [time, setTime] = useState(new Date());
@@ -54,35 +54,35 @@ export default function AddMealManual() {
 
     // TODO: Implement save logic
     Alert.alert('Success', 'Meal saved successfully!', [
-      { text: 'OK', onPress: () => router.back() }
+      { text: 'OK', onPress: () => router.back() },
     ]);
   };
 
-  const NutritionInput = ({ 
-    label, 
-    value, 
-    onChangeText, 
+  const NutritionInput = ({
+    label,
+    value,
+    onChangeText,
     unit,
-    placeholder = '0'
-  }: { 
-    label: string; 
-    value: string; 
-    onChangeText: (text: string) => void; 
+    placeholder = '0',
+  }: {
+    label: string;
+    value: string;
+    onChangeText: (text: string) => void;
     unit: string;
     placeholder?: string;
   }) => (
     <View className="mb-4">
-      <Text className="text-sm text-gray-400 mb-2">{label}</Text>
+      <Text className="mb-2 text-sm text-gray-400">{label}</Text>
       <View className="flex-row items-center rounded-xl bg-[#2C2D32] px-4 py-3">
         <TextInput
-          className="flex-1 text-white text-base"
+          className="flex-1 text-base text-white"
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
           placeholderTextColor="#666"
           keyboardType="numeric"
         />
-        <Text className="text-gray-400 ml-2">{unit}</Text>
+        <Text className="ml-2 text-gray-400">{unit}</Text>
       </View>
     </View>
   );
@@ -90,7 +90,7 @@ export default function AddMealManual() {
   return (
     <SafeAreaView className="flex-1 bg-[#1A1B1E]">
       {/* Header */}
-      <View className="flex-row items-center justify-between px-6 pt-4 pb-2">
+      <View className="flex-row items-center justify-between px-6 pb-2 pt-4">
         <TouchableOpacity onPress={() => router.back()}>
           <ArrowLeft size={24} color="white" />
         </TouchableOpacity>
@@ -101,20 +101,19 @@ export default function AddMealManual() {
       <ScrollView className="flex-1 px-6 pt-6">
         {/* Time Section */}
         <View className="mb-6">
-          <Text className="text-base font-semibold text-white mb-4">Time</Text>
-          
+          <Text className="mb-4 text-base font-semibold text-white">Time</Text>
+
           {/* Date Picker */}
           <TouchableOpacity
             onPress={() => setShowDatePicker(true)}
-            className="flex-row items-center justify-between rounded-xl bg-[#2C2D32] px-4 py-4 mb-3"
-          >
+            className="mb-3 flex-row items-center justify-between rounded-xl bg-[#2C2D32] px-4 py-4">
             <View className="flex-row items-center space-x-3">
               <Calendar size={20} color={theme.primary} />
-              <Text className="text-white text-base">
-                {date.toLocaleDateString('en-US', { 
-                  month: 'short', 
-                  day: 'numeric', 
-                  year: 'numeric' 
+              <Text className="text-base text-white">
+                {date.toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
                 })}
               </Text>
             </View>
@@ -123,34 +122,30 @@ export default function AddMealManual() {
           {/* Time Picker */}
           <TouchableOpacity
             onPress={() => setShowTimePicker(true)}
-            className="flex-row items-center justify-between rounded-xl bg-[#2C2D32] px-4 py-4"
-          >
+            className="flex-row items-center justify-between rounded-xl bg-[#2C2D32] px-4 py-4">
             <View className="flex-row items-center space-x-3">
               <Clock size={20} color={theme.primary} />
-              <Text className="text-white text-base">
-                {time.toLocaleTimeString('en-US', { 
-                  hour: '2-digit', 
-                  minute: '2-digit' 
+              <Text className="text-base text-white">
+                {time.toLocaleTimeString('en-US', {
+                  hour: '2-digit',
+                  minute: '2-digit',
                 })}
               </Text>
             </View>
           </TouchableOpacity>
-
-
         </View>
 
         {/* Meal Type */}
         <View className="mb-6">
-          <Text className="text-base font-semibold text-white mb-4">Meal type</Text>
+          <Text className="mb-4 text-base font-semibold text-white">Meal type</Text>
           <TouchableOpacity
             onPress={() => setShowMealTypePicker(!showMealTypePicker)}
-            className="rounded-xl bg-[#2C2D32] px-4 py-4"
-          >
-            <Text className="text-white text-base">{selectedMealType}</Text>
+            className="rounded-xl bg-[#2C2D32] px-4 py-4">
+            <Text className="text-base text-white">{selectedMealType}</Text>
           </TouchableOpacity>
 
           {showMealTypePicker && (
-            <View className="mt-2 rounded-xl bg-[#25262B] overflow-hidden">
+            <View className="mt-2 overflow-hidden rounded-xl bg-[#25262B]">
               {mealTypes.map((type) => (
                 <TouchableOpacity
                   key={type}
@@ -158,15 +153,14 @@ export default function AddMealManual() {
                     setSelectedMealType(type);
                     setShowMealTypePicker(false);
                   }}
-                  className="px-4 py-4 border-b border-[#2C2D32]"
+                  className="border-b border-[#2C2D32] px-4 py-4"
                   style={{
-                    backgroundColor: selectedMealType === type ? `${theme.primary}15` : 'transparent'
-                  }}
-                >
-                  <Text 
+                    backgroundColor:
+                      selectedMealType === type ? `${theme.primary}15` : 'transparent',
+                  }}>
+                  <Text
                     className="text-base"
-                    style={{ color: selectedMealType === type ? theme.primary : 'white' }}
-                  >
+                    style={{ color: selectedMealType === type ? theme.primary : 'white' }}>
                     {type}
                   </Text>
                 </TouchableOpacity>
@@ -177,9 +171,9 @@ export default function AddMealManual() {
 
         {/* Meal Name */}
         <View className="mb-6">
-          <Text className="text-base font-semibold text-white mb-4">Meal name</Text>
+          <Text className="mb-4 text-base font-semibold text-white">Meal name</Text>
           <TextInput
-            className="rounded-xl bg-[#2C2D32] px-4 py-4 text-white text-base"
+            className="rounded-xl bg-[#2C2D32] px-4 py-4 text-base text-white"
             value={mealName}
             onChangeText={setMealName}
             placeholder="e.g., Grilled Chicken Salad"
@@ -189,9 +183,9 @@ export default function AddMealManual() {
 
         {/* Serving Size */}
         <View className="mb-6">
-          <Text className="text-base font-semibold text-white mb-4">Serving size (optional)</Text>
+          <Text className="mb-4 text-base font-semibold text-white">Serving size (optional)</Text>
           <TextInput
-            className="rounded-xl bg-[#2C2D32] px-4 py-4 text-white text-base"
+            className="rounded-xl bg-[#2C2D32] px-4 py-4 text-base text-white"
             value={servingSize}
             onChangeText={setServingSize}
             placeholder="e.g., 1 cup, 150g"
@@ -201,8 +195,8 @@ export default function AddMealManual() {
 
         {/* Nutrition Information */}
         <View className="mb-6">
-          <Text className="text-base font-semibold text-white mb-4">Nutrition Information</Text>
-          
+          <Text className="mb-4 text-base font-semibold text-white">Nutrition Information</Text>
+
           <NutritionInput
             label="Calories *"
             value={calories}
@@ -210,47 +204,17 @@ export default function AddMealManual() {
             unit="kcal"
           />
 
-          <NutritionInput
-            label="Protein"
-            value={protein}
-            onChangeText={setProtein}
-            unit="g"
-          />
+          <NutritionInput label="Protein" value={protein} onChangeText={setProtein} unit="g" />
 
-          <NutritionInput
-            label="Carbohydrates"
-            value={carbs}
-            onChangeText={setCarbs}
-            unit="g"
-          />
+          <NutritionInput label="Carbohydrates" value={carbs} onChangeText={setCarbs} unit="g" />
 
-          <NutritionInput
-            label="Total Fat"
-            value={fat}
-            onChangeText={setFat}
-            unit="g"
-          />
+          <NutritionInput label="Total Fat" value={fat} onChangeText={setFat} unit="g" />
 
-          <NutritionInput
-            label="Dietary Fiber"
-            value={fiber}
-            onChangeText={setFiber}
-            unit="g"
-          />
+          <NutritionInput label="Dietary Fiber" value={fiber} onChangeText={setFiber} unit="g" />
 
-          <NutritionInput
-            label="Sugar"
-            value={sugar}
-            onChangeText={setSugar}
-            unit="g"
-          />
+          <NutritionInput label="Sugar" value={sugar} onChangeText={setSugar} unit="g" />
 
-          <NutritionInput
-            label="Sodium"
-            value={sodium}
-            onChangeText={setSodium}
-            unit="mg"
-          />
+          <NutritionInput label="Sodium" value={sodium} onChangeText={setSodium} unit="mg" />
 
           <NutritionInput
             label="Cholesterol"
@@ -269,15 +233,12 @@ export default function AddMealManual() {
       </ScrollView>
 
       {/* Save Button */}
-      <View className="px-6 pb-6 pt-4 border-t border-[#2C2D32]">
+      <View className="border-t border-[#2C2D32] px-6 pb-6 pt-4">
         <TouchableOpacity
           onPress={handleSave}
           className="rounded-2xl py-4"
-          style={{ backgroundColor: theme.primary }}
-        >
-          <Text className="text-center text-lg font-bold text-white">
-            Save Meal
-          </Text>
+          style={{ backgroundColor: theme.primary }}>
+          <Text className="text-center text-lg font-bold text-white">Save Meal</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

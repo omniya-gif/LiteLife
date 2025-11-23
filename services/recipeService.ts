@@ -24,25 +24,25 @@ export interface Recipe {
 }
 
 export interface RecipeDetails extends Recipe {
-  extendedIngredients: Array<{
+  extendedIngredients: {
     id: number;
     name: string;
     amount: number;
     unit: string;
     original: string;
-  }>;
-  analyzedInstructions: Array<{
-    steps: Array<{
+  }[];
+  analyzedInstructions: {
+    steps: {
       number: number;
       step: string;
-    }>;
-  }>;
+    }[];
+  }[];
   nutrition?: {
-    nutrients: Array<{
+    nutrients: {
       name: string;
       amount: number;
       unit: string;
-    }>;
+    }[];
   };
 }
 
@@ -180,7 +180,9 @@ export const getFeaturedRecipes = async (limit = 6, tags?: string): Promise<Reci
         servings: recipe.servings,
         calories: calories?.amount || 0,
         dishTypes: recipe.dishTypes || [],
-        summary: recipe.summary ? recipe.summary.replace(/<[^>]*>?/gm, '').substring(0, 120) + '...' : '',
+        summary: recipe.summary
+          ? recipe.summary.replace(/<[^>]*>?/gm, '').substring(0, 120) + '...'
+          : '',
       };
     });
   } catch (error) {
@@ -265,6 +267,112 @@ export const getRecipesByCategory = async (type: string, limit = 12): Promise<Re
     return await searchRecipes('', { type }, limit);
   } catch (error) {
     console.error('Error getting recipes by category:', error);
+    throw error;
+  }
+};
+
+/**
+ * Connect user to Spoonacular API
+ * @param username - Desired Spoonacular username
+ * @param email - User email
+ */
+export const connectSpoonacularUser = async (
+  username: string,
+  email: string
+): Promise<{ username: string; hash: string }> => {
+  try {
+    if (!RAPID_API_KEY || !RAPID_API_HOST) {
+      throw new Error('API credentials not configured.');
+    }
+
+    const url = `https://${RAPID_API_HOST}/users/connect`;
+    console.log('🔗 Connecting Spoonacular user:', username, email);
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'X-RapidAPI-Key': RAPID_API_KEY,
+        'X-RapidAPI-Host': RAPID_API_HOST,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        username: username.toLowerCase(),
+        email,
+      }),
+    });
+
+    console.log('📡 Connect response:', response.status, response.statusText);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ API Error:', errorText);
+      throw new Error(`API Error: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    return {
+      username: data.username,
+      hash: data.hash,
+    };
+  } catch (error) {
+    console.error('Error connecting Spoonacular user:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get bulk recipe information by IDs
+ * @param ids - Array of recipe IDs
+ */
+export const getRecipesBulk = async (ids: number[]): Promise<Recipe[]> => {
+  try {
+    if (!ids || ids.length === 0) {
+      return [];
+    }
+
+    if (!RAPID_API_KEY || !RAPID_API_HOST) {
+      throw new Error('API credentials not configured.');
+    }
+
+    const url = `https://${RAPID_API_HOST}/recipes/informationBulk?ids=${ids.join(',')}&includeNutrition=true`;
+    console.log('📦 Getting bulk recipes:', url);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'X-RapidAPI-Key': RAPID_API_KEY,
+        'X-RapidAPI-Host': RAPID_API_HOST,
+      },
+    });
+
+    console.log('📡 Bulk response:', response.status, response.statusText);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ API Error:', errorText);
+      throw new Error(`API Error: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+
+    return data.map((recipe: any) => {
+      const calories = recipe.nutrition?.nutrients?.find(
+        (nutrient: any) => nutrient.name === 'Calories'
+      );
+
+      return {
+        id: recipe.id,
+        title: recipe.title,
+        image: recipe.image,
+        readyInMinutes: recipe.readyInMinutes,
+        servings: recipe.servings,
+        calories: calories?.amount || 0,
+        dishTypes: recipe.dishTypes || [],
+        summary: recipe.summary || '',
+      };
+    });
+  } catch (error) {
+    console.error('Error getting bulk recipes:', error);
     throw error;
   }
 };

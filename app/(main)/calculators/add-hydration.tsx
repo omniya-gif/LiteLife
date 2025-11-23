@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, TextInput } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft, Droplets, X } from 'lucide-react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, SafeAreaView, TextInput } from 'react-native';
 import { insertRecords } from 'react-native-health-connect';
 
 import { useTheme } from '../../../hooks/useTheme';
@@ -24,7 +24,7 @@ export default function AddHydration() {
 
     try {
       setIsSaving(true);
-      
+
       // Create hydration record for Health Connect
       const hydrationRecord = {
         recordType: 'Hydration' as const,
@@ -37,9 +37,9 @@ export default function AddHydration() {
       };
 
       console.log('💧 Writing hydration to Health Connect:', hydrationRecord);
-      
+
       await insertRecords([hydrationRecord]);
-      
+
       console.log('✅ Hydration saved successfully!');
       router.back();
     } catch (error) {
@@ -57,16 +57,14 @@ export default function AddHydration() {
           <X size={24} color="white" />
         </TouchableOpacity>
         <Text className="text-xl font-bold text-white">Add hydration</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={handleSave}
-          disabled={isSaving || !amount || parseInt(amount) <= 0}
-        >
-          <Text 
+          disabled={isSaving || !amount || parseInt(amount) <= 0}>
+          <Text
             className="text-base font-semibold"
-            style={{ 
-              color: (!amount || parseInt(amount) <= 0) ? '#666' : theme.primary 
-            }}
-          >
+            style={{
+              color: !amount || parseInt(amount) <= 0 ? '#666' : theme.primary,
+            }}>
             Save
           </Text>
         </TouchableOpacity>
@@ -79,9 +77,9 @@ export default function AddHydration() {
           <View className="flex-row items-center justify-between rounded-xl bg-[#2C2D32] px-4 py-4">
             <Text className="text-base text-white">Today</Text>
             <Text className="text-base text-gray-400">
-              {time.toLocaleTimeString('en-US', { 
-                hour: '2-digit', 
-                minute: '2-digit' 
+              {time.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
               })}
             </Text>
           </View>
@@ -103,7 +101,7 @@ export default function AddHydration() {
             />
             <Text className="text-base text-gray-400">ml</Text>
           </View>
-          
+
           {/* Show in liters if > 500ml */}
           {parseInt(amount) > 500 && (
             <Text className="mt-2 text-center text-sm text-gray-500">
@@ -123,10 +121,13 @@ export default function AddHydration() {
                 className="rounded-xl bg-[#2C2D32] px-4 py-3"
                 style={
                   parseInt(amount) === preset
-                    ? { backgroundColor: `${theme.primary}20`, borderWidth: 1, borderColor: theme.primary }
+                    ? {
+                        backgroundColor: `${theme.primary}20`,
+                        borderWidth: 1,
+                        borderColor: theme.primary,
+                      }
                     : {}
-                }
-              >
+                }>
                 <Text className="text-center text-white">{preset}ml</Text>
               </TouchableOpacity>
             ))}

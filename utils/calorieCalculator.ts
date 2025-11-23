@@ -51,7 +51,7 @@ export function getGoalAdjustment(goal: Goal, tdee: number): number {
 
 /**
  * Calculate recommended daily calorie intake
- * 
+ *
  * @param weight - Current weight in kg
  * @param height - Height in cm
  * @param age - Age in years
@@ -109,7 +109,7 @@ export function getEstimatedWeightChange(
 } {
   const dailyDifference = currentCalories - targetCalories;
   const weeklyDifference = dailyDifference * 7;
-  
+
   // 7700 calories = approximately 1 kg of body weight
   const weeklyChange = weeklyDifference / 7700;
 

@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, ActivityIndicator } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { ArrowLeft, Droplets, Plus, TrendingUp } from 'lucide-react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, TouchableOpacity, SafeAreaView, ActivityIndicator } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
-import { useTheme } from '../../../hooks/useTheme';
 import { useHealthConnect, readHydrationData } from '../../../hooks/useHealthConnect';
+import { useTheme } from '../../../hooks/useTheme';
 import { useUserStore } from '../../../stores/userStore';
 
 export default function HydrationTracker() {
@@ -32,10 +32,7 @@ export default function HydrationTracker() {
       const startOfDay = new Date(today.setHours(0, 0, 0, 0));
       const endOfDay = new Date(today.setHours(23, 59, 59, 999));
 
-      const water = await readHydrationData(
-        startOfDay.toISOString(),
-        endOfDay.toISOString()
-      );
+      const water = await readHydrationData(startOfDay.toISOString(), endOfDay.toISOString());
       console.log('💧 Setting water consumed from Health Connect:', water);
       setWaterConsumed(water);
     } catch (error) {
@@ -91,10 +88,9 @@ export default function HydrationTracker() {
   return (
     <SafeAreaView className="flex-1 bg-[#1A1B1E]">
       {/* Header */}
-      <Animated.View 
+      <Animated.View
         entering={FadeInDown.springify()}
-        className="flex-row items-center justify-between px-6 pt-4"
-      >
+        className="flex-row items-center justify-between px-6 pt-4">
         <TouchableOpacity onPress={() => router.back()}>
           <ArrowLeft size={24} color="white" />
         </TouchableOpacity>
@@ -117,11 +113,8 @@ export default function HydrationTracker() {
             <TouchableOpacity
               onPress={handleRequestPermission}
               className="mt-6 rounded-2xl px-8 py-4"
-              style={{ backgroundColor: theme.primary }}
-            >
-              <Text className="text-lg font-semibold text-[#1A1B1E]">
-                Grant Permission
-              </Text>
+              style={{ backgroundColor: theme.primary }}>
+              <Text className="text-lg font-semibold text-[#1A1B1E]">Grant Permission</Text>
             </TouchableOpacity>
           </View>
         ) : isLoading ? (
@@ -132,18 +125,16 @@ export default function HydrationTracker() {
         ) : (
           <>
             {/* Main Card */}
-            <Animated.View 
+            <Animated.View
               entering={FadeInDown.delay(200)}
               className="overflow-hidden rounded-3xl"
-              style={{ backgroundColor: `${theme.primary}08` }}
-            >
+              style={{ backgroundColor: `${theme.primary}08` }}>
               <View className="p-8">
                 {/* Water Drop Icon */}
                 <View className="items-center">
-                  <View 
+                  <View
                     className="mb-6 h-32 w-32 items-center justify-center rounded-full"
-                    style={{ backgroundColor: theme.primary }}
-                  >
+                    style={{ backgroundColor: theme.primary }}>
                     <Droplets size={64} color="white" />
                   </View>
                 </View>
@@ -161,34 +152,38 @@ export default function HydrationTracker() {
 
                 {/* Progress Bar */}
                 <View className="mt-8 h-4 overflow-hidden rounded-full bg-[#2C2D32]">
-                  <View 
+                  <View
                     className="h-full rounded-full"
-                    style={{ 
+                    style={{
                       width: `${percentage}%`,
-                      backgroundColor: theme.primary
+                      backgroundColor: theme.primary,
                     }}
                   />
                 </View>
 
                 {/* Percentage & Status */}
                 <View className="mt-6 items-center">
-                  <Text className="text-3xl font-bold text-white">
-                    {Math.round(percentage)}%
-                  </Text>
+                  <Text className="text-3xl font-bold text-white">{Math.round(percentage)}%</Text>
                   <Text className="mt-2 text-sm text-gray-400">of daily goal</Text>
                 </View>
               </View>
 
               {/* Stats Row */}
               <View className="flex-row border-t" style={{ borderTopColor: `${theme.primary}15` }}>
-                <View className="flex-1 items-center border-r py-5" style={{ borderRightColor: `${theme.primary}15` }}>
+                <View
+                  className="flex-1 items-center border-r py-5"
+                  style={{ borderRightColor: `${theme.primary}15` }}>
                   <Text className="text-2xl font-bold" style={{ color: theme.primary }}>
                     {glassesConsumed}
                   </Text>
                   <Text className="mt-1 text-xs text-gray-500">Glasses</Text>
-                  <Text className="text-xs text-gray-600">({glassesConsumed}/{totalGlasses})</Text>
+                  <Text className="text-xs text-gray-600">
+                    ({glassesConsumed}/{totalGlasses})
+                  </Text>
                 </View>
-                <View className="flex-1 items-center border-r py-5" style={{ borderRightColor: `${theme.primary}15` }}>
+                <View
+                  className="flex-1 items-center border-r py-5"
+                  style={{ borderRightColor: `${theme.primary}15` }}>
                   <Text className="text-2xl font-bold text-white">
                     {waterGoal - waterConsumed > 0 ? waterGoal - waterConsumed : 0}
                   </Text>
@@ -206,22 +201,20 @@ export default function HydrationTracker() {
             </Animated.View>
 
             {/* Quick Add Buttons */}
-            <Animated.View 
-              entering={FadeInDown.delay(400)}
-              className="mt-6"
-            >
+            <Animated.View entering={FadeInDown.delay(400)} className="mt-6">
               <Text className="mb-4 text-lg font-semibold text-white">Quick Add</Text>
               <View className="flex-row justify-between">
                 {[250, 500, 750, 1000].map((amount) => (
                   <TouchableOpacity
                     key={amount}
-                    onPress={() => router.push({
-                      pathname: '/(main)/calculators/add-hydration',
-                      params: { amount: amount.toString() }
-                    })}
+                    onPress={() =>
+                      router.push({
+                        pathname: '/(main)/calculators/add-hydration',
+                        params: { amount: amount.toString() },
+                      })
+                    }
                     className="items-center rounded-2xl bg-[#2C2D32] px-4 py-4"
-                    style={{ width: '23%' }}
-                  >
+                    style={{ width: '23%' }}>
                     <Plus size={20} color={theme.primary} />
                     <Text className="mt-2 font-semibold text-white">{amount}ml</Text>
                     <Text className="text-xs text-gray-400">{amount / 1000}L</Text>
@@ -231,22 +224,21 @@ export default function HydrationTracker() {
             </Animated.View>
 
             {/* Tips Card */}
-            <Animated.View 
+            <Animated.View
               entering={FadeInDown.delay(600)}
-              className="mt-6 rounded-2xl bg-[#25262B] p-5"
-            >
+              className="mt-6 rounded-2xl bg-[#25262B] p-5">
               <View className="flex-row items-center space-x-2">
                 <TrendingUp size={20} color={theme.primary} />
                 <Text className="text-base font-semibold text-white">Hydration Tip</Text>
               </View>
-              <Text className="mt-2 leading-6 text-sm text-gray-400">
+              <Text className="mt-2 text-sm leading-6 text-gray-400">
                 {percentage < 50
                   ? "You're behind on your hydration goal! Drink water regularly throughout the day."
                   : percentage < 80
-                  ? "Great progress! Keep sipping water to reach your daily goal."
-                  : percentage >= 100
-                  ? "Excellent! You've met your hydration goal today. Stay consistent! 💪"
-                  : "Almost there! A few more glasses and you'll hit your target."}
+                    ? 'Great progress! Keep sipping water to reach your daily goal.'
+                    : percentage >= 100
+                      ? "Excellent! You've met your hydration goal today. Stay consistent! 💪"
+                      : "Almost there! A few more glasses and you'll hit your target."}
               </Text>
             </Animated.View>
           </>

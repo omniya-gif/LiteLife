@@ -1,3 +1,5 @@
+import { useRouter } from 'expo-router';
+import { Search, Heart, AlertCircle } from 'lucide-react-native';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
@@ -13,16 +15,14 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
-import { Search, Heart, AlertCircle } from 'lucide-react-native';
 
-import { useTheme } from '../../../hooks/useTheme';
-import { searchRecipes, getFeaturedRecipes, Recipe } from '../../../services/recipeService';
 import { Header } from '../../../components/home/Header';
-import { BottomNavigation } from '../home/components/BottomNavigation';
 import { useHealthConnect } from '../../../hooks/useHealthConnect';
 import { useHealthConnectWrite } from '../../../hooks/useHealthConnectWrite';
+import { useRecipeFavorites } from '../../../hooks/useRecipeFavorites';
+import { useTheme } from '../../../hooks/useTheme';
+import { searchRecipes, getFeaturedRecipes, Recipe } from '../../../services/recipeService';
+import { BottomNavigation } from '../home/components/BottomNavigation';
 
 const categories = [
   {
@@ -61,7 +61,6 @@ export default function RecipesPage() {
   const router = useRouter();
   const theme = useTheme();
   const [searchVisible, setSearchVisible] = useState(false);
-  const [favorites, setFavorites] = useState<number[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [featuredRecipes, setFeaturedRecipes] = useState<Recipe[]>([]);
   const [searchResults, setSearchResults] = useState<Recipe[]>([]);
@@ -70,7 +69,7 @@ export default function RecipesPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  
+
   // Health Connect
   const nutritionPermissions = [
     { accessType: 'write' as const, recordType: 'Nutrition' },
@@ -79,6 +78,14 @@ export default function RecipesPage() {
   const healthConnect = useHealthConnect(nutritionPermissions);
   const { writeMealToHealthConnect, isWriting } = useHealthConnectWrite();
 
+  // Favorites with Supabase
+  const {
+    addToFavorites,
+    removeFromFavorites,
+    isFavorite,
+    error: favoritesError,
+  } = useRecipeFavorites();
+
   // Animation values
   const headerAnim = useRef(new Animated.Value(0)).current;
   const searchAnim = useRef(new Animated.Value(0)).current;
@@ -86,21 +93,6 @@ export default function RecipesPage() {
   const categoryAnimsRef = useRef(categories.map(() => new Animated.Value(0)));
   const categoryAnims = categoryAnimsRef.current;
   const scrollViewRef = useRef<ScrollView>(null);
-
-  // Load favorites from AsyncStorage
-  useEffect(() => {
-    const loadFavorites = async () => {
-      try {
-        const stored = await AsyncStorage.getItem('favoriteRecipes');
-        if (stored) {
-          setFavorites(JSON.parse(stored));
-        }
-      } catch (error) {
-        console.error('Error loading favorites:', error);
-      }
-    };
-    loadFavorites();
-  }, []);
 
   // Load featured recipes
   useEffect(() => {
@@ -128,7 +120,7 @@ export default function RecipesPage() {
       setSelectedCategory(categoryId);
       const recipes = await searchRecipes('', { type: categoryId }, 12);
       setFeaturedRecipes(recipes);
-      
+
       // Scroll to results after a short delay to let content render
       setTimeout(() => {
         scrollViewRef.current?.scrollTo({ y: 600, animated: true });
@@ -183,17 +175,16 @@ export default function RecipesPage() {
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
 
-  const toggleFavorite = async (id: number) => {
-    const newFavorites = favorites.includes(id)
-      ? favorites.filter((fid) => fid !== id)
-      : [...favorites, id];
-    
-    setFavorites(newFavorites);
-    
+  const toggleFavorite = async (recipe: Recipe) => {
     try {
-      await AsyncStorage.setItem('favoriteRecipes', JSON.stringify(newFavorites));
+      if (isFavorite(recipe.id)) {
+        await removeFromFavorites(recipe.id);
+      } else {
+        await addToFavorites(recipe);
+      }
     } catch (error) {
-      console.error('Error saving favorites:', error);
+      console.error('Error toggling favorite:', error);
+      Alert.alert('Error', 'Failed to update favorites. Please try again.');
     }
   };
 
@@ -231,9 +222,10 @@ export default function RecipesPage() {
     const protein =
       recipeWithNutrition.nutrition?.nutrients?.find((n: any) => n.name === 'Protein')?.amount || 0;
     const carbs =
-      recipeWithNutrition.nutrition?.nutrients?.find((n: any) => n.name === 'Carbohydrates')?.amount ||
-      0;
-    const fat = recipeWithNutrition.nutrition?.nutrients?.find((n: any) => n.name === 'Fat')?.amount || 0;
+      recipeWithNutrition.nutrition?.nutrients?.find((n: any) => n.name === 'Carbohydrates')
+        ?.amount || 0;
+    const fat =
+      recipeWithNutrition.nutrition?.nutrients?.find((n: any) => n.name === 'Fat')?.amount || 0;
 
     if (calories === 0) {
       Alert.alert('No Nutrition Data', 'This recipe does not have calorie information available.');
@@ -362,7 +354,9 @@ export default function RecipesPage() {
                     }}
                     className="rounded-full px-4 py-2"
                     style={{ backgroundColor: `${theme.primary}20` }}>
-                    <Text className="text-base font-medium" style={{ color: theme.primary }}>Cancel</Text>
+                    <Text className="text-base font-medium" style={{ color: theme.primary }}>
+                      Cancel
+                    </Text>
                   </TouchableOpacity>
                 </View>
 
@@ -387,10 +381,14 @@ export default function RecipesPage() {
                             />
                             <View className="flex-1 justify-between p-4">
                               <View>
-                                <Text className="mb-1 text-sm font-medium" style={{ color: theme.primary }}>
+                                <Text
+                                  className="mb-1 text-sm font-medium"
+                                  style={{ color: theme.primary }}>
                                   {recipe.dishTypes?.[0]?.toUpperCase() || 'RECIPE'}
                                 </Text>
-                                <Text className="mb-2 text-lg font-medium text-white" numberOfLines={2}>
+                                <Text
+                                  className="mb-2 text-lg font-medium text-white"
+                                  numberOfLines={2}>
                                   {recipe.title}
                                 </Text>
                                 <Text className="text-sm text-gray-400" numberOfLines={2}>
@@ -405,13 +403,13 @@ export default function RecipesPage() {
                                 <TouchableOpacity
                                   onPress={(e) => {
                                     e.stopPropagation();
-                                    toggleFavorite(recipe.id);
+                                    toggleFavorite(recipe);
                                   }}
                                   className="h-8 w-8 items-center justify-center rounded-full bg-[#2C2D32]">
                                   <Heart
                                     size={16}
-                                    color={favorites.includes(recipe.id) ? theme.primary : 'white'}
-                                    fill={favorites.includes(recipe.id) ? theme.primary : 'transparent'}
+                                    color={isFavorite(recipe.id) ? theme.primary : 'white'}
+                                    fill={isFavorite(recipe.id) ? theme.primary : 'transparent'}
                                   />
                                 </TouchableOpacity>
                               </View>
@@ -441,12 +439,21 @@ export default function RecipesPage() {
         {!searchVisible && (
           <>
             {error && (
-              <View className="mx-4 mt-4 flex-row items-center rounded-xl bg-red-500/10 border border-red-500/30 p-4">
+              <View className="mx-4 mt-4 flex-row items-center rounded-xl border border-red-500/30 bg-red-500/10 p-4">
                 <AlertCircle size={20} color="#ef4444" />
                 <Text className="ml-3 flex-1 text-sm text-red-400">{error}</Text>
                 <TouchableOpacity onPress={loadFeaturedRecipes}>
-                  <Text className="text-sm font-semibold" style={{ color: theme.primary }}>Retry</Text>
+                  <Text className="text-sm font-semibold" style={{ color: theme.primary }}>
+                    Retry
+                  </Text>
                 </TouchableOpacity>
+              </View>
+            )}
+
+            {favoritesError && (
+              <View className="mx-4 mt-4 flex-row items-center rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4">
+                <AlertCircle size={20} color="#eab308" />
+                <Text className="ml-3 flex-1 text-sm text-yellow-400">{favoritesError}</Text>
               </View>
             )}
 
@@ -454,14 +461,17 @@ export default function RecipesPage() {
               {selectedCategory && (
                 <TouchableOpacity
                   onPress={handleClearCategory}
-                  className="mb-4 flex-row items-center"
-                >
-                  <Text className="text-base" style={{ color: theme.primary }}>← Back to Categories</Text>
+                  className="mb-4 flex-row items-center">
+                  <Text className="text-base" style={{ color: theme.primary }}>
+                    ← Back to Categories
+                  </Text>
                 </TouchableOpacity>
               )}
               <View className="mb-4 flex-row items-center justify-between">
                 <Text className="text-2xl font-bold text-white">
-                  {selectedCategory ? categories.find((c) => c.id === selectedCategory)?.title : 'Featured Recipes'}
+                  {selectedCategory
+                    ? categories.find((c) => c.id === selectedCategory)?.title
+                    : 'Featured Recipes'}
                 </Text>
                 {!selectedCategory && (
                   <TouchableOpacity onPress={loadFeaturedRecipes}>
@@ -485,93 +495,99 @@ export default function RecipesPage() {
                 className="mb-8"
                 contentContainerStyle={{ paddingHorizontal: 24 }}>
                 {featuredRecipes.map((recipe, index) => (
-                <Animated.View
-                  key={recipe.id}
-                  style={{
-                    transform: [
-                      {
-                        translateX: featuredAnim.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [100 * (index + 1), 0],
-                        }),
-                      },
-                    ],
-                    opacity: featuredAnim,
-                  }}>
-                  <TouchableOpacity
-                    onPress={() => router.push(`/recipes/${recipe.id}`)}
-                    className="mr-4 overflow-hidden rounded-3xl bg-[#25262B]"
-                    style={{ width: 280 }}>
-                    <View className="relative">
-                      <Image
-                        source={{ uri: recipe.image }}
-                        className="h-40 w-full"
-                        resizeMode="cover"
-                      />
-                      <TouchableOpacity
-                        onPress={() => toggleFavorite(recipe.id)}
-                        className="absolute right-4 top-4 h-10 w-10 items-center justify-center rounded-full bg-black/20">
-                        <Heart
-                          size={20}
-                          color={favorites.includes(recipe.id) ? theme.primary : 'white'}
-                          fill={favorites.includes(recipe.id) ? theme.primary : 'transparent'}
+                  <Animated.View
+                    key={recipe.id}
+                    style={{
+                      transform: [
+                        {
+                          translateX: featuredAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [100 * (index + 1), 0],
+                          }),
+                        },
+                      ],
+                      opacity: featuredAnim,
+                    }}>
+                    <TouchableOpacity
+                      onPress={() => router.push(`/recipes/${recipe.id}`)}
+                      className="mr-4 overflow-hidden rounded-3xl bg-[#25262B]"
+                      style={{ width: 280 }}>
+                      <View className="relative">
+                        <Image
+                          source={{ uri: recipe.image }}
+                          className="h-40 w-full"
+                          resizeMode="cover"
                         />
-                      </TouchableOpacity>
-                    </View>
-
-                    <View className="p-4">
-                      <Text className="mb-2 text-sm font-medium" style={{ color: theme.primary }}>
-                        {recipe.dishTypes?.[0]?.toUpperCase() || 'RECIPE'}
-                      </Text>
-                      <Text className="mb-2 text-lg font-medium text-white" numberOfLines={2}>{recipe.title}</Text>
-                      <Text className="mb-2 text-sm text-gray-400" numberOfLines={2}>
-                        {recipe.summary?.replace(/<[^>]*>?/gm, '') || 'Delicious recipe'}
-                      </Text>
-                      <View className="mb-4 flex-row items-center gap-3">
-                        <Text className="text-xs text-gray-500">⏱️ {recipe.readyInMinutes} min</Text>
-                        <Text className="text-xs text-gray-500">🍽️ {recipe.servings} servings</Text>
+                        <TouchableOpacity
+                          onPress={() => toggleFavorite(recipe)}
+                          className="absolute right-4 top-4 h-10 w-10 items-center justify-center rounded-full bg-black/20">
+                          <Heart
+                            size={20}
+                            color={isFavorite(recipe.id) ? theme.primary : 'white'}
+                            fill={isFavorite(recipe.id) ? theme.primary : 'transparent'}
+                          />
+                        </TouchableOpacity>
                       </View>
-                      
-                      {recipe.calories && recipe.calories > 0 ? (
-                        <View 
-                          className="mb-4 self-start px-3 py-1.5 rounded-full"
-                          style={{ backgroundColor: `${getCalorieColor(recipe.calories)}20` }}
-                        >
-                          <Text 
-                            className="text-sm font-semibold"
-                            style={{ color: getCalorieColor(recipe.calories) }}
-                          >
-                            {recipe.calories > 600 
-                              ? `🔥 ${Math.round(recipe.calories)} cal • High`
-                              : recipe.calories > 400 
-                              ? `🔥 ${Math.round(recipe.calories)} cal • Medium`
-                              : `🔥 ${Math.round(recipe.calories)} cal`}
+
+                      <View className="p-4">
+                        <Text className="mb-2 text-sm font-medium" style={{ color: theme.primary }}>
+                          {recipe.dishTypes?.[0]?.toUpperCase() || 'RECIPE'}
+                        </Text>
+                        <Text className="mb-2 text-lg font-medium text-white" numberOfLines={2}>
+                          {recipe.title}
+                        </Text>
+                        <Text className="mb-2 text-sm text-gray-400" numberOfLines={2}>
+                          {recipe.summary?.replace(/<[^>]*>?/gm, '') || 'Delicious recipe'}
+                        </Text>
+                        <View className="mb-4 flex-row items-center gap-3">
+                          <Text className="text-xs text-gray-500">
+                            ⏱️ {recipe.readyInMinutes} min
+                          </Text>
+                          <Text className="text-xs text-gray-500">
+                            🍽️ {recipe.servings} servings
                           </Text>
                         </View>
-                      ) : null}
 
-                      <View className="flex-row gap-2">
-                        <TouchableOpacity
-                          onPress={() => handleAddCalories(recipe)}
-                          disabled={isWriting}
-                          className="h-12 px-4 items-center justify-center rounded-xl flex-row"
-                          style={{ backgroundColor: `${theme.primary}20` }}>
-                          <Text className="font-semibold text-sm" style={{ color: theme.primary }}>
-                            {isWriting ? 'Adding...' : '+ Add Calories'}
-                          </Text>
-                        </TouchableOpacity>
+                        {recipe.calories && recipe.calories > 0 ? (
+                          <View
+                            className="mb-4 self-start rounded-full px-3 py-1.5"
+                            style={{ backgroundColor: `${getCalorieColor(recipe.calories)}20` }}>
+                            <Text
+                              className="text-sm font-semibold"
+                              style={{ color: getCalorieColor(recipe.calories) }}>
+                              {recipe.calories > 600
+                                ? `🔥 ${Math.round(recipe.calories)} cal • High`
+                                : recipe.calories > 400
+                                  ? `🔥 ${Math.round(recipe.calories)} cal • Medium`
+                                  : `🔥 ${Math.round(recipe.calories)} cal`}
+                            </Text>
+                          </View>
+                        ) : null}
 
-                        <TouchableOpacity
-                          onPress={() => router.push(`/recipes/${recipe.id}`)}
-                          className="h-12 flex-1 items-center justify-center rounded-xl"
-                          style={{ backgroundColor: theme.primary }}>
-                          <Text className="font-medium text-white">View Recipe</Text>
-                        </TouchableOpacity>
+                        <View className="flex-row gap-2">
+                          <TouchableOpacity
+                            onPress={() => handleAddCalories(recipe)}
+                            disabled={isWriting}
+                            className="h-12 flex-row items-center justify-center rounded-xl px-4"
+                            style={{ backgroundColor: `${theme.primary}20` }}>
+                            <Text
+                              className="text-sm font-semibold"
+                              style={{ color: theme.primary }}>
+                              {isWriting ? 'Adding...' : '+ Add Calories'}
+                            </Text>
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            onPress={() => router.push(`/recipes/${recipe.id}`)}
+                            className="h-12 flex-1 items-center justify-center rounded-xl"
+                            style={{ backgroundColor: theme.primary }}>
+                            <Text className="font-medium text-white">View Recipe</Text>
+                          </TouchableOpacity>
+                        </View>
                       </View>
-                    </View>
-                  </TouchableOpacity>
-                </Animated.View>
-              ))}
+                    </TouchableOpacity>
+                  </Animated.View>
+                ))}
               </ScrollView>
             )}
 
@@ -579,39 +595,39 @@ export default function RecipesPage() {
               <View className="px-6">
                 <Text className="mb-4 text-2xl font-bold text-white">Categories</Text>
                 <View className="flex-row flex-wrap justify-between">
-                {categories.map((category, index) => (
-                  <Animated.View
-                    key={category.id}
-                    style={{
-                      width: '48%',
-                      marginBottom: 16,
-                      opacity: categoryAnims[index],
-                      transform: [
-                        {
-                          translateY: categoryAnims[index].interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [50, 0],
-                          }),
-                        },
-                      ],
-                    }}>
-                    <TouchableOpacity
-                      onPress={() => handleCategoryPress(category.id)}
-                      className="overflow-hidden rounded-2xl"
-                      style={{ aspectRatio: 1 }}>
-                      <Image
-                        source={{ uri: category.image }}
-                        className="h-full w-full"
-                        resizeMode="cover"
-                      />
-                      <View className="absolute bottom-0 left-0 right-0 bg-black/30 p-4">
-                        <Text className="text-lg font-bold text-white">{category.title}</Text>
-                      </View>
-                    </TouchableOpacity>
-                  </Animated.View>
-                ))}
+                  {categories.map((category, index) => (
+                    <Animated.View
+                      key={category.id}
+                      style={{
+                        width: '48%',
+                        marginBottom: 16,
+                        opacity: categoryAnims[index],
+                        transform: [
+                          {
+                            translateY: categoryAnims[index].interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [50, 0],
+                            }),
+                          },
+                        ],
+                      }}>
+                      <TouchableOpacity
+                        onPress={() => handleCategoryPress(category.id)}
+                        className="overflow-hidden rounded-2xl"
+                        style={{ aspectRatio: 1 }}>
+                        <Image
+                          source={{ uri: category.image }}
+                          className="h-full w-full"
+                          resizeMode="cover"
+                        />
+                        <View className="absolute bottom-0 left-0 right-0 bg-black/30 p-4">
+                          <Text className="text-lg font-bold text-white">{category.title}</Text>
+                        </View>
+                      </TouchableOpacity>
+                    </Animated.View>
+                  ))}
+                </View>
               </View>
-            </View>
             )}
           </>
         )}

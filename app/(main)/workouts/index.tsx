@@ -48,6 +48,7 @@ const workoutTypes = [
     duration: '50 Minutes',
     color: '#FFB347',
     image: 'https://images.unsplash.com/photo-1601422407692-ec4eeec1d9b3',
+    bodyPart: 'cardio',
   },
   {
     id: 'arms',
@@ -56,14 +57,25 @@ const workoutTypes = [
     duration: '35 Minutes',
     color: '#66CDAA',
     image: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e',
+    bodyPart: 'upper arms',
   },
   {
-    id: 'yoga',
-    title: 'Yoga',
+    id: 'chest',
+    title: 'Chest',
     exercises: 8,
     duration: '40 Minutes',
-    color: '#DDA0DD',
-    image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b',
+    color: '#FF6B6B',
+    bodyPart: 'chest',
+    image: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b',
+  },
+  {
+    id: 'back',
+    title: 'Back',
+    exercises: 7,
+    duration: '45 Minutes',
+    color: '#4ECDC4',
+    bodyPart: 'back',
+    image: 'https://images.unsplash.com/photo-1532029837206-abbe2b7620e3',
   },
 ];
 
@@ -150,7 +162,7 @@ export default function WorkoutsPage() {
           <Animated.View entering={FadeInDown.delay(600)} className="mt-8 mb-6">
             <View className="mb-5 flex-row items-center justify-between">
               <Text className="text-2xl font-bold text-white">Discover Workouts</Text>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={() => router.push('/workouts/exercises')}>
                 <Text style={{ color: theme.primary }} className="font-medium">
                   See All
                 </Text>
@@ -164,7 +176,13 @@ export default function WorkoutsPage() {
                   style={{ width: '48%' }}
                   className="mb-4">
                   <TouchableOpacity
-                    onPress={() => router.push(`/workouts/${workout.id}`)}
+                    onPress={() => {
+                      // Navigate to exercises page with body part filter
+                      router.push({
+                        pathname: '/workouts/exercises',
+                        params: { bodyPart: workout.bodyPart }
+                      });
+                    }}
                     className="overflow-hidden rounded-3xl bg-[#25262B]">
                     <Image
                       source={{ uri: workout.image }}

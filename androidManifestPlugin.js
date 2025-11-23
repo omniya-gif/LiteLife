@@ -2,7 +2,7 @@ const { withAndroidManifest } = require('@expo/config-plugins');
 
 module.exports = function androidManifestPlugin(config) {
   return withAndroidManifest(config, async (config) => {
-    let androidManifest = config.modResults.manifest;
+    const androidManifest = config.modResults.manifest;
 
     // Add queries section if it doesn't exist
     if (!androidManifest.queries) {
@@ -11,15 +11,13 @@ module.exports = function androidManifestPlugin(config) {
 
     // Add Health Connect package query
     androidManifest.queries.push({
-      package: [
-        { $: { 'android:name': 'com.google.android.apps.healthconnect' } }
-      ],
+      package: [{ $: { 'android:name': 'com.google.android.apps.healthconnect' } }],
       intent: [
         {
           $: {},
-          action: [{ $: { 'android:name': 'androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE' } }]
-        }
-      ]
+          action: [{ $: { 'android:name': 'androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE' } }],
+        },
+      ],
     });
 
     // Add uses-permission elements if they don't exist
@@ -36,13 +34,13 @@ module.exports = function androidManifestPlugin(config) {
       'android.permission.health.READ_NUTRITION',
     ];
 
-    healthPermissions.forEach(permission => {
+    healthPermissions.forEach((permission) => {
       const exists = androidManifest['uses-permission'].some(
-        p => p.$['android:name'] === permission
+        (p) => p.$['android:name'] === permission
       );
       if (!exists) {
         androidManifest['uses-permission'].push({
-          $: { 'android:name': permission }
+          $: { 'android:name': permission },
         });
       }
     });
@@ -61,18 +59,18 @@ module.exports = function androidManifestPlugin(config) {
         'android:launchMode': 'singleTask',
         'android:windowSoftInputMode': 'adjustResize',
         'android:theme': '@style/Theme.App.SplashScreen',
-        'android:exported': 'true'
+        'android:exported': 'true',
       },
       'intent-filter': [
         {
           $: {},
           action: [{ $: { 'android:name': 'android.intent.action.MAIN' } }],
-          category: [{ $: { 'android:name': 'android.intent.category.LAUNCHER' } }]
+          category: [{ $: { 'android:name': 'android.intent.category.LAUNCHER' } }],
         },
         {
-          action: [{ $: { 'android:name': 'androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE' } }]
-        }
-      ]
+          action: [{ $: { 'android:name': 'androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE' } }],
+        },
+      ],
     };
 
     // Add or update the MainActivity in the manifest
@@ -81,7 +79,7 @@ module.exports = function androidManifestPlugin(config) {
     } else {
       androidManifest.application[0].activity[0] = {
         ...androidManifest.application[0].activity[0],
-        ...mainActivity
+        ...mainActivity,
       };
     }
 

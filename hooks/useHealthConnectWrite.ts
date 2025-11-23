@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { insertRecords } from 'react-native-health-connect';
 import { Platform } from 'react-native';
+import { insertRecords } from 'react-native-health-connect';
 
 interface MealData {
   name: string;
@@ -32,12 +32,12 @@ export const useHealthConnectWrite = () => {
       const startTime = mealData.timestamp || new Date().toISOString();
       // endTime must be after startTime, even if just 1 second
       const endTime = new Date(new Date(startTime).getTime() + 1000).toISOString();
-      
+
       // Prepare nutrition record for Health Connect
       const nutritionRecord: any = {
         recordType: 'Nutrition',
-        startTime: startTime,
-        endTime: endTime,
+        startTime,
+        endTime,
         energy: {
           value: mealData.calories,
           unit: 'kilocalories',
@@ -92,8 +92,8 @@ export const useHealthConnectWrite = () => {
         const endTime = new Date(new Date(startTime).getTime() + 1000).toISOString();
         const record: any = {
           recordType: 'Nutrition',
-          startTime: startTime,
-          endTime: endTime,
+          startTime,
+          endTime,
           energy: {
             value: meal.calories,
             unit: 'kilocalories',
