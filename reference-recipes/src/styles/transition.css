@@ -1,0 +1,32 @@
+/* Page Transition Styles */
+.view {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.view--2 {
+  pointer-events: none;
+  opacity: 0;
+}
+
+.view--open {
+  pointer-events: auto;
+  opacity: 1;
+}
+
+.overlay {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.overlay__path {
+  fill: #065f46;
+  stroke-width: 2px;
+  stroke: #fbbf24;
+}

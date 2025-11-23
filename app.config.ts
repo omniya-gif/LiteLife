@@ -50,9 +50,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ],
   },
   extra: {
-    supabaseUrl: 'https://zvbgtmlxzhiuxmimcqpd.supabase.co',
-    supabaseAnonKey:
+    supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://zvbgtmlxzhiuxmimcqpd.supabase.co',
+    supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp2Ymd0bWx4emhpdXhtaW1jcXBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEwNDgxMDUsImV4cCI6MjA3NjYyNDEwNX0.w4FTwYvZqGLDXuI3po1AjPErMHJfRvwN0V1Eu1Le1Pw',
+    EXPO_PUBLIC_RAPID_API_KEY: process.env.EXPO_PUBLIC_RAPID_API_KEY,
+    EXPO_PUBLIC_RAPID_API_HOST: process.env.EXPO_PUBLIC_RAPID_API_HOST,
     eas: {
       projectId: 'ce7f6b25-f00d-4d0d-b769-c6bd5e34bc3b',
     },

@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { Search, Heart, Info, ChevronRight } from 'lucide-react-native';
+import { Search, Heart, Info, ChevronRight, AlertCircle } from 'lucide-react-native';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View,
@@ -10,74 +10,48 @@ import {
   TextInput,
   Animated,
   Easing,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Header } from '../../../components/home/Header';
 import { BottomNavigation } from '../home/components/BottomNavigation';
 import { TabBar } from '../home/components/TabBar';
 import { useTheme } from '../../../hooks/useTheme';
+import { searchRecipes, getFeaturedRecipes, Recipe } from '../../../services/recipeService';
 
 const categories = [
   {
-    id: 'main',
+    id: 'main course',
     title: 'Main Course',
     image: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=800',
   },
   {
-    id: 'vegetables',
-    title: 'Vegetables',
+    id: 'side dish',
+    title: 'Side Dishes',
     image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800',
   },
   {
-    id: 'soups',
+    id: 'soup',
     title: 'Soups',
     image: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=800',
   },
   {
-    id: 'desserts',
+    id: 'dessert',
     title: 'Desserts',
     image: 'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=800',
   },
   {
-    id: 'pastas',
-    title: 'Pastas',
-    image: 'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=800',
+    id: 'breakfast',
+    title: 'Breakfast',
+    image: 'https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=800',
   },
   {
     id: 'bread',
     title: 'Bread',
     image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800',
-  },
-];
-
-const featuredRecipes = [
-  {
-    id: 1,
-    title: 'Tartine Bread',
-    image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800',
-    duration: '48 minutes',
-    type: 'Guided',
-    summary: 'A classic sourdough bread recipe that brings the artisanal bakery experience home.',
-    dishTypes: ['breakfast', 'snack'],
-  },
-  {
-    id: 2,
-    title: 'Tomato Soup',
-    image: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=800',
-    duration: '30 minutes',
-    type: 'Listed',
-    summary: 'Creamy tomato soup with fresh basil and garlic croutons.',
-    dishTypes: ['lunch', 'dinner'],
-  },
-  {
-    id: 3,
-    title: 'Chicken Noodles',
-    image: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=800',
-    duration: '30 minutes',
-    type: 'Listed',
-    summary: 'Classic chicken noodle soup with tender vegetables and herbs.',
-    dishTypes: ['lunch', 'dinner'],
   },
 ];
 
@@ -87,16 +61,12 @@ export default function RecipesPage() {
   const [searchVisible, setSearchVisible] = useState(false);
   const [favorites, setFavorites] = useState<number[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-
-  const filteredRecipes = useMemo(() => {
-    if (!searchQuery) return [];
-    return featuredRecipes.filter(
-      (recipe) =>
-        recipe.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        recipe.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        recipe.dishTypes.some((type) => type.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
-  }, [searchQuery]);
+  const [featuredRecipes, setFeaturedRecipes] = useState<Recipe[]>([]);
+  const [searchResults, setSearchResults] = useState<Recipe[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searching, setSearching] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Animation values
   const headerAnim = useRef(new Animated.Value(0)).current;
@@ -104,8 +74,81 @@ export default function RecipesPage() {
   const featuredAnim = useRef(new Animated.Value(0)).current;
   const categoryAnims = categories.map(() => useRef(new Animated.Value(0)).current);
 
-  const toggleFavorite = (id: number) => {
-    setFavorites((prev) => (prev.includes(id) ? prev.filter((fid) => fid !== id) : [...prev, id]));
+  // Load favorites from AsyncStorage
+  useEffect(() => {
+    const loadFavorites = async () => {
+      try {
+        const stored = await AsyncStorage.getItem('favoriteRecipes');
+        if (stored) {
+          setFavorites(JSON.parse(stored));
+        }
+      } catch (error) {
+        console.error('Error loading favorites:', error);
+      }
+    };
+    loadFavorites();
+  }, []);
+
+  // Load featured recipes
+  useEffect(() => {
+    loadFeaturedRecipes();
+  }, []);
+
+  const loadFeaturedRecipes = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const recipes = await getFeaturedRecipes(6);
+      setFeaturedRecipes(recipes);
+    } catch (error) {
+      console.error('Error loading featured recipes:', error);
+      setError('Failed to load recipes. Please check your internet connection.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadFeaturedRecipes();
+    setRefreshing(false);
+  };
+
+  // Search recipes with debounce
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        setSearching(true);
+        const results = await searchRecipes(searchQuery, {}, 12);
+        setSearchResults(results);
+      } catch (error) {
+        console.error('Error searching recipes:', error);
+        setSearchResults([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
+
+  const toggleFavorite = async (id: number) => {
+    const newFavorites = favorites.includes(id)
+      ? favorites.filter((fid) => fid !== id)
+      : [...favorites, id];
+    
+    setFavorites(newFavorites);
+    
+    try {
+      await AsyncStorage.setItem('favoriteRecipes', JSON.stringify(newFavorites));
+    } catch (error) {
+      console.error('Error saving favorites:', error);
+    }
   };
 
   useEffect(() => {
@@ -168,7 +211,17 @@ export default function RecipesPage() {
         />
       </Animated.View>
 
-      <ScrollView className="flex-1">
+      <ScrollView 
+        className="flex-1"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={theme.primary}
+            colors={[theme.primary]}
+          />
+        }
+      >
         <View className="px-4 pt-12">
           <Animated.View
             style={{
@@ -207,48 +260,58 @@ export default function RecipesPage() {
 
                 {searchQuery.length > 0 && (
                   <ScrollView className="mt-4" contentContainerStyle={{ gap: 16 }}>
-                    {filteredRecipes.map((recipe) => (
-                      <TouchableOpacity
-                        key={recipe.id}
-                        onPress={() => router.push(`/recipes/${recipe.id}`)}
-                        className="overflow-hidden rounded-3xl bg-[#25262B]">
-                        <View className="flex-row">
-                          <Image
-                            source={{ uri: recipe.image }}
-                            className="h-32 w-32"
-                            resizeMode="cover"
-                          />
-                          <View className="flex-1 justify-between p-4">
-                            <View>
-                              <Text className="mb-1 text-sm font-medium" style={{ color: theme.primary }}>
-                                {recipe.dishTypes[0]?.toUpperCase()}
-                              </Text>
-                              <Text className="mb-2 text-lg font-medium text-white">
-                                {recipe.title}
-                              </Text>
-                              <Text className="text-sm text-gray-400" numberOfLines={2}>
-                                {recipe.summary}
-                              </Text>
-                            </View>
+                    {searching ? (
+                      <View className="items-center py-8">
+                        <ActivityIndicator size="large" color={theme.primary} />
+                        <Text className="mt-2 text-gray-400">Searching recipes...</Text>
+                      </View>
+                    ) : searchResults.length > 0 ? (
+                      searchResults.map((recipe) => (
+                        <TouchableOpacity
+                          key={recipe.id}
+                          onPress={() => router.push(`/recipes/${recipe.id}`)}
+                          className="overflow-hidden rounded-3xl bg-[#25262B]">
+                          <View className="flex-row">
+                            <Image
+                              source={{ uri: recipe.image }}
+                              className="h-32 w-32"
+                              resizeMode="cover"
+                            />
+                            <View className="flex-1 justify-between p-4">
+                              <View>
+                                <Text className="mb-1 text-sm font-medium" style={{ color: theme.primary }}>
+                                  {recipe.dishTypes?.[0]?.toUpperCase() || 'RECIPE'}
+                                </Text>
+                                <Text className="mb-2 text-lg font-medium text-white" numberOfLines={2}>
+                                  {recipe.title}
+                                </Text>
+                                <Text className="text-sm text-gray-400" numberOfLines={2}>
+                                  {recipe.summary?.replace(/<[^>]*>?/gm, '') || 'Delicious recipe'}
+                                </Text>
+                              </View>
 
-                            <View className="flex-row items-center justify-between">
-                              <Text className="text-sm text-gray-400">{recipe.duration}</Text>
-                              <TouchableOpacity
-                                onPress={() => toggleFavorite(recipe.id)}
-                                className="h-8 w-8 items-center justify-center rounded-full bg-[#2C2D32]">
-                                <Heart
-                                  size={16}
-                                  color={favorites.includes(recipe.id) ? theme.primary : 'white'}
-                                  fill={favorites.includes(recipe.id) ? theme.primary : 'transparent'}
-                                />
-                              </TouchableOpacity>
+                              <View className="flex-row items-center justify-between">
+                                <Text className="text-sm text-gray-400">
+                                  {recipe.readyInMinutes} mins • {recipe.calories || 0} cal
+                                </Text>
+                                <TouchableOpacity
+                                  onPress={(e) => {
+                                    e.stopPropagation();
+                                    toggleFavorite(recipe.id);
+                                  }}
+                                  className="h-8 w-8 items-center justify-center rounded-full bg-[#2C2D32]">
+                                  <Heart
+                                    size={16}
+                                    color={favorites.includes(recipe.id) ? theme.primary : 'white'}
+                                    fill={favorites.includes(recipe.id) ? theme.primary : 'transparent'}
+                                  />
+                                </TouchableOpacity>
+                              </View>
                             </View>
                           </View>
-                        </View>
-                      </TouchableOpacity>
-                    ))}
-
-                    {filteredRecipes.length === 0 && (
+                        </TouchableOpacity>
+                      ))
+                    ) : (
                       <View className="items-center py-8">
                         <Text className="text-gray-400">No recipes found</Text>
                       </View>
@@ -269,21 +332,37 @@ export default function RecipesPage() {
 
         {!searchVisible && (
           <>
+            {error && (
+              <View className="mx-4 mt-4 flex-row items-center rounded-xl bg-red-500/10 border border-red-500/30 p-4">
+                <AlertCircle size={20} color="#ef4444" />
+                <Text className="ml-3 flex-1 text-sm text-red-400">{error}</Text>
+                <TouchableOpacity onPress={loadFeaturedRecipes}>
+                  <Text className="text-sm font-semibold" style={{ color: theme.primary }}>Retry</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
             <View className="px-6 pt-6">
               <View className="mb-4 flex-row items-center justify-between">
                 <Text className="text-2xl font-bold text-white">Featured Recipes</Text>
-                <TouchableOpacity>
-                  <Text className="text-base font-medium" style={{ color: theme.primary }}>See All</Text>
+                <TouchableOpacity onPress={loadFeaturedRecipes}>
+                  <Text className="text-base font-medium" style={{ color: theme.primary }}>Refresh</Text>
                 </TouchableOpacity>
               </View>
             </View>
 
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              className="mb-8"
-              contentContainerStyle={{ paddingHorizontal: 24 }}>
-              {featuredRecipes.map((recipe, index) => (
+            {loading ? (
+              <View className="items-center py-12">
+                <ActivityIndicator size="large" color={theme.primary} />
+                <Text className="mt-2 text-gray-400">Loading recipes...</Text>
+              </View>
+            ) : (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                className="mb-8"
+                contentContainerStyle={{ paddingHorizontal: 24 }}>
+                {featuredRecipes.map((recipe, index) => (
                 <Animated.View
                   key={recipe.id}
                   style={{
@@ -320,26 +399,27 @@ export default function RecipesPage() {
 
                     <View className="p-4">
                       <Text className="mb-2 text-sm font-medium" style={{ color: theme.primary }}>
-                        {recipe.dishTypes[0]?.toUpperCase()}
+                        {recipe.dishTypes?.[0]?.toUpperCase() || 'RECIPE'}
                       </Text>
-                      <Text className="mb-2 text-lg font-medium text-white">{recipe.title}</Text>
-                      <Text className="mb-4 text-sm text-gray-400" numberOfLines={2}>
-                        {recipe.summary}
+                      <Text className="mb-2 text-lg font-medium text-white" numberOfLines={2}>{recipe.title}</Text>
+                      <Text className="mb-2 text-sm text-gray-400" numberOfLines={2}>
+                        {recipe.summary?.replace(/<[^>]*>?/gm, '') || 'Delicious recipe'}
                       </Text>
+                      <View className="mb-4 flex-row items-center gap-3">
+                        <Text className="text-xs text-gray-500">⏱️ {recipe.readyInMinutes} min</Text>
+                        <Text className="text-xs text-gray-500">🍽️ {recipe.servings} servings</Text>
+                        {recipe.calories && recipe.calories > 0 && (
+                          <Text className="text-xs text-gray-500">🔥 {Math.round(recipe.calories)} cal</Text>
+                        )}
+                      </View>
 
                       {/* Action Buttons */}
                       <View className="flex-row justify-between">
                         <TouchableOpacity
-                          onPress={() => router.push('/journal')}
+                          onPress={() => router.push('/nutrition/meal-planner')}
                           className="mr-2 h-12 flex-1 items-center justify-center rounded-xl"
                           style={{ backgroundColor: theme.primary }}>
-                          <Text className="font-medium text-white">Add to Journal</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                          onPress={() => router.push(`/recipes/${recipe.id}/nutrition`)}
-                          className="mx-2 h-12 w-12 items-center justify-center rounded-xl bg-[#2C2D32]">
-                          <Info size={20} color={theme.primary} />
+                          <Text className="font-medium text-white">Add to Meal Plan</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -352,7 +432,8 @@ export default function RecipesPage() {
                   </TouchableOpacity>
                 </Animated.View>
               ))}
-            </ScrollView>
+              </ScrollView>
+            )}
 
             <View className="px-6">
               <Text className="mb-4 text-2xl font-bold text-white">Categories</Text>

@@ -1,6 +1,6 @@
 import { useRouter, usePathname } from 'expo-router';
 import LottieView from 'lottie-react-native';
-import { Home, Activity, Users, Heart } from 'lucide-react-native';
+import { Home, Activity, CalendarDays, Heart, Users } from 'lucide-react-native';
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useTheme } from '../../../../hooks/useTheme';
@@ -49,12 +49,12 @@ export const BottomNavigation = () => {
             style={{ width: 64, height: 64, marginTop: -16 }}
           />
         </TouchableOpacity>
-        <TouchableOpacity className="items-center" onPress={() => router.push('/profile')}>
-          <Users size={24} color={isActive('/profile') ? theme.primary : '#666'} />
+        <TouchableOpacity className="items-center" onPress={() => router.push('/nutrition/meal-planner')}>
+          <CalendarDays size={24} color={isActive('/nutrition/meal-planner') ? theme.primary : '#666'} />
           <Text
-            className="mt-1 text-sm"
-            style={{ color: isActive('/profile') ? theme.primary : '#9CA3AF' }}>
-            Profile
+            className="mt-1 text-xs"
+            style={{ color: isActive('/nutrition/meal-planner') ? theme.primary : '#9CA3AF' }}>
+            Meals
           </Text>
         </TouchableOpacity>
         <TouchableOpacity className="items-center" onPress={() => router.push('/favorites')}>
