@@ -1,397 +1,305 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, Dimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Share } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft, Heart, Clock, Users, ChefHat, Star, Info } from 'lucide-react-native';
+import { ArrowLeft, Heart, Clock, Users, Share2, AlertCircle, ChevronRight } from 'lucide-react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+
 import { useTheme } from '../../../../hooks/useTheme';
+import { getRecipeDetails, getSimilarRecipes, Recipe } from '../../../../services/recipeService';
 
-const { width } = Dimensions.get('window');
-
-const mockRecipe = {
-  id: 1,
-  title: 'Chocolate and Szechuan Peppercorn Brownies',
-  image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c',
-  author: 'Foodista.com',
-  rating: 4.2,
-  likes: 24,
-  prepTime: '45 Minutes',
-  servings: 16,
-  pricePerServing: 0.45,
-  healthScore: 2,
-  spoonacularScore: 39.2,
-  summary: 'Chocolate and Szechuan Peppercorn Brownies is an American dessert. This recipe serves 16 and costs 45 cents per serving. One serving contains 304 calories, 5g of protein, and 15g of fat.',
-  ingredients: [
-    { name: 'brown sugar', amount: '¾', unit: 'cup' },
-    { name: 'butter', amount: '185', unit: 'gr' },
-    { name: 'cinnamon stick', amount: '1', unit: '', notes: 'broken' },
-    { name: 'eggs', amount: '3', unit: '', notes: 'beaten' },
-    { name: 'espresso', amount: '1', unit: 'tablespoon' },
-    { name: 'all-purpose flour', amount: '3', unit: 'cups' },
-    { name: 'granulated sugar', amount: '½', unit: 'cup' },
-    { name: 'heavy cream', amount: '1/3', unit: 'cup' },
-    { name: 'kosher salt', amount: '¼', unit: 'teaspoon' },
-    { name: 'milk', amount: '1', unit: 'tablespoon' },
-    { name: 'Szechuan peppercorns', amount: '1', unit: 'tablespoon' },
-    { name: 'semisweet chocolate chips', amount: '1/3', unit: 'cup' },
-    { name: 'unsweetened chocolate', amount: '1', unit: 'ounce' },
-    { name: 'unsweetened cocoa powder', amount: '¾', unit: 'cup' },
-    { name: 'vanilla extract', amount: '2', unit: 'teaspoons' }
-  ],
-  instructions: [
-    {
-      step: 'Preheat oven to 350',
-      image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136'
-    },
-    {
-      step: 'Grease an 8x8 baking dish',
-      image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136'
-    },
-    {
-      step: 'In a large saut pan over medium heat, melt the butter and add the peppercorns and the pieces of cinnamon stick',
-      image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136'
-    },
-    {
-      step: 'Meanwhile, in a double boiler or microwave, melt the unsweetened chocolate and semisweet chocolate together',
-      image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136'
-    },
-    {
-      step: 'Stir in the espresso to the melted chocolate',
-      image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136'
-    },
-    {
-      step: 'Once the butter stops foaming and you can see browned bits at the bottom of the pan (about 5 minutes), take off heat and remove the peppercorns and cinnamon stick',
-      image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136'
-    },
-    {
-      step: 'It may be easier to strain the contents of the pan and then return just the butter to it',
-      image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136'
-    },
-    {
-      step: 'Stir the sugars, milk, vanilla, and salt into the butter in the pan',
-      image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136'
-    },
-    {
-      step: 'Then stir in the cocoa powder and chocolate and espresso mixture',
-      image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136'
-    },
-    {
-      step: 'Beat in the eggs, and then lastly, stir in the flour',
-      image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136'
-    },
-    {
-      step: 'Bake in greased pan for about 25-30 minutes, until a tester comes out clean',
-      image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136'
-    },
-    {
-      step: 'Feel free to underbake them a bit',
-      image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136'
-    }
-  ]
-};
-
-const similarRecipes = [
-  {
-    id: 2,
-    title: 'Dark Chocolate Truffles',
-    image: 'https://images.unsplash.com/photo-1599599810769-bcde5a160d32',
-    duration: '35 minutes',
-    rating: 4.8
-  },
-  // ...other similar recipes
-];
-
-const recipeVideos = [
-  {
-    id: 1,
-    title: 'How to Make Perfect Brownies',
-    thumbnail: 'https://images.unsplash.com/photo-1589375025852-a66cdd127efb',
-    duration: '5:24',
-    views: '125K'
-  },
-  // ...other recipe videos
-];
-
-const tabs = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'ingredients', label: 'Ingredients' },
-  { id: 'instructions', label: 'Instructions' },
-  { id: 'nutrition', label: 'Nutrition' }
-];
-
-export default function RecipeDetailsPage() {
+export default function RecipeDetailPage() {
   const router = useRouter();
   const theme = useTheme();
-  const [activeTab, setActiveTab] = useState('overview');
+  const { id } = useLocalSearchParams<{ id: string }>();
+  
+  const [recipe, setRecipe] = useState<any>(null);
+  const [similarRecipes, setSimilarRecipes] = useState<Recipe[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
 
-  const renderSimilarRecipes = () => (
-    <View className="mt-8">
-      <Text className="text-white text-xl font-medium mb-4">Similar Recipes</Text>
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        className="-mx-6 px-6"
-      >
-        {similarRecipes.map((recipe) => (
-          <TouchableOpacity 
-            key={recipe.id}
-            onPress={() => router.push(`/recipes/${recipe.id}`)}
-            className="mr-4 w-[200px]"
-          >
-            <View className="rounded-2xl overflow-hidden bg-[#25262B]">
-              <Image 
-                source={{ uri: recipe.image }}
-                className="w-full h-[120px]"
-                resizeMode="cover"
-              />
-              <View className="p-3">
-                <Text className="text-white font-medium mb-1">{recipe.title}</Text>
-                <View className="flex-row items-center justify-between">
-                  <View className="flex-row items-center">
-                    <Clock size={14} color={theme.primary} />
-                    <Text className="text-gray-400 text-sm ml-1">{recipe.duration}</Text>
-                  </View>
-                  <View className="flex-row items-center">
-                    <Star size={14} color={theme.primary} />
-                    <Text className="text-gray-400 text-sm ml-1">{recipe.rating}</Text>
-                  </View>
-                </View>
-              </View>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-    </View>
-  );
-
-  const renderRecipeVideos = () => (
-    <View className="mt-8">
-      <Text className="text-white text-xl font-medium mb-4">Recipe Videos</Text>
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        className="-mx-6 px-6"
-      >
-        {recipeVideos.map((video) => (
-          <TouchableOpacity 
-            key={video.id}
-            className="mr-4 w-[280px]"
-          >
-            <View className="rounded-2xl overflow-hidden">
-              <View className="relative">
-                <Image 
-                  source={{ uri: video.thumbnail }}
-                  className="w-full h-[160px]"
-                  resizeMode="cover"
-                />
-                <View className="absolute bottom-2 right-2 bg-black/60 px-2 py-1 rounded-md">
-                  <Text className="text-white text-xs">{video.duration}</Text>
-                </View>
-              </View>
-              <View className="bg-[#25262B] p-3">
-                <Text className="text-white font-medium mb-1">{video.title}</Text>
-                <Text className="text-gray-400 text-sm">{video.views} views</Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-    </View>
-  );
-
-  const renderInstructions = () => (
-    <View className="space-y-8">
-      {mockRecipe.instructions.map((instruction, index) => (
-        <View key={index} className="space-y-4">
-          <View className="flex-row">
-            <View className="h-8 w-8 rounded-full items-center justify-center mr-4" style={{ backgroundColor: theme.primary }}>
-              <Text className="text-[#1A1B1E] font-medium">{index + 1}</Text>
-            </View>
-            <Text className="text-gray-400 flex-1">{instruction.step}</Text>
-          </View>
-          {instruction.image && (
-            <Image 
-              source={{ uri: instruction.image }}
-              className="w-full h-[200px] rounded-2xl"
-              resizeMode="cover"
-            />
-          )}
-        </View>
-      ))}
-    </View>
-  );
-
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'overview':
-        return (
-          <View className="space-y-6">
-            <Text className="text-gray-400 leading-relaxed">{mockRecipe.summary}</Text>
-            
-            {/* Stats Grid */}
-            <View className="flex-row flex-wrap">
-              <View className="w-1/2 p-4 border-r border-b border-[#2C2D32]">
-                <View className="flex-row items-center">
-                  <Clock size={20} color={theme.primary} />
-                  <Text className="text-white ml-2">Prep Time</Text>
-                </View>
-                <Text className="text-gray-400 mt-1">{mockRecipe.prepTime}</Text>
-              </View>
-              <View className="w-1/2 p-4 border-b border-[#2C2D32]">
-                <View className="flex-row items-center">
-                  <Users size={20} color={theme.primary} />
-                  <Text className="text-white ml-2">Servings</Text>
-                </View>
-                <Text className="text-gray-400 mt-1">{mockRecipe.servings} People</Text>
-              </View>
-              <View className="w-1/2 p-4 border-r border-[#2C2D32]">
-                <View className="flex-row items-center">
-                  <Star size={20} color={theme.primary} />
-                  <Text className="text-white ml-2">Rating</Text>
-                </View>
-                <Text className="text-gray-400 mt-1">{mockRecipe.rating}/5</Text>
-              </View>
-              <View className="w-1/2 p-4">
-                <View className="flex-row items-center">
-                  <Info size={20} color={theme.primary} />
-                  <Text className="text-white ml-2">Price</Text>
-                </View>
-                <Text className="text-gray-400 mt-1">${mockRecipe.pricePerServing}/serving</Text>
-              </View>
-            </View>
-            {renderSimilarRecipes()}
-            {renderRecipeVideos()}
-          </View>
-        );
-      
-      case 'ingredients':
-        return (
-          <View className="space-y-4">
-            {mockRecipe.ingredients.map((ingredient, index) => (
-              <View 
-                key={index}
-                className="flex-row items-center justify-between py-4 border-b border-[#2C2D32]"
-              >
-                <Text className="text-white flex-1">{ingredient.name}</Text>
-                <Text className="text-gray-400">
-                  {ingredient.amount} {ingredient.unit}
-                  {ingredient.notes && ` (${ingredient.notes})`}
-                </Text>
-              </View>
-            ))}
-          </View>
-        );
-      
-      case 'instructions':
-         return renderInstructions();
-      
-      case 'nutrition':
-        return (
-          <TouchableOpacity 
-            onPress={() => router.push(`/recipes/${mockRecipe.id}/nutrition`)}
-            className="bg-[#25262B] rounded-2xl p-6"
-          >
-            <Text className="text-white text-lg font-medium mb-4">Nutrition Facts</Text>
-            <View className="flex-row justify-between mb-4">
-              <Text className="text-gray-400">Health Score</Text>
-              <Text style={{ color: theme.primary }}>{mockRecipe.healthScore}/100</Text>
-            </View>
-            <View className="flex-row justify-between">
-              <Text className="text-gray-400">Spoonacular Score</Text>
-              <Text style={{ color: theme.primary }}>{mockRecipe.spoonacularScore}/100</Text>
-            </View>
-            <Text className="text-gray-400 text-sm mt-4">
-              Tap to view detailed nutrition information
-            </Text>
-          </TouchableOpacity>
-        );
+  useEffect(() => {
+    if (id) {
+      fetchRecipeData();
     }
+  }, [id]);
+
+  const fetchRecipeData = async () => {
+    if (!id) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const recipeData = await getRecipeDetails(parseInt(id));
+      setRecipe(recipeData);
+      
+      // Check if recipe is in favorites
+      const stored = await AsyncStorage.getItem('favoriteRecipes');
+      const favorites = stored ? JSON.parse(stored) : [];
+      setIsFavorite(favorites.includes(parseInt(id)));
+      
+      // Get similar recipes
+      const similar = await getSimilarRecipes(parseInt(id), 3);
+      setSimilarRecipes(similar);
+    } catch (err) {
+      console.error('Error fetching recipe:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load recipe details');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleFavorite = async () => {
+    if (!id) return;
+    
+    const recipeId = parseInt(id);
+    const stored = await AsyncStorage.getItem('favoriteRecipes');
+    let favorites = stored ? JSON.parse(stored) : [];
+    
+    if (isFavorite) {
+      favorites = favorites.filter((favId: number) => favId !== recipeId);
+    } else {
+      favorites.push(recipeId);
+    }
+    
+    await AsyncStorage.setItem('favoriteRecipes', JSON.stringify(favorites));
+    setIsFavorite(!isFavorite);
+  };
+
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: `Check out this recipe: ${recipe?.title}`,
+        title: recipe?.title || 'Recipe',
+      });
+    } catch (error) {
+      console.error('Error sharing:', error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView className="flex-1 bg-[#1A1B1E]">
+        <View className="flex-row items-center justify-between px-4 py-3 border-b border-gray-800">
+          <TouchableOpacity onPress={() => router.back()}>
+            <ArrowLeft size={24} color="white" />
+          </TouchableOpacity>
+          <Text className="text-xl font-bold text-white">Recipe</Text>
+          <View style={{ width: 24 }} />
+        </View>
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color={theme.primary} />
+          <Text className="mt-4 text-gray-400">Loading recipe...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error || !recipe) {
+    return (
+      <SafeAreaView className="flex-1 bg-[#1A1B1E]">
+        <View className="flex-row items-center justify-between px-4 py-3 border-b border-gray-800">
+          <TouchableOpacity onPress={() => router.back()}>
+            <ArrowLeft size={24} color="white" />
+          </TouchableOpacity>
+          <Text className="text-xl font-bold text-white">Error</Text>
+          <View style={{ width: 24 }} />
+        </View>
+        <View className="flex-1 items-center justify-center px-6">
+          <AlertCircle size={64} color="#ef4444" />
+          <Text className="mt-4 text-xl font-bold text-white text-center">
+            {error || 'Recipe Not Found'}
+          </Text>
+          <Text className="mt-2 text-gray-400 text-center">
+            {error || "The recipe you're looking for doesn't exist"}
+          </Text>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="mt-6 px-6 py-3 rounded-xl"
+            style={{ backgroundColor: theme.primary }}
+          >
+            <Text className="text-white font-semibold">Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const ingredients = recipe.extendedIngredients || [];
+  const instructions = recipe.analyzedInstructions?.[0]?.steps || [];
+  const nutrition = recipe.nutrition?.nutrients || [];
+  
+  const getNutrient = (name: string) => {
+    const nutrient = nutrition.find((n: any) => n.name === name);
+    return nutrient?.amount || 0;
   };
 
   return (
     <SafeAreaView className="flex-1 bg-[#1A1B1E]">
+      {/* Header */}
+      <View className="flex-row items-center justify-between px-4 py-3 border-b border-gray-800">
+        <TouchableOpacity onPress={() => router.back()}>
+          <ArrowLeft size={24} color="white" />
+        </TouchableOpacity>
+        <Text className="text-xl font-bold text-white" numberOfLines={1}>Recipe</Text>
+        <View className="flex-row gap-2">
+          <TouchableOpacity onPress={toggleFavorite}>
+            <Heart 
+              size={24} 
+              color={isFavorite ? theme.primary : 'white'}
+              fill={isFavorite ? theme.primary : 'transparent'}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleShare}>
+            <Share2 size={24} color="white" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
       <ScrollView className="flex-1">
-        {/* Header Image */}
-        <View className="h-[300px]">
-          <Image 
-            source={{ uri: mockRecipe.image }}
-            className="absolute w-full h-full"
+        {/* Recipe Image */}
+        <View className="relative h-64">
+          <Image
+            source={{ uri: recipe.image }}
+            className="w-full h-full"
             resizeMode="cover"
           />
-          <View className="flex-row items-center justify-between px-6 pt-4">
-            <TouchableOpacity 
-              onPress={() => router.back()}
-              className="h-12 w-12 items-center justify-center rounded-xl bg-black/20"
-            >
-              <ArrowLeft size={24} color="white" />
-            </TouchableOpacity>
-            <TouchableOpacity 
-              onPress={() => setIsFavorite(!isFavorite)}
-              className="h-9 w-9 items-center justify-center rounded-xl bg-white"
-            >
-              <Heart 
-                size={16} 
-                color={theme.primary}
-                fill={isFavorite ? theme.primary : "transparent"}
-              />
-            </TouchableOpacity>
+          <View className="absolute inset-0 bg-gradient-to-t from-[#1A1B1E] to-transparent" />
+          <View className="absolute bottom-0 left-0 right-0 p-6">
+            <Text className="text-3xl font-bold text-white mb-2">{recipe.title}</Text>
+            <View className="flex-row gap-4">
+              <View className="flex-row items-center gap-2">
+                <Clock size={20} color={theme.primary} />
+                <Text className="text-white">{recipe.readyInMinutes} min</Text>
+              </View>
+              <View className="flex-row items-center gap-2">
+                <Users size={20} color={theme.primary} />
+                <Text className="text-white">{recipe.servings} servings</Text>
+              </View>
+            </View>
           </View>
         </View>
 
-        {/* Content */}
-        <Animated.View 
-          entering={FadeInDown.springify()}
-          className="bg-[#1A1B1E] -mt-10 rounded-t-[36px] p-6"
-        >
-          {/* Author */}
-          <View className="flex-row items-center mb-4">
-            <ChefHat size={16} color={theme.primary} />
-            <Text className="text-sm font-medium ml-2" style={{ color: theme.primary }}>{mockRecipe.author}</Text>
-          </View>
-
-          {/* Title */}
-          <Text className="text-white text-2xl font-medium">{mockRecipe.title}</Text>
-
-          {/* Tabs */}
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            className="mt-6 -mx-6 px-6"
-          >
-            <View className="flex-row">
-              {tabs.map(tab => (
-                <TouchableOpacity
-                  key={tab.id}
-                  onPress={() => setActiveTab(tab.id)}
-                  className="mr-4 pb-2 border-b-2"
-                  style={{ borderBottomColor: activeTab === tab.id ? theme.primary : 'transparent' }}
-                >
-                  <Text style={{ color: activeTab === tab.id ? theme.primary : '#9CA3AF' }}>
-                    {tab.label}
+        {/* Ingredients */}
+        <Animated.View entering={FadeInDown.delay(100)} className="p-6 bg-[#25262B] m-4 rounded-2xl">
+          <Text className="text-2xl font-bold text-white mb-4">Ingredients</Text>
+          <Text className="text-sm text-gray-400 mb-4">Servings: {recipe.servings}</Text>
+          {ingredients.length > 0 ? (
+            <View className="space-y-3">
+              {ingredients.map((ingredient: any, index: number) => (
+                <View key={index} className="flex-row items-start gap-3 py-2">
+                  <Text style={{ color: theme.primary }}>●</Text>
+                  <Text className="flex-1 text-white">
+                    {ingredient.amount ? `${ingredient.amount.toFixed(1)} ` : ''}
+                    {ingredient.unit} {ingredient.name}
                   </Text>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <Text className="text-gray-400">Ingredient information not available</Text>
+          )}
+        </Animated.View>
+
+        {/* Instructions */}
+        <Animated.View entering={FadeInDown.delay(200)} className="p-6 bg-[#25262B] m-4 rounded-2xl">
+          <Text className="text-2xl font-bold text-white mb-4">Instructions</Text>
+          {instructions.length > 0 ? (
+            <View className="space-y-6">
+              {instructions.map((step: any, index: number) => (
+                <View key={index} className="flex-row gap-4">
+                  <View 
+                    className="w-8 h-8 rounded-full items-center justify-center"
+                    style={{ backgroundColor: theme.primary }}
+                  >
+                    <Text className="text-[#1A1B1E] font-bold">{step.number}</Text>
+                  </View>
+                  <Text className="flex-1 text-white leading-6">{step.step}</Text>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <Text className="text-gray-400">Instruction information not available</Text>
+          )}
+        </Animated.View>
+
+        {/* Nutrition */}
+        {nutrition.length > 0 && (
+          <Animated.View entering={FadeInDown.delay(300)} className="p-6 bg-[#25262B] m-4 rounded-2xl">
+            <Text className="text-2xl font-bold text-white mb-4">Nutrition Facts</Text>
+            
+            <View className="mb-6">
+              <View className="flex-row justify-between mb-2">
+                <Text className="text-white text-lg">Calories</Text>
+                <Text className="text-2xl font-bold" style={{ color: theme.primary }}>
+                  {getNutrient('Calories').toFixed(0)}
+                </Text>
+              </View>
+              <View className="h-2 bg-gray-800 rounded-full">
+                <View 
+                  className="h-2 rounded-full"
+                  style={{ 
+                    width: `${Math.min((getNutrient('Calories') / 2000) * 100, 100)}%`,
+                    backgroundColor: theme.primary 
+                  }}
+                />
+              </View>
+            </View>
+
+            <View className="flex-row flex-wrap gap-3">
+              {['Protein', 'Carbohydrates', 'Fat', 'Fiber'].map((nutrient) => {
+                const amount = getNutrient(nutrient);
+                if (amount === 0) return null;
+                
+                return (
+                  <View key={nutrient} className="flex-1 min-w-[45%] p-4 bg-[#2C2D32] rounded-xl">
+                    <Text className="text-gray-400 text-sm mb-1">{nutrient}</Text>
+                    <Text className="text-white text-xl font-bold">{amount.toFixed(1)}g</Text>
+                  </View>
+                );
+              })}
+            </View>
+          </Animated.View>
+        )}
+
+        {/* Similar Recipes */}
+        {similarRecipes.length > 0 && (
+          <Animated.View entering={FadeInDown.delay(400)} className="p-6 bg-[#25262B] m-4 rounded-2xl">
+            <Text className="text-2xl font-bold text-white mb-4">Similar Recipes</Text>
+            <View className="space-y-3">
+              {similarRecipes.map((similar) => (
+                <TouchableOpacity
+                  key={similar.id}
+                  onPress={() => router.push(`/recipes/${similar.id}`)}
+                  className="flex-row items-center gap-3 p-3 bg-[#2C2D32] rounded-xl"
+                >
+                  <Image
+                    source={{ uri: similar.image }}
+                    className="w-16 h-16 rounded-lg"
+                    resizeMode="cover"
+                  />
+                  <View className="flex-1">
+                    <Text className="text-white font-medium" numberOfLines={2}>
+                      {similar.title}
+                    </Text>
+                    {similar.readyInMinutes > 0 && (
+                      <Text className="text-gray-400 text-sm mt-1">
+                        {similar.readyInMinutes} minutes
+                      </Text>
+                    )}
+                  </View>
+                  <ChevronRight size={20} color={theme.primary} />
                 </TouchableOpacity>
               ))}
             </View>
-          </ScrollView>
+          </Animated.View>
+        )}
 
-          {/* Tab Content */}
-          <View className="mt-6">
-            {renderTabContent()}
-          </View>
-        </Animated.View>
+        <View className="h-8" />
       </ScrollView>
-
-      {/* Add to Journal Button */}
-      <View className="p-6 bg-[#1A1B1E] border-t border-[#2C2D32]">
-        <TouchableOpacity 
-          onPress={() => router.push('/journal')}
-          className="w-full h-[54px] rounded-2xl items-center justify-center"
-          style={{ backgroundColor: theme.primary }}
-        >
-          <Text className="text-white font-medium">Add to Journal</Text>
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   );
 }

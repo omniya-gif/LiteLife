@@ -1,6 +1,4 @@
-import { useRouter } from 'expo-router';
-import { Search, Heart, Info, ChevronRight, AlertCircle } from 'lucide-react-native';
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -15,12 +13,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
+import { Search, Heart, ChevronRight, AlertCircle } from 'lucide-react-native';
 
-import { Header } from '../../../components/home/Header';
-import { BottomNavigation } from '../home/components/BottomNavigation';
-import { TabBar } from '../home/components/TabBar';
 import { useTheme } from '../../../hooks/useTheme';
 import { searchRecipes, getFeaturedRecipes, Recipe } from '../../../services/recipeService';
+import { Header } from '../../../components/home/Header';
+import { BottomNavigation } from '../home/components/BottomNavigation';
 
 const categories = [
   {
@@ -67,12 +66,15 @@ export default function RecipesPage() {
   const [searching, setSearching] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   // Animation values
   const headerAnim = useRef(new Animated.Value(0)).current;
   const searchAnim = useRef(new Animated.Value(0)).current;
   const featuredAnim = useRef(new Animated.Value(0)).current;
-  const categoryAnims = categories.map(() => useRef(new Animated.Value(0)).current);
+  const categoryAnimsRef = useRef(categories.map(() => new Animated.Value(0)));
+  const categoryAnims = categoryAnimsRef.current;
+  const scrollViewRef = useRef<ScrollView>(null);
 
   // Load favorites from AsyncStorage
   useEffect(() => {
@@ -106,6 +108,39 @@ export default function RecipesPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCategoryPress = async (categoryId: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      setSelectedCategory(categoryId);
+      const recipes = await searchRecipes('', { type: categoryId }, 12);
+      setFeaturedRecipes(recipes);
+      
+      // Scroll to results after a short delay to let content render
+      setTimeout(() => {
+        scrollViewRef.current?.scrollTo({ y: 600, animated: true });
+      }, 100);
+    } catch (error) {
+      console.error('Error loading category recipes:', error);
+      setError('Failed to load recipes.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClearCategory = () => {
+    setSelectedCategory(null);
+    loadFeaturedRecipes();
+    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+  };
+
+  const getCalorieColor = (calories: number | undefined) => {
+    if (!calories) return theme.primary;
+    if (calories > 600) return '#ff6b35'; // High calories - orange
+    if (calories > 400) return '#ffa500'; // Medium-high - lighter orange
+    return theme.primary; // Normal - primary color
   };
 
   const onRefresh = async () => {
@@ -205,13 +240,11 @@ export default function RecipesPage() {
           ],
         }}
         className="border-b border-[#25262B]">
-        <Header
-          title="Recipes"
-          imageUrl="https://images.unsplash.com/photo-1599566150163-29194dcaad36"
-        />
+        <Header />
       </Animated.View>
 
-      <ScrollView 
+      <ScrollView
+        ref={scrollViewRef}
         className="flex-1"
         refreshControl={
           <RefreshControl
@@ -220,8 +253,7 @@ export default function RecipesPage() {
             tintColor={theme.primary}
             colors={[theme.primary]}
           />
-        }
-      >
+        }>
         <View className="px-4 pt-12">
           <Animated.View
             style={{
@@ -343,11 +375,25 @@ export default function RecipesPage() {
             )}
 
             <View className="px-6 pt-6">
-              <View className="mb-4 flex-row items-center justify-between">
-                <Text className="text-2xl font-bold text-white">Featured Recipes</Text>
-                <TouchableOpacity onPress={loadFeaturedRecipes}>
-                  <Text className="text-base font-medium" style={{ color: theme.primary }}>Refresh</Text>
+              {selectedCategory && (
+                <TouchableOpacity
+                  onPress={handleClearCategory}
+                  className="mb-4 flex-row items-center"
+                >
+                  <Text className="text-base" style={{ color: theme.primary }}>← Back to Categories</Text>
                 </TouchableOpacity>
+              )}
+              <View className="mb-4 flex-row items-center justify-between">
+                <Text className="text-2xl font-bold text-white">
+                  {selectedCategory ? categories.find((c) => c.id === selectedCategory)?.title : 'Featured Recipes'}
+                </Text>
+                {!selectedCategory && (
+                  <TouchableOpacity onPress={loadFeaturedRecipes}>
+                    <Text className="text-base font-medium" style={{ color: theme.primary }}>
+                      Refresh
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
 
@@ -408,18 +454,32 @@ export default function RecipesPage() {
                       <View className="mb-4 flex-row items-center gap-3">
                         <Text className="text-xs text-gray-500">⏱️ {recipe.readyInMinutes} min</Text>
                         <Text className="text-xs text-gray-500">🍽️ {recipe.servings} servings</Text>
-                        {recipe.calories && recipe.calories > 0 && (
-                          <Text className="text-xs text-gray-500">🔥 {Math.round(recipe.calories)} cal</Text>
-                        )}
                       </View>
+                      
+                      {/* Calorie Badge */}
+                      {recipe.calories && recipe.calories > 0 && (
+                        <View 
+                          className="mb-4 self-start px-3 py-1.5 rounded-full"
+                          style={{ backgroundColor: `${getCalorieColor(recipe.calories)}20` }}
+                        >
+                          <Text 
+                            className="text-sm font-semibold"
+                            style={{ color: getCalorieColor(recipe.calories) }}
+                          >
+                            🔥 {Math.round(recipe.calories)} cal
+                            {recipe.calories > 600 && ' • High'}
+                            {recipe.calories > 400 && recipe.calories <= 600 && ' • Medium'}
+                          </Text>
+                        </View>
+                      )}
 
                       {/* Action Buttons */}
                       <View className="flex-row justify-between">
                         <TouchableOpacity
-                          onPress={() => router.push('/nutrition/meal-planner')}
+                          onPress={() => router.push(`/recipes/${recipe.id}`)}
                           className="mr-2 h-12 flex-1 items-center justify-center rounded-xl"
                           style={{ backgroundColor: theme.primary }}>
-                          <Text className="font-medium text-white">Add to Meal Plan</Text>
+                          <Text className="font-medium text-white">View Recipe</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -435,9 +495,10 @@ export default function RecipesPage() {
               </ScrollView>
             )}
 
-            <View className="px-6">
-              <Text className="mb-4 text-2xl font-bold text-white">Categories</Text>
-              <View className="flex-row flex-wrap justify-between">
+            {!selectedCategory && (
+              <View className="px-6">
+                <Text className="mb-4 text-2xl font-bold text-white">Categories</Text>
+                <View className="flex-row flex-wrap justify-between">
                 {categories.map((category, index) => (
                   <Animated.View
                     key={category.id}
@@ -455,6 +516,7 @@ export default function RecipesPage() {
                       ],
                     }}>
                     <TouchableOpacity
+                      onPress={() => handleCategoryPress(category.id)}
                       className="overflow-hidden rounded-2xl"
                       style={{ aspectRatio: 1 }}>
                       <Image
@@ -470,6 +532,7 @@ export default function RecipesPage() {
                 ))}
               </View>
             </View>
+            )}
           </>
         )}
       </ScrollView>
