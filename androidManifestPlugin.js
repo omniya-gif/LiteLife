@@ -22,6 +22,31 @@ module.exports = function androidManifestPlugin(config) {
       ]
     });
 
+    // Add uses-permission elements if they don't exist
+    if (!androidManifest['uses-permission']) {
+      androidManifest['uses-permission'] = [];
+    }
+
+    // Add Health Connect permissions
+    const healthPermissions = [
+      'android.permission.health.READ_STEPS',
+      'android.permission.health.READ_DISTANCE',
+      'android.permission.health.READ_ACTIVE_CALORIES_BURNED',
+      'android.permission.health.WRITE_NUTRITION',
+      'android.permission.health.READ_NUTRITION',
+    ];
+
+    healthPermissions.forEach(permission => {
+      const exists = androidManifest['uses-permission'].some(
+        p => p.$['android:name'] === permission
+      );
+      if (!exists) {
+        androidManifest['uses-permission'].push({
+          $: { 'android:name': permission }
+        });
+      }
+    });
+
     // Ensure we have an application element
     if (!androidManifest.application) {
       androidManifest.application = [{}];

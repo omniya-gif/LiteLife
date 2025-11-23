@@ -381,3 +381,50 @@ export const readActiveCaloriesData = async (startTime: string, endTime: string)
     throw error;
   }
 };
+
+// Helper function to read nutrition (calories consumed) data
+export const readNutritionData = async (startTime: string, endTime: string) => {
+  try {
+    console.log('🍽️ Reading nutrition data from', startTime, 'to', endTime);
+    const timeRangeFilter = {
+      operator: 'between' as const,
+      startTime,
+      endTime,
+    };
+
+    interface NutritionRecord {
+      energy: {
+        inKilocalories: number;
+        inKilojoules: number;
+        inJoules: number;
+        inCalories: number;
+      };
+    }
+
+    const nutritionRecords = await readRecords('Nutrition', { timeRangeFilter });
+    console.log('🍽️ Nutrition records fetched:', nutritionRecords);
+    console.log('🍽️ Number of nutrition records:', nutritionRecords.records?.length || 0);
+    console.log('🍽️ Raw nutrition records:', JSON.stringify(nutritionRecords.records, null, 2));
+    
+    const totalCalories = (nutritionRecords.records as NutritionRecord[]).reduce(
+      (sum: number, record) => {
+        console.log('🍽️ Processing record:', record);
+        // Health Connect returns energy in a different format when reading
+        // It uses inKilocalories, not { value, unit }
+        const calories = record.energy?.inKilocalories || 0;
+        console.log('🍽️ Calories from this record:', calories);
+        return sum + calories;
+      },
+      0
+    );
+    console.log('🍽️ TOTAL Calories Consumed from Health Connect:', totalCalories);
+    return Math.round(totalCalories);
+  } catch (error) {
+    // Only log if it's not a permission error
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (!errorMessage.includes('lacks the following permissions')) {
+      console.error('❌ Error reading nutrition data:', error);
+    }
+    throw error;
+  }
+};

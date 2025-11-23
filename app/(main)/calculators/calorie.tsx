@@ -12,7 +12,7 @@ import {
   readStepsData, 
   readDistanceData, 
   readFloorsData,
-  readActiveCaloriesData
+  readNutritionData
 } from '../../../hooks/useHealthConnect';
 
 const MacroRow = ({ name, amount, percentage, color, index }) => (
@@ -38,12 +38,12 @@ export default function CalorieTrackerPage() {
   const [steps, setSteps] = useState(0);
   const [distance, setDistance] = useState(0);
   const [floors, setFloors] = useState(0);
-  const [estimatedCalories, setEstimatedCalories] = useState(0);
+  const [caloriesConsumed, setCaloriesConsumed] = useState(0);
   const [isLoadingData, setIsLoadingData] = useState(false);
 
   // Use calculated daily_calories from onboarding data
   const dailyGoal = onboarding?.daily_calories || 2000;
-  const percentage = Math.round((estimatedCalories / dailyGoal) * 100);
+  const percentage = Math.round((caloriesConsumed / dailyGoal) * 100);
 
   // Debug logging to check onboarding data
   useEffect(() => {
@@ -57,7 +57,7 @@ export default function CalorieTrackerPage() {
     { accessType: 'read', recordType: 'Steps' },
     { accessType: 'read', recordType: 'Distance' },
     { accessType: 'read', recordType: 'FloorsClimbed' },
-    { accessType: 'read', recordType: 'ActiveCaloriesBurned' },
+    { accessType: 'read', recordType: 'Nutrition' },
   ]);
 
   const fetchHealthData = async () => {
@@ -74,21 +74,21 @@ export default function CalorieTrackerPage() {
       const startOfDay = new Date(now.setHours(0, 0, 0, 0));
       const endOfDay = new Date(now.setHours(23, 59, 59, 999));
 
-      // Fetch all health data including active calories burned
-      const [totalSteps, totalDistance, totalFloors, activeCalories] = await Promise.all([
+      // Fetch all health data including nutrition (calories consumed)
+      const [totalSteps, totalDistance, totalFloors, nutritionCalories] = await Promise.all([
         readStepsData(startOfDay.toISOString(), endOfDay.toISOString()),
         readDistanceData(startOfDay.toISOString(), endOfDay.toISOString()),
         readFloorsData(startOfDay.toISOString(), endOfDay.toISOString()),
-        readActiveCaloriesData(startOfDay.toISOString(), endOfDay.toISOString()),
+        readNutritionData(startOfDay.toISOString(), endOfDay.toISOString()),
       ]);
 
       setSteps(totalSteps);
       setDistance(totalDistance);
       setFloors(totalFloors);
       
-      // Use actual calories burned from Google Fit via Health Connect
-      setEstimatedCalories(activeCalories);
-      console.log('🔥 Setting active calories from Health Connect:', activeCalories);
+      // Use calories consumed from nutrition data (meals eaten)
+      setCaloriesConsumed(nutritionCalories);
+      console.log('🍽️ Setting calories consumed from Health Connect:', nutritionCalories);
     } catch (error) {
       // Only log and show alert if it's not a permission error
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -200,9 +200,9 @@ export default function CalorieTrackerPage() {
         entering={FadeIn.delay(300).springify()}
         className="px-6 pt-12"
       >
-        <Text className="text-center text-lg font-medium" style={{ color: theme.primary }}>DAILY ACTIVITY</Text>
+        <Text className="text-center text-lg font-medium" style={{ color: theme.primary }}>CALORIES CONSUMED</Text>
         <Text className="mt-4 text-center text-3xl font-bold text-white">
-          <Text style={{ color: theme.primary }}>{estimatedCalories}</Text>
+          <Text style={{ color: theme.primary }}>{caloriesConsumed}</Text>
           <Text className="text-gray-400"> / </Text>
           <Text className="text-gray-500">{dailyGoal}</Text>
           <Text style={{ color: theme.primary }}> cal</Text>
