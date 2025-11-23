@@ -428,3 +428,44 @@ export const readNutritionData = async (startTime: string, endTime: string) => {
     throw error;
   }
 };
+
+// Helper function to read hydration data
+export const readHydrationData = async (startTime: string, endTime: string) => {
+  try {
+    console.log('💧 Reading hydration data from', startTime, 'to', endTime);
+    const timeRangeFilter = {
+      operator: 'between' as const,
+      startTime,
+      endTime,
+    };
+
+    interface HydrationRecord {
+      volume: {
+        inLiters: number;
+        inMilliliters: number;
+        inFluidOuncesUS: number;
+      };
+    }
+
+    const hydrationRecords = await readRecords('Hydration', { timeRangeFilter });
+    console.log('💧 Hydration records fetched:', hydrationRecords);
+    console.log('💧 Number of hydration records:', hydrationRecords.records?.length || 0);
+    
+    const totalWater = (hydrationRecords.records as HydrationRecord[]).reduce(
+      (sum: number, record) => {
+        const ml = record.volume?.inMilliliters || 0;
+        console.log('💧 Water from this record:', ml, 'ml');
+        return sum + ml;
+      },
+      0
+    );
+    console.log('💧 TOTAL Water Consumed from Health Connect:', totalWater, 'ml');
+    return Math.round(totalWater);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (!errorMessage.includes('lacks the following permissions')) {
+      console.error('❌ Error reading hydration data:', error);
+    }
+    throw error;
+  }
+};

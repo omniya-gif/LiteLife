@@ -14,6 +14,7 @@ export interface OnboardingFormData {
   target_weight?: number;
   // Optional fields
   daily_calories?: number;
+  water_target?: number; // Daily water intake goal in ml
   expertise?: Expertise;
   interests?: Interest[];
   notifications_enabled?: boolean;

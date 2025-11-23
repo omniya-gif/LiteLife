@@ -55,7 +55,7 @@ export default function CaloriesPage() {
       console.error('❌ ERROR: finalCalories is null/undefined!');
     }
     
-    router.push('/onboarding/goal');
+    router.push('/onboarding/hydration');
   };
 
   return (

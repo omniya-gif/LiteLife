@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, SafeAreaView, Image, Dimensions, Alert, ActivityIndicator, ScrollView, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, MoreVertical, BarChart2, Utensils, Plus, Trash2, Flame, Coffee, Sun, ChevronLeft, ChevronRight, TrendingUp, Calendar } from 'lucide-react-native';
+import { ArrowLeft, MoreVertical, BarChart2, Utensils, Plus, Trash2, Flame, Coffee, Sun, ChevronLeft, ChevronRight, TrendingUp, Calendar, Upload, Edit3, Book, X } from 'lucide-react-native';
 import Animated, { 
   useAnimatedStyle, 
   withSpring,
@@ -47,6 +47,8 @@ export default function JournalPage() {
   const [dailyCalories, setDailyCalories] = useState<number>(0);
   const [isLoadingCalories, setIsLoadingCalories] = useState(false);
   const [showStatsModal, setShowStatsModal] = useState(false);
+  const [showAddMealModal, setShowAddMealModal] = useState(false);
+  const [selectedMealType, setSelectedMealType] = useState<string>('');
   const translateX = useSharedValue(0);
 
   // Health Connect integration
@@ -203,7 +205,14 @@ export default function JournalPage() {
           </View>
           <View className="flex-row items-center space-x-2">
             <Text className="text-lg text-gray-400">{meal.calories}kcal/{meal.maxCalories} kcal</Text>
-            <TouchableOpacity className="ml-2 rounded-full p-2" style={{ backgroundColor: `${theme.primary}10` }}>
+            <TouchableOpacity 
+              className="ml-2 rounded-full p-2" 
+              style={{ backgroundColor: `${theme.primary}10` }}
+              onPress={() => {
+                setSelectedMealType(meal.title);
+                setShowAddMealModal(true);
+              }}
+            >
               <Plus size={20} color={theme.primary} />
             </TouchableOpacity>
           </View>
@@ -485,6 +494,148 @@ export default function JournalPage() {
           ))}
         </View>
       </View>
+
+      {/* Add Meal Modal */}
+      <Modal
+        visible={showAddMealModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowAddMealModal(false)}
+      >
+        <View className="flex-1 bg-black/80 justify-end">
+          <View className="bg-[#1A1B1E] rounded-t-[32px] px-6 pt-6 pb-10">
+            {/* Header */}
+            <View className="flex-row items-center justify-between mb-6">
+              <View>
+                <Text className="text-2xl font-bold text-white">Add Meal</Text>
+                <Text className="text-sm text-gray-400 mt-1">{selectedMealType}</Text>
+              </View>
+              <TouchableOpacity 
+                onPress={() => setShowAddMealModal(false)}
+                className="rounded-full p-2"
+                style={{ backgroundColor: '#2C2D32' }}
+              >
+                <X size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Options */}
+            <View className="space-y-4">
+              {/* Upload Meal Photo */}
+              <TouchableOpacity 
+                className="rounded-2xl p-5 border-2"
+                style={{ 
+                  backgroundColor: `${theme.primary}08`,
+                  borderColor: `${theme.primary}30`
+                }}
+                onPress={() => {
+                  // TODO: Implement upload meal logic
+                  setShowAddMealModal(false);
+                }}
+              >
+                <View className="flex-row items-center space-x-4">
+                  <View 
+                    className="rounded-2xl p-4"
+                    style={{ backgroundColor: theme.primary }}
+                  >
+                    <Upload size={28} color="white" />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-lg font-bold text-white mb-1">Upload Meal Photo</Text>
+                    <Text className="text-sm text-gray-400">
+                      Take a photo or upload from gallery
+                    </Text>
+                  </View>
+                  <View 
+                    className="rounded-full px-3 py-1"
+                    style={{ backgroundColor: `${theme.primary}20` }}
+                  >
+                    <Text className="text-xs font-semibold" style={{ color: theme.primary }}>
+                      AI
+                    </Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+
+              {/* Manual Entry */}
+              <TouchableOpacity 
+                className="rounded-2xl p-5 border-2"
+                style={{ 
+                  backgroundColor: `${theme.primary}08`,
+                  borderColor: `${theme.primary}30`
+                }}
+                onPress={() => {
+                  setShowAddMealModal(false);
+                  router.push({
+                    pathname: '/(main)/journal/add-meal-manual',
+                    params: { mealType: selectedMealType }
+                  });
+                }}
+              >
+                <View className="flex-row items-center space-x-4">
+                  <View 
+                    className="rounded-2xl p-4"
+                    style={{ backgroundColor: theme.primary }}
+                  >
+                    <Edit3 size={28} color="white" />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-lg font-bold text-white mb-1">Manual Entry</Text>
+                    <Text className="text-sm text-gray-400">
+                      Enter meal details manually
+                    </Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+
+              {/* Browse Recipes */}
+              <TouchableOpacity 
+                className="rounded-2xl p-5 border-2"
+                style={{ 
+                  backgroundColor: `${theme.primary}08`,
+                  borderColor: `${theme.primary}30`
+                }}
+                onPress={() => {
+                  // TODO: Implement browse recipes logic
+                  setShowAddMealModal(false);
+                }}
+              >
+                <View className="flex-row items-center space-x-4">
+                  <View 
+                    className="rounded-2xl p-4"
+                    style={{ backgroundColor: theme.primary }}
+                  >
+                    <Book size={28} color="white" />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-lg font-bold text-white mb-1">Browse Recipes</Text>
+                    <Text className="text-sm text-gray-400">
+                      Choose from our recipe library
+                    </Text>
+                  </View>
+                  <View 
+                    className="rounded-full px-3 py-1"
+                    style={{ backgroundColor: `${theme.primary}20` }}
+                  >
+                    <Text className="text-xs font-semibold" style={{ color: theme.primary }}>
+                      NEW
+                    </Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            </View>
+
+            {/* Cancel Button */}
+            <TouchableOpacity 
+              className="mt-6 rounded-2xl p-4"
+              style={{ backgroundColor: '#2C2D32' }}
+              onPress={() => setShowAddMealModal(false)}
+            >
+              <Text className="text-center text-lg font-semibold text-white">Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {/* Detailed Stats Modal - Google Fit Style */}
       <Modal

@@ -41,6 +41,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'android.permission.health.READ_ACTIVE_CALORIES_BURNED',
       'android.permission.health.WRITE_NUTRITION',
       'android.permission.health.READ_NUTRITION',
+      'android.permission.health.WRITE_HYDRATION',
+      'android.permission.health.READ_HYDRATION',
       'android.permission.ACTIVITY_RECOGNITION',
       'android.permission.CAMERA',
       'android.permission.READ_EXTERNAL_STORAGE',
