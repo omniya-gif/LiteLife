@@ -78,11 +78,11 @@ export default function HealthPage() {
       route: '/calculators/calorie'
     },
     {
-      title: 'Water Intake',
-      description: 'Track your daily hydration',
+      title: 'Hydration Tracker',
+      description: 'Track your daily water intake',
       icon: <Droplets size={24} color="#3B82F6" />,
       color: '#3B82F6',
-      route: '/calculators/water'
+      route: '/calculators/hydration'
     },
     {
       title: 'Weight Tracker',

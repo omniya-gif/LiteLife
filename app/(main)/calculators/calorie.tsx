@@ -137,6 +137,32 @@ export default function CalorieTrackerPage() {
     }
   ];
 
+  // Handle permission screen
+  if (!healthConnect.isAvailable) {
+    return (
+      <SafeAreaView className="flex-1 bg-[#1A1B1E]">
+        <View className="flex-1 items-center justify-center px-6">
+          <AlertCircle size={64} color={theme.primary} />
+          <Text className="mt-6 text-center text-xl font-bold text-white">
+            Health Connect Not Available
+          </Text>
+          <Text className="mt-2 text-center text-gray-400">
+            Health Connect is required to track your nutrition
+          </Text>
+          <TouchableOpacity
+            onPress={healthConnect.installHealthConnect}
+            className="mt-6 rounded-2xl px-8 py-4"
+            style={{ backgroundColor: theme.primary }}
+          >
+            <Text className="text-lg font-semibold text-[#1A1B1E]">
+              Install Health Connect
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: theme.background }}>
       {/* Header */}
@@ -157,49 +183,36 @@ export default function CalorieTrackerPage() {
         </TouchableOpacity>
       </Animated.View>
 
-      {/* Health Connect Status Banner */}
-      {Platform.OS === 'android' && (!healthConnect.isAvailable || !healthConnect.hasPermissions) && (
-        <Animated.View
-          entering={FadeInDown.delay(200)}
-          className="mx-6 mt-4 rounded-2xl p-4"
-          style={{ backgroundColor: '#F59E0B20' }}>
-          <View className="flex-row items-center">
-            <AlertCircle size={24} color="#F59E0B" />
-            <View className="ml-3 flex-1">
-              <Text className="font-semibold text-white">
-                {!healthConnect.isAvailable
-                  ? 'Health Connect Not Installed'
-                  : 'Permission Required'}
-              </Text>
-              <Text className="mt-1 text-xs text-gray-400">
-                {!healthConnect.isAvailable
-                  ? 'Install Health Connect to track calories'
-                  : 'Grant permission to read your activity data'}
-              </Text>
-            </View>
-          </View>
+      {/* Full Screen Permission State */}
+      {Platform.OS === 'android' && !healthConnect.hasPermissions && (
+        <View className="flex-1 items-center justify-center px-6">
+          <AlertCircle size={64} color={theme.primary} />
+          <Text className="mt-6 text-center text-xl font-bold text-white">
+            Permission Required
+          </Text>
+          <Text className="mt-2 text-center text-gray-400">
+            Grant access to track your daily nutrition and calories
+          </Text>
           <TouchableOpacity
-            onPress={() => {
-              if (!healthConnect.isAvailable) {
-                healthConnect.installHealthConnect();
-              } else {
-                healthConnect.requestHealthPermissions();
-              }
-            }}
-            className="mt-3 rounded-xl py-2"
-            style={{ backgroundColor: '#F59E0B' }}>
-            <Text className="text-center font-medium text-white">
-              {!healthConnect.isAvailable ? 'Install Now' : 'Grant Permission'}
+            onPress={healthConnect.requestHealthPermissions}
+            className="mt-6 rounded-2xl px-8 py-4"
+            style={{ backgroundColor: theme.primary }}
+          >
+            <Text className="text-lg font-semibold text-[#1A1B1E]">
+              Grant Permission
             </Text>
           </TouchableOpacity>
-        </Animated.View>
+        </View>
       )}
 
-      {/* Daily Activity */}
-      <Animated.View 
-        entering={FadeIn.delay(300).springify()}
-        className="px-6 pt-12"
-      >
+      {/* Main Content - Only show when permissions granted */}
+      {Platform.OS === 'android' && healthConnect.hasPermissions && (
+        <>
+          {/* Daily Activity */}
+          <Animated.View 
+            entering={FadeIn.delay(300).springify()}
+            className="px-6 pt-12"
+          >
         <Text className="text-center text-lg font-medium" style={{ color: theme.primary }}>CALORIES CONSUMED</Text>
         <Text className="mt-4 text-center text-3xl font-bold text-white">
           <Text style={{ color: theme.primary }}>{caloriesConsumed}</Text>
@@ -250,21 +263,23 @@ export default function CalorieTrackerPage() {
         ))}
       </View>
 
-      {/* Add Activity Button */}
-      <Animated.View 
-        entering={FadeInUp.delay(600).springify()}
-        className="p-6"
-      >
-        <TouchableOpacity 
-          onPress={() => router.push('/journal')}
-          className="w-full rounded-xl py-4"
-          style={{ backgroundColor: theme.primary }}
-        >
-          <Text className="text-center text-lg font-semibold text-white">
-            Add Manual Activity
-          </Text>
-        </TouchableOpacity>
-      </Animated.View>
+          {/* Add Activity Button */}
+          <Animated.View 
+            entering={FadeInUp.delay(600).springify()}
+            className="p-6"
+          >
+            <TouchableOpacity 
+              onPress={() => router.push('/journal')}
+              className="w-full rounded-xl py-4"
+              style={{ backgroundColor: theme.primary }}
+            >
+              <Text className="text-center text-lg font-semibold text-white">
+                Add Manual Activity
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </>
+      )}
     </SafeAreaView>
   );
 }
