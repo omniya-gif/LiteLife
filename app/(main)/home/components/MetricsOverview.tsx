@@ -5,7 +5,7 @@ import { View, Text } from 'react-native';
 import { useAuth } from '../../../../hooks/useAuth';
 import { useTheme } from '../../../../hooks/useTheme';
 import { useUserStore } from '../../../../lib/store/userStore';
-import { supabase } from '../../../../lib/supabase';
+import { useHealthConnect, readNutritionData, readHydrationData } from '../../../../hooks/useHealthConnect';
 
 const MetricCard = ({ title, value, unit, icon, lastUpdate }) => {
   const theme = useTheme();
@@ -40,48 +40,52 @@ export const MetricsOverview = () => {
   const { user } = useAuth();
   const { onboarding } = useUserStore();
   const [todayCalories, setTodayCalories] = useState(0);
-  const [todayWater, setTodayWater] = useState(0);
+  const [todayWater, setTodayWater] = useState(0.0);
 
-  // Fetch today's metrics from database
+  const healthConnect = useHealthConnect([
+    { accessType: 'read', recordType: 'Nutrition' },
+    { accessType: 'read', recordType: 'Hydration' },
+  ]);
+
+  // Fetch today's metrics from Health Connect
   useEffect(() => {
     const fetchTodayMetrics = async () => {
-      if (!user?.id) return;
-
-      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-
-      // Fetch today's calorie intake
-      const { data: calorieData } = await supabase
-        .from('meal_logs')
-        .select('calories')
-        .eq('user_id', user.id)
-        .gte('created_at', `${today}T00:00:00`)
-        .lte('created_at', `${today}T23:59:59`);
-
-      if (calorieData) {
-        const totalCalories = calorieData.reduce((sum, meal) => sum + (meal.calories || 0), 0);
-        setTodayCalories(totalCalories);
+      // Only fetch if Health Connect is available and has permissions
+      if (!healthConnect.isAvailable || !healthConnect.hasPermissions) {
+        // Leave as 0 if not available or no permission
+        return;
       }
 
-      // Fetch today's water intake
-      const { data: waterData } = await supabase
-        .from('water_logs')
-        .select('amount')
-        .eq('user_id', user.id)
-        .gte('created_at', `${today}T00:00:00`)
-        .lte('created_at', `${today}T23:59:59`);
+      try {
+        const today = new Date();
+        const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+        const endOfDay = new Date(today.setHours(23, 59, 59, 999));
 
-      if (waterData) {
-        const totalWater = waterData.reduce((sum, log) => sum + (log.amount || 0), 0);
-        setTodayWater(totalWater);
+        // Fetch calories from Health Connect
+        const calories = await readNutritionData(
+          startOfDay.toISOString(),
+          endOfDay.toISOString()
+        );
+        setTodayCalories(calories);
+
+        // Fetch hydration from Health Connect
+        const hydration = await readHydrationData(
+          startOfDay.toISOString(),
+          endOfDay.toISOString()
+        );
+        setTodayWater(hydration / 1000); // Convert ml to liters
+      } catch (error) {
+        console.error('Error fetching Health Connect data:', error);
+        // Keep at 0 on error
       }
     };
 
     fetchTodayMetrics();
-  }, [user?.id]);
+  }, [healthConnect.isAvailable, healthConnect.hasPermissions]);
 
   // Calculate values
-  const calorieGoal = onboarding?.daily_calories || 2850;
-  const waterGoal = 2.5; // Default 2.5L goal
+  const calorieGoal = onboarding?.daily_calories || 2000;
+  const waterGoal = (onboarding?.water_target || 2000) / 1000; // Convert ml to liters
   const currentWeight = onboarding?.current_weight || 0;
 
   const formatNumber = (num: number) => {

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, ActivityIndicator, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, TouchableOpacity, SafeAreaView, ActivityIndicator } from 'react-native';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { ArrowLeft, Droplets, Plus, TrendingUp } from 'lucide-react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
@@ -20,34 +20,44 @@ export default function HydrationTracker() {
     { accessType: 'write', recordType: 'Hydration' },
   ]);
 
+  const fetchHydration = async () => {
+    if (!healthConnect.hasPermissions) {
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const today = new Date();
+      const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+      const endOfDay = new Date(today.setHours(23, 59, 59, 999));
+
+      const water = await readHydrationData(
+        startOfDay.toISOString(),
+        endOfDay.toISOString()
+      );
+      console.log('💧 Setting water consumed from Health Connect:', water);
+      setWaterConsumed(water);
+    } catch (error) {
+      console.error('Error fetching hydration:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchHydration = async () => {
-      if (!healthConnect.hasPermissions) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        setIsLoading(true);
-        const today = new Date();
-        const startOfDay = new Date(today.setHours(0, 0, 0, 0));
-        const endOfDay = new Date(today.setHours(23, 59, 59, 999));
-
-        const water = await readHydrationData(
-          startOfDay.toISOString(),
-          endOfDay.toISOString()
-        );
-        console.log('💧 Setting water consumed from Health Connect:', water);
-        setWaterConsumed(water);
-      } catch (error) {
-        console.error('Error fetching hydration:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchHydration();
   }, [healthConnect.hasPermissions]);
+
+  // Refresh when returning from add-hydration page
+  useFocusEffect(
+    useCallback(() => {
+      console.log('🔄 Screen focused - refreshing hydration data');
+      if (healthConnect.hasPermissions) {
+        fetchHydration();
+      }
+    }, [healthConnect.hasPermissions])
+  );
 
   const waterGoal = onboarding?.water_target || 2000;
   const percentage = Math.min((waterConsumed / waterGoal) * 100, 100);
@@ -89,7 +99,9 @@ export default function HydrationTracker() {
           <ArrowLeft size={24} color="white" />
         </TouchableOpacity>
         <Text className="text-2xl font-bold text-white">Hydration Tracker</Text>
-        <View style={{ width: 24 }} />
+        <TouchableOpacity onPress={() => router.push('/calculators/hydration-history')}>
+          <TrendingUp size={24} color={theme.primary} />
+        </TouchableOpacity>
       </Animated.View>
 
       <View className="flex-1 px-6 pt-8">
@@ -199,15 +211,16 @@ export default function HydrationTracker() {
               className="mt-6"
             >
               <Text className="mb-4 text-lg font-semibold text-white">Quick Add</Text>
-              <View className="flex-row space-x-3">
+              <View className="flex-row justify-between">
                 {[250, 500, 750, 1000].map((amount) => (
                   <TouchableOpacity
                     key={amount}
-                    onPress={() => {
-                      // TODO: Implement quick add to Health Connect
-                      Alert.alert('Coming Soon', `Add ${amount}ml water tracking`);
-                    }}
-                    className="flex-1 items-center rounded-2xl bg-[#2C2D32] py-4"
+                    onPress={() => router.push({
+                      pathname: '/(main)/calculators/add-hydration',
+                      params: { amount: amount.toString() }
+                    })}
+                    className="items-center rounded-2xl bg-[#2C2D32] px-4 py-4"
+                    style={{ width: '23%' }}
                   >
                     <Plus size={20} color={theme.primary} />
                     <Text className="mt-2 font-semibold text-white">{amount}ml</Text>
