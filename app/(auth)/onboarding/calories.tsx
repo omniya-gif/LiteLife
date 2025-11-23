@@ -1,16 +1,62 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Calculator, Flame } from 'lucide-react-native';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { Slider } from '@miblanchard/react-native-slider';
 import { useTheme } from '../../../hooks/useTheme';
+import { useOnboardingStore } from '../../../stores/onboardingStore';
+import { calculateDailyCalories } from '../../../utils/calorieCalculator';
 
 export default function CaloriesPage() {
   const router = useRouter();
   const theme = useTheme();
-  const [calories, setCalories] = useState(2000);
+  const { formData, updateFormData } = useOnboardingStore();
+  const [calories, setCalories] = useState(formData.daily_calories || 2000);
   const [mode, setMode] = useState<'manual' | 'auto'>('manual');
+  const [autoCalories, setAutoCalories] = useState<number | null>(null);
+
+  // Calculate calories automatically when in auto mode
+  useEffect(() => {
+    console.log('🔥 CALORIE PAGE - useEffect triggered');
+    console.log('🔥 Mode:', mode);
+    console.log('🔥 formData.gender:', formData.gender);
+    console.log('🔥 Full formData:', JSON.stringify(formData, null, 2));
+    
+    if (mode === 'auto' && formData.current_weight && formData.height && formData.age && formData.gender) {
+      const calculated = calculateDailyCalories(
+        formData.current_weight,
+        formData.height,
+        formData.age,
+        formData.gender,
+        formData.expertise || 'beginner',
+        formData.goal || 'maintain'
+      );
+      setAutoCalories(calculated);
+      console.log('🔥 Auto-calculated daily calories:', calculated);
+    }
+  }, [mode, formData]);
+
+  const handleContinue = () => {
+    // Save the calorie value based on mode
+    const finalCalories = mode === 'auto' ? autoCalories : calories;
+    
+    console.log('🔥 CALORIE PAGE - handleContinue called');
+    console.log('🔥 Mode:', mode);
+    console.log('🔥 Manual calories:', calories);
+    console.log('🔥 Auto calories:', autoCalories);
+    console.log('🔥 Final calories to save:', finalCalories);
+    console.log('🔥 Current formData before update:', JSON.stringify(formData, null, 2));
+    
+    if (finalCalories) {
+      updateFormData({ daily_calories: finalCalories });
+      console.log('💾 Saving daily_calories to onboarding store:', finalCalories);
+    } else {
+      console.error('❌ ERROR: finalCalories is null/undefined!');
+    }
+    
+    router.push('/onboarding/goal');
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-[#1A1B1E]">
@@ -111,10 +157,26 @@ export default function CaloriesPage() {
         >
           <View className="w-32 h-32 rounded-full items-center justify-center mb-8" style={{ backgroundColor: `${theme.primary}10` }}>
             <Calculator size={48} color={theme.primary} />
+            {autoCalories && (
+              <View className="mt-4">
+                <Text className="text-3xl font-bold text-white text-center">
+                  {autoCalories}
+                </Text>
+                <Text className="text-gray-400 text-center">calories/day</Text>
+              </View>
+            )}
           </View>
-          <Text className="text-white text-center">
-            We'll calculate your daily calorie needs based on your age, gender, weight, and activity level
+          <Text className="text-white text-center text-lg mb-4">
+            Based on your profile:
           </Text>
+          <View className="bg-[#2C2D32] rounded-2xl p-4 w-full">
+            <Text className="text-gray-400 text-center">
+              {formData.age}yo • {formData.gender || 'N/A'} • {formData.current_weight}kg • {formData.height}cm
+            </Text>
+            <Text className="text-gray-400 text-center mt-2">
+              Goal: {formData.goal?.replace('_', ' ')} • Level: {formData.expertise}
+            </Text>
+          </View>
         </Animated.View>
       )}
 
@@ -124,7 +186,7 @@ export default function CaloriesPage() {
         className="px-6 mt-auto mb-6"
       >
         <TouchableOpacity
-          onPress={() => router.push('/onboarding/goal')} // Changed from gender to goal
+          onPress={handleContinue}
           className="w-full h-14 rounded-2xl items-center justify-center"
           style={{ backgroundColor: theme.primary }}
         >

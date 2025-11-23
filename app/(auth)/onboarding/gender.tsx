@@ -21,13 +21,24 @@ export default function GenderPage() {
   const theme = useTheme();
   const selectedGender = formData.gender || 'male';
 
+  console.log('🚹 GENDER PAGE - Loaded, current formData:', JSON.stringify(formData, null, 2));
+  console.log('🚹 GENDER PAGE - Selected gender:', selectedGender);
+
   const handleGenderSelect = (gender: Gender) => {
-    updateFormData({ gender });
-    setGender(gender); // Update theme immediately
     console.log('🎨 Gender selected in onboarding:', gender);
+    updateFormData({ gender });
+    console.log('🎨 Updated formData with gender, current store:', useOnboardingStore.getState().formData);
+    setGender(gender); // Update theme immediately
   };
 
   const handleNext = () => {
+    // Save the selected gender before navigation
+    updateFormData({ gender: selectedGender });
+    
+    const currentStore = useOnboardingStore.getState().formData;
+    console.log('🚹 GENDER PAGE - Before navigation, formData in store:', JSON.stringify(currentStore, null, 2));
+    console.log('🚹 GENDER PAGE - Gender being saved:', selectedGender);
+    console.log('🚹 GENDER PAGE - Gender in store:', currentStore.gender);
     router.push('/onboarding/calories');
   };
 

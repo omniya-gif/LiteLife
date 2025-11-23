@@ -42,6 +42,9 @@ export default function NotificationsPage() {
     try {
       const updatedData = { ...formData, notifications_enabled: notificationsEnabled };
 
+      console.log('📤 NOTIFICATIONS PAGE - Final submission payload:', JSON.stringify(updatedData, null, 2));
+      console.log('📤 daily_calories in payload:', updatedData.daily_calories);
+
       // First update local state
       updateFormData({ notifications_enabled: notificationsEnabled });
 

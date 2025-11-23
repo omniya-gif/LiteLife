@@ -88,6 +88,7 @@ export const useUserStore = create(
               target_weight,
               height,
               expertise,
+              daily_calories,
               notifications_enabled,
               completed,
               updated_at

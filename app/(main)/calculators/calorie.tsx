@@ -6,11 +6,13 @@ import { CircularProgress } from '../../../components/CircularProgress';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { Platform } from 'react-native';
 import { useTheme } from '../../../hooks/useTheme';
+import { useUserStore } from '../../../lib/store/userStore';
 import { 
   useHealthConnect, 
   readStepsData, 
   readDistanceData, 
-  readFloorsData 
+  readFloorsData,
+  readActiveCaloriesData
 } from '../../../hooks/useHealthConnect';
 
 const MacroRow = ({ name, amount, percentage, color, index }) => (
@@ -32,20 +34,30 @@ const MacroRow = ({ name, amount, percentage, color, index }) => (
 export default function CalorieTrackerPage() {
   const router = useRouter();
   const theme = useTheme();
+  const onboarding = useUserStore((state) => state.onboarding);
   const [steps, setSteps] = useState(0);
   const [distance, setDistance] = useState(0);
   const [floors, setFloors] = useState(0);
   const [estimatedCalories, setEstimatedCalories] = useState(0);
-  const [dailyGoal] = useState(2500);
   const [isLoadingData, setIsLoadingData] = useState(false);
 
+  // Use calculated daily_calories from onboarding data
+  const dailyGoal = onboarding?.daily_calories || 2000;
   const percentage = Math.round((estimatedCalories / dailyGoal) * 100);
+
+  // Debug logging to check onboarding data
+  useEffect(() => {
+    console.log('📊 CALORIE PAGE - onboarding:', onboarding);
+    console.log('📊 CALORIE PAGE - daily_calories:', onboarding?.daily_calories);
+    console.log('📊 CALORIE PAGE - dailyGoal being used:', dailyGoal);
+  }, [onboarding, dailyGoal]);
 
   // Health Connect setup
   const healthConnect = useHealthConnect([
     { accessType: 'read', recordType: 'Steps' },
     { accessType: 'read', recordType: 'Distance' },
     { accessType: 'read', recordType: 'FloorsClimbed' },
+    { accessType: 'read', recordType: 'ActiveCaloriesBurned' },
   ]);
 
   const fetchHealthData = async () => {
@@ -62,22 +74,21 @@ export default function CalorieTrackerPage() {
       const startOfDay = new Date(now.setHours(0, 0, 0, 0));
       const endOfDay = new Date(now.setHours(23, 59, 59, 999));
 
-      // Fetch all health data
-      const [totalSteps, totalDistance, totalFloors] = await Promise.all([
+      // Fetch all health data including active calories burned
+      const [totalSteps, totalDistance, totalFloors, activeCalories] = await Promise.all([
         readStepsData(startOfDay.toISOString(), endOfDay.toISOString()),
         readDistanceData(startOfDay.toISOString(), endOfDay.toISOString()),
         readFloorsData(startOfDay.toISOString(), endOfDay.toISOString()),
+        readActiveCaloriesData(startOfDay.toISOString(), endOfDay.toISOString()),
       ]);
 
       setSteps(totalSteps);
       setDistance(totalDistance);
       setFloors(totalFloors);
-
-      // Estimate calories based on activity
-      const estimatedCals = Math.round(
-        totalSteps * 0.04 + totalDistance * 0.0001 + totalFloors * 5
-      );
-      setEstimatedCalories(estimatedCals);
+      
+      // Use actual calories burned from Google Fit via Health Connect
+      setEstimatedCalories(activeCalories);
+      console.log('🔥 Setting active calories from Health Connect:', activeCalories);
     } catch (error) {
       // Only log and show alert if it's not a permission error
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -191,9 +202,15 @@ export default function CalorieTrackerPage() {
       >
         <Text className="text-center text-lg font-medium" style={{ color: theme.primary }}>DAILY ACTIVITY</Text>
         <Text className="mt-4 text-center text-3xl font-bold text-white">
-          Estimated calories burned{' '}
           <Text style={{ color: theme.primary }}>{estimatedCalories}</Text>
+          <Text className="text-gray-400"> / </Text>
+          <Text className="text-gray-500">{dailyGoal}</Text>
           <Text style={{ color: theme.primary }}> cal</Text>
+        </Text>
+        <Text className="mt-2 text-center text-sm text-gray-400">
+          {onboarding?.daily_calories 
+            ? 'Based on your profile & fitness goal' 
+            : 'Default goal (complete profile for personalized goal)'}
         </Text>
       </Animated.View>
 
@@ -202,14 +219,24 @@ export default function CalorieTrackerPage() {
         entering={FadeInUp.delay(400).springify()}
         className="items-center justify-center py-12"
       >
-        <View className="relative">
+        <View className="relative" style={{ width: 240, height: 240 }}>
           <CircularProgress
             size={240}
             strokeWidth={24}
             progress={percentage / 100}
             colors={['#3B82F6', theme.primary, '#06B6D4']}
           />
-          <View className="absolute inset-0 items-center justify-center">
+          <View 
+            style={{
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              top: 0,
+              bottom: 0,
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
             <Text className="text-4xl font-bold text-white">{percentage}%</Text>
             <Text className="text-gray-500">of daily goal</Text>
           </View>

@@ -8,6 +8,7 @@ import { useUserStore } from '../lib/store/userStore';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useThemeStore } from '../stores/themeStore';
 import { OnboardingFormData } from '../types/onboarding';
+import { calculateDailyCalories } from '../utils/calorieCalculator';
 
 export function useOnboardingSubmit() {
   const { user } = useAuth();
@@ -54,17 +55,52 @@ export function useOnboardingSubmit() {
 
       // Save onboarding data (exclude username as it's saved in profiles)
       const { username, ...onboardingData } = formData;
-      const { error } = await supabase.from('user_onboarding').upsert({
+
+      console.log('🔥 SUBMIT HOOK - Received formData:', JSON.stringify(formData, null, 2));
+      console.log('🔥 SUBMIT HOOK - onboardingData.daily_calories:', onboardingData.daily_calories);
+
+      // 🔥 Calculate daily calorie goal if not already set by user
+      // (User may have set it manually or via auto-calculate in the calorie onboarding step)
+      let dailyCalories = onboardingData.daily_calories;
+      
+      if (
+        !dailyCalories &&
+        onboardingData.current_weight &&
+        onboardingData.height &&
+        onboardingData.age &&
+        onboardingData.gender
+      ) {
+        // Only calculate if user didn't set it themselves
+        dailyCalories = calculateDailyCalories(
+          onboardingData.current_weight,
+          onboardingData.height,
+          onboardingData.age,
+          onboardingData.gender,
+          onboardingData.expertise || 'beginner',
+          onboardingData.goal || 'maintain'
+        );
+        console.log('📊 Auto-calculated daily calorie goal (fallback):', dailyCalories);
+      } else if (dailyCalories) {
+        console.log('📊 Using user-selected daily calorie goal:', dailyCalories);
+      }
+
+      const dataToInsert = {
         user_id: currentUser.id,
         ...onboardingData,
+        daily_calories: dailyCalories,
         completed: true,
-      });
+      };
+
+      console.log('📊 SUBMIT HOOK - Final data being sent to database:', JSON.stringify(dataToInsert, null, 2));
+      console.log('📊 SUBMIT HOOK - daily_calories field value:', dataToInsert.daily_calories);
+
+      const { error } = await supabase.from('user_onboarding').upsert(dataToInsert);
 
       if (error) {
         console.error('Database error:', error);
         throw error;
       }
-      console.log('Onboarding data saved successfully');
+      console.log('✅ Onboarding data saved successfully');
 
       // 🎨 Sync theme with gender immediately
       if (formData.gender) {

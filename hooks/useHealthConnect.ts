@@ -349,3 +349,35 @@ export const readFloorsData = async (startTime: string, endTime: string) => {
     throw error;
   }
 };
+
+// Helper function to read active calories burned data
+export const readActiveCaloriesData = async (startTime: string, endTime: string) => {
+  try {
+    const timeRangeFilter = {
+      operator: 'between' as const,
+      startTime,
+      endTime,
+    };
+
+    interface CaloriesRecord {
+      energy: {
+        inKilocalories: number;
+      };
+    }
+
+    const caloriesRecords = await readRecords('ActiveCaloriesBurned', { timeRangeFilter });
+    const totalCalories = (caloriesRecords.records as CaloriesRecord[]).reduce(
+      (sum: number, record) => sum + record.energy.inKilocalories,
+      0
+    );
+    console.log('🔥 Active Calories Burned from Health Connect:', totalCalories);
+    return Math.round(totalCalories);
+  } catch (error) {
+    // Only log if it's not a permission error
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (!errorMessage.includes('lacks the following permissions')) {
+      console.error('Error reading calories data:', error);
+    }
+    throw error;
+  }
+};

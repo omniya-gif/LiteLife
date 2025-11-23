@@ -18,6 +18,7 @@ import { useUserStore } from '../../../lib/store/userStore';
 import { useTheme } from '../../../hooks/useTheme';
 import { supabase } from '../../../lib/supabase';
 import { Gender } from '../../../types/onboarding';
+import { calculateDailyCalories } from '../../../utils/calorieCalculator';
 
 export default function EditProfilePage() {
   const router = useRouter();
@@ -100,6 +101,20 @@ export default function EditProfilePage() {
 
       if (targetWeight) {
         updateData.target_weight = parseFloat(targetWeight);
+      }
+
+      // 🔥 Recalculate daily calorie goal when biometrics change
+      if (onboarding?.goal && onboarding?.expertise) {
+        const newDailyCalories = calculateDailyCalories(
+          weightNum,
+          heightNum,
+          ageNum,
+          gender,
+          onboarding.expertise,
+          onboarding.goal
+        );
+        updateData.daily_calories = newDailyCalories;
+        console.log('📊 Recalculated daily calorie goal:', newDailyCalories);
       }
 
       const { error: onboardingError } = await supabase
