@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Platform, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Footprints, Heart, Clock, Navigation2, Activity } from 'lucide-react-native';
+import { ArrowLeft, Footprints, Heart, Clock, Navigation2, Activity, AlertCircle } from 'lucide-react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { initialize, requestPermission, readRecords } from 'react-native-health-connect';
+import { readRecords } from 'react-native-health-connect';
 import { format } from 'date-fns';
+import { useHealthConnect } from '../../../../hooks/useHealthConnect';
+import { useTheme } from '../../../../hooks/useTheme';
 
 interface ActivityEntry {
   id: string;
@@ -22,34 +24,34 @@ interface ActivityEntry {
 
 export default function JournalPage() {
   const router = useRouter();
+  const theme = useTheme();
   const [activities, setActivities] = useState<ActivityEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Health Connect setup
+  const healthConnect = useHealthConnect([
+    { accessType: 'read', recordType: 'Steps' },
+    { accessType: 'read', recordType: 'Distance' },
+    { accessType: 'read', recordType: 'ExerciseRoute' },
+    { accessType: 'read', recordType: 'TotalCaloriesBurned' },
+    { accessType: 'read', recordType: 'Speed' }
+  ]);
 
   useEffect(() => {
-    initializeHealthConnect();
-  }, []);
-
-  const initializeHealthConnect = async () => {
-    try {
-      const isInitialized = await initialize();
-      if (!isInitialized) return;
-
-      const granted = await requestPermission([
-        { accessType: 'read', recordType: 'Steps' },
-        { accessType: 'read', recordType: 'Distance' },
-        { accessType: 'read', recordType: 'ExerciseRoute' }, // Changed from 'Exercise'
-        { accessType: 'read', recordType: 'TotalCaloriesBurned' },
-        { accessType: 'read', recordType: 'Speed' }
-      ]);
-
-      if (granted) {
-        await fetchActivities();
-      }
-    } catch (error) {
-      console.error('Health Connect error:', error);
+    if (Platform.OS === 'android' && 
+        healthConnect.isAvailable && 
+        healthConnect.isInitialized && 
+        healthConnect.hasPermissions &&
+        !healthConnect.isChecking) {
+      fetchActivities();
     }
-  };
+  }, [healthConnect.isAvailable, healthConnect.isInitialized, healthConnect.hasPermissions, healthConnect.isChecking]);
 
   const fetchActivities = async () => {
+    if (Platform.OS !== 'android' || !healthConnect.hasPermissions) {
+      return;
+    }
+
     const now = new Date();
     const startOfWeek = new Date(now);
     startOfWeek.setDate(now.getDate() - 7);
@@ -61,6 +63,7 @@ export default function JournalPage() {
     };
 
     try {
+      setIsLoading(true);
       const [exerciseData, stepsData, distanceData, caloriesData] = await Promise.all([
         readRecords('ExerciseRoute', { timeRangeFilter }), // Changed from 'Exercise'
         readRecords('Steps', { timeRangeFilter }),
@@ -126,7 +129,18 @@ export default function JournalPage() {
 
       setActivities(activities);
     } catch (error) {
-      console.error('Error fetching activities:', error);
+      // Only log and show alert if it's not a permission error
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (!errorMessage.includes('lacks the following permissions')) {
+        console.error('Error fetching activities:', error);
+        Alert.alert(
+          'Error Loading Activities',
+          'Unable to load activity data. Please try again.',
+          [{ text: 'OK' }]
+        );
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -163,6 +177,44 @@ export default function JournalPage() {
         <Text className="text-xl font-bold text-white">Activity Journal</Text>
         <View className="w-8" />
       </Animated.View>
+
+      {/* Health Connect Status Banner */}
+      {Platform.OS === 'android' && (!healthConnect.isAvailable || !healthConnect.hasPermissions) && (
+        <Animated.View
+          entering={FadeInDown.delay(200)}
+          className="mx-6 mb-4 rounded-2xl p-4"
+          style={{ backgroundColor: '#F59E0B20' }}>
+          <View className="flex-row items-center">
+            <AlertCircle size={24} color="#F59E0B" />
+            <View className="ml-3 flex-1">
+              <Text className="font-semibold text-white">
+                {!healthConnect.isAvailable
+                  ? 'Health Connect Not Installed'
+                  : 'Permission Required'}
+              </Text>
+              <Text className="mt-1 text-xs text-gray-400">
+                {!healthConnect.isAvailable
+                  ? 'Install Health Connect to view your activities'
+                  : 'Grant permission to read your activity data'}
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            onPress={() => {
+              if (!healthConnect.isAvailable) {
+                healthConnect.installHealthConnect();
+              } else {
+                healthConnect.requestHealthPermissions();
+              }
+            }}
+            className="mt-3 rounded-xl py-2"
+            style={{ backgroundColor: '#F59E0B' }}>
+            <Text className="text-center font-medium text-white">
+              {!healthConnect.isAvailable ? 'Install Now' : 'Grant Permission'}
+            </Text>
+          </TouchableOpacity>
+        </Animated.View>
+      )}
 
       <ScrollView className="flex-1">
         {Object.entries(groupActivitiesByDate()).map(([date, dayActivities], index) => (

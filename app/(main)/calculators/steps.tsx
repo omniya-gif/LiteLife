@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, SafeAreaView, Dimensions, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, TrendingUp, Map, Timer, Footprints } from 'lucide-react-native';
+import { ArrowLeft, TrendingUp, Map, Timer, Footprints, AlertCircle } from 'lucide-react-native';
 import { LineChart } from 'react-native-chart-kit';
 import Animated, { 
   FadeIn, 
@@ -15,9 +15,14 @@ import Animated, {
 } from 'react-native-reanimated';
 import { CircularProgress } from '../../../components/CircularProgress';
 import { LinearGradient } from 'expo-linear-gradient';
-import { initialize, requestPermission, readRecords } from 'react-native-health-connect';
 import { Platform } from 'react-native';
 import { useTheme } from '../../../hooks/useTheme';
+import { 
+  useHealthConnect, 
+  readStepsData, 
+  readDistanceData, 
+  readFloorsData 
+} from '../../../hooks/useHealthConnect';
 
 const { width } = Dimensions.get('window');
 
@@ -62,18 +67,74 @@ export default function StepsTrackerPage() {
   const [floors, setFloors] = useState(0);
   const [goal] = useState(10000);
   const [activeTab, setActiveTab] = useState('WEEK');
+  const [isLoadingData, setIsLoadingData] = useState(false);
   const progress = steps / goal;
+
+  // Health Connect setup
+  const healthConnect = useHealthConnect([
+    { accessType: 'read', recordType: 'Steps' },
+    { accessType: 'read', recordType: 'Distance' },
+    { accessType: 'read', recordType: 'FloorsClimbed' },
+    { accessType: 'read', recordType: 'ActiveCaloriesBurned' },
+  ]);
   
   // Animation values
   const footprintScale = useSharedValue(1);
   const progressAnimation = useSharedValue(0);
 
+  const fetchHealthData = async () => {
+    if (Platform.OS !== 'android') return;
+    
+    // Don't fetch if we don't have permissions yet
+    if (!healthConnect.hasPermissions) {
+      return;
+    }
+
+    try {
+      setIsLoadingData(true);
+      const now = new Date();
+      const startOfDay = new Date(now.setHours(0, 0, 0, 0));
+      const endOfDay = new Date(now.setHours(23, 59, 59, 999));
+
+      // Fetch all health data
+      const [totalSteps, totalDistance, totalFloors] = await Promise.all([
+        readStepsData(startOfDay.toISOString(), endOfDay.toISOString()),
+        readDistanceData(startOfDay.toISOString(), endOfDay.toISOString()),
+        readFloorsData(startOfDay.toISOString(), endOfDay.toISOString()),
+      ]);
+
+      setSteps(totalSteps);
+      setDistance(totalDistance);
+      setFloors(totalFloors);
+
+      // Estimate calories based on activity
+      const estimatedCals = Math.round(
+        totalSteps * 0.04 + totalDistance * 0.0001 + totalFloors * 5
+      );
+      setCalories(estimatedCals);
+
+      // Estimate duration (assuming average walking speed of 5 km/h)
+      const durationMinutes = Math.round((totalDistance / 1000 / 5) * 60);
+      setDuration(durationMinutes);
+    } catch (error) {
+      // Only log and show alert if it's not a permission error (which should be handled by the banner)
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (!errorMessage.includes('lacks the following permissions')) {
+        console.error('Health Connect error:', error);
+        Alert.alert(
+          'Error Loading Data',
+          'Unable to load health data. Please try again.',
+          [{ text: 'OK' }]
+        );
+      }
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
+
   React.useEffect(() => {
     footprintScale.value = withRepeat(
-      withSequence(
-        withSpring(1.1),
-        withSpring(1)
-      ),
+      withSequence(withSpring(1.1), withSpring(1)),
       -1,
       true
     );
@@ -82,96 +143,18 @@ export default function StepsTrackerPage() {
       damping: 15,
       stiffness: 80,
     });
+  }, [progress]);
 
-    // Health Connect initialization
-    const initializeHealthConnect = async () => {
-      if (Platform.OS !== 'android') return;
-
-      try {
-        const isInitialized = await initialize();
-        if (!isInitialized) return;
-
-        const granted = await requestPermission([
-          { accessType: 'read', recordType: 'Steps' },
-          { accessType: 'read', recordType: 'Distance' },
-          { accessType: 'read', recordType: 'FloorsClimbed' }
-        ]);
-
-        if (granted) {
-          const now = new Date();
-          const startOfDay = new Date(now.setHours(0, 0, 0, 0));
-          const endOfDay = new Date(now.setHours(23, 59, 59, 999));
-
-          const timeRangeFilter = {
-            operator: 'between' as const,
-            startTime: startOfDay.toISOString(),
-            endTime: endOfDay.toISOString(),
-          };
-
-          // Add type definitions for the records
-          interface StepsRecord {
-            count: number;
-          }
-
-          interface DistanceRecord {
-            distance: {
-              inMeters: number;
-            };
-          }
-
-          interface FloorsRecord {
-            floors: number;
-          }
-
-          // Update the records processing
-          const stepsRecords = await readRecords('Steps', { timeRangeFilter });
-          const totalSteps = (stepsRecords.records as StepsRecord[]).reduce(
-            (sum: number, record) => sum + record.count, 
-            0
-          );
-          setSteps(totalSteps);
-
-          // Get distance
-          const distanceRecords = await readRecords('Distance', { timeRangeFilter });
-          const totalDistance = (distanceRecords.records as DistanceRecord[]).reduce(
-            (sum: number, record) => sum + record.distance.inMeters, 
-            0
-          );
-          setDistance(totalDistance);
-
-          // Get floors climbed
-          const floorsRecords = await readRecords('FloorsClimbed', { timeRangeFilter });
-          const totalFloors = (floorsRecords.records as FloorsRecord[]).reduce(
-            (sum: number, record) => sum + record.floors, 
-            0
-          );
-          setFloors(totalFloors);
-
-          // Estimate calories based on activity
-          // Rough estimation: 
-          // - 0.04 calories per step
-          // - 0.17 calories per meter
-          // - 0.17 calories per floor climbed
-          const estimatedCals = Math.round(
-            (totalSteps * 0.04) + 
-            (totalDistance * 0.17) + 
-            (totalFloors * 0.17)
-          );
-          setCalories(estimatedCals);
-
-          // Get duration
-          const duration = Math.round((totalDistance / 1000) * 60);
-          setDuration(duration);
-        }
-      } catch (error) {
-        console.error('Health Connect error:', error);
-      }
-    };
-
-    if (Platform.OS === 'android') {
-      initializeHealthConnect();
+  React.useEffect(() => {
+    // Only fetch data when we have confirmed permissions
+    if (Platform.OS === 'android' && 
+        healthConnect.isAvailable && 
+        healthConnect.isInitialized && 
+        healthConnect.hasPermissions &&
+        !healthConnect.isChecking) {
+      fetchHealthData();
     }
-  }, []);
+  }, [healthConnect.isAvailable, healthConnect.isInitialized, healthConnect.hasPermissions, healthConnect.isChecking]);
 
   const footprintStyle = useAnimatedStyle(() => ({
     transform: [{ scale: footprintScale.value }],
@@ -206,6 +189,44 @@ export default function StepsTrackerPage() {
           <Text style={{ color: theme.primary }}>Insight</Text>
         </TouchableOpacity>
       </Animated.View>
+
+      {/* Health Connect Status Banner */}
+      {Platform.OS === 'android' && (!healthConnect.isAvailable || !healthConnect.hasPermissions) && (
+        <Animated.View
+          entering={FadeInDown.delay(200)}
+          className="mx-6 mt-4 rounded-2xl p-4"
+          style={{ backgroundColor: '#F59E0B20' }}>
+          <View className="flex-row items-center">
+            <AlertCircle size={24} color="#F59E0B" />
+            <View className="ml-3 flex-1">
+              <Text className="font-semibold text-white">
+                {!healthConnect.isAvailable
+                  ? 'Health Connect Not Installed'
+                  : 'Permission Required'}
+              </Text>
+              <Text className="mt-1 text-xs text-gray-400">
+                {!healthConnect.isAvailable
+                  ? 'Install Health Connect to track your steps'
+                  : 'Grant permission to read your step data'}
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            onPress={() => {
+              if (!healthConnect.isAvailable) {
+                healthConnect.installHealthConnect();
+              } else {
+                healthConnect.requestHealthPermissions();
+              }
+            }}
+            className="mt-3 rounded-xl py-2"
+            style={{ backgroundColor: '#F59E0B' }}>
+            <Text className="text-center font-medium text-white">
+              {!healthConnect.isAvailable ? 'Install Now' : 'Grant Permission'}
+            </Text>
+          </TouchableOpacity>
+        </Animated.View>
+      )}
 
       <View className="mt-12 px-6">
         <Animated.View

@@ -8,8 +8,8 @@ import React from 'react';
 import { View, TouchableOpacity, Image, Alert, Text } from 'react-native';
 import { useQueryClient } from 'react-query';
 
-import { supabase } from '../../lib/supabase';
 import { useUserStore } from '../../lib/store/userStore';
+import { supabase } from '../../lib/supabase';
 import { useOnboardingStore } from '../../stores/onboardingStore';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -36,11 +36,11 @@ export const SocialLogin = ({ isSignUp = false }: SocialLoginProps) => {
     try {
       console.log('[SocialLogin] ====== AUTH CALLBACK STARTED ======');
       console.log('[SocialLogin] Callback URL received:', url);
-      
+
       const { params, errorCode } = QueryParams.getQueryParams(url);
       console.log('[SocialLogin] Query params:', params);
       console.log('[SocialLogin] Error code:', errorCode);
-      
+
       if (errorCode) throw new Error(errorCode);
       const { access_token, refresh_token } = params;
 
@@ -108,7 +108,7 @@ export const SocialLogin = ({ isSignUp = false }: SocialLoginProps) => {
         console.log('[SocialLogin] Onboarding completed:', isCompleted);
 
         setOnboardingCompleted(isCompleted);
-        
+
         // ✅ IMMEDIATELY fetch user data and cache it before navigation
         console.log('[SocialLogin] 📥 Fetching user profile data immediately...');
         await fetchUserData(data.session.user.id);
@@ -143,11 +143,11 @@ export const SocialLogin = ({ isSignUp = false }: SocialLoginProps) => {
       console.log('═══════════════════════════════════════════════════════');
       console.log('Go to: Supabase Dashboard → Authentication → URL Configuration');
       console.log('');
-      
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: redirectTo,
+          redirectTo,
           skipBrowserRedirect: true,
           queryParams: {
             access_type: 'offline',
@@ -162,21 +162,17 @@ export const SocialLogin = ({ isSignUp = false }: SocialLoginProps) => {
       }
 
       console.log('[SocialLogin] Opening auth session with URL:', data?.url);
-      const res = await WebBrowser.openAuthSessionAsync(
-        data?.url ?? '', 
-        redirectTo,
-        {
-          showInRecents: true,
-          createTask: false,
-          enableDefaultShareMenuItem: false,
-          // This is important for Android to return to the app
-          preferEphemeralSession: false,
-        }
-      );
+      const res = await WebBrowser.openAuthSessionAsync(data?.url ?? '', redirectTo, {
+        showInRecents: true,
+        createTask: false,
+        enableDefaultShareMenuItem: false,
+        // This is important for Android to return to the app
+        preferEphemeralSession: false,
+      });
 
       console.log('[SocialLogin] Auth session result:', res);
       console.log('[SocialLogin] Auth session type:', res.type);
-      
+
       if (res.type === 'success') {
         console.log('[SocialLogin] Auth session successful, processing URL...');
         console.log('[SocialLogin] Returned URL:', res.url);

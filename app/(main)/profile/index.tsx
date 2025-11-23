@@ -1,17 +1,24 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, Image, ScrollView, Dimensions, Platform, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Camera } from 'lucide-react-native';
-import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
-import { CircularProgress } from '../../../components/CircularProgress';
-import { useUserStore } from '../../../lib/store/userStore';
-import { useAuth } from '../../../hooks/useAuth';
-import { LoadingScreen } from '../../../components/LoadingScreen';
-import { HEALTH_SERVICE_ICONS } from '../../../assets/icons/health';
-import { useTheme } from '../../../hooks/useTheme';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  ScrollView,
+  Platform,
+  ActivityIndicator,
+} from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-const { width } = Dimensions.get('window');
+import { HEALTH_SERVICE_ICONS } from '../../../assets/icons/health';
+import { LoadingScreen } from '../../../components/LoadingScreen';
+import { useAuth } from '../../../hooks/useAuth';
+import { useHealthConnect } from '../../../hooks/useHealthConnect';
+import { useTheme } from '../../../hooks/useTheme';
+import { useUserStore } from '../../../lib/store/userStore';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -19,6 +26,14 @@ export default function ProfilePage() {
   const { profile, onboarding, fetchUserData, isLoading } = useUserStore();
   const theme = useTheme();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  // Health Connect setup
+  const healthConnect = useHealthConnect([
+    { accessType: 'read', recordType: 'Steps' },
+    { accessType: 'read', recordType: 'Distance' },
+    { accessType: 'read', recordType: 'FloorsClimbed' },
+    { accessType: 'read', recordType: 'ActiveCaloriesBurned' },
+  ]);
 
   useEffect(() => {
     if (user?.id) {
@@ -36,64 +51,87 @@ export default function ProfilePage() {
     return <LoadingScreen />; // You'll need to create this component
   }
 
+  const handleHealthConnectPress = () => {
+    if (!healthConnect.isAvailable) {
+      healthConnect.installHealthConnect();
+    } else if (!healthConnect.hasPermissions) {
+      healthConnect.requestHealthPermissions();
+    } else {
+      healthConnect.openSettings();
+    }
+  };
+
+  const getHealthConnectStatus = () => {
+    if (healthConnect.isChecking) {
+      return { icon: '⏳', color: '#FCD34D', text: 'CHECKING...' };
+    }
+    if (!healthConnect.isAvailable) {
+      return { icon: '❌', color: '#EF4444', text: 'NOT INSTALLED' };
+    }
+    if (!healthConnect.hasPermissions) {
+      return { icon: '⚠️', color: '#F59E0B', text: 'NO PERMISSION' };
+    }
+    return { icon: '✅', color: '#10B981', text: 'CONNECTED' };
+  };
+
   const renderHealthServices = () => {
     const services = [];
 
     // Add platform-specific health service
     if (Platform.OS === 'ios') {
       services.push(
-        <TouchableOpacity 
+        <TouchableOpacity
           key="apple-health"
-          onPress={() => {/* Handle Apple Health */}}
-          className="flex-1 items-center py-4 rounded-2xl mx-1"
-          style={{ backgroundColor: `${theme.primary}30` }}
-        >
-          <Image 
+          onPress={() => {
+            /* Handle Apple Health */
+          }}
+          className="mx-1 flex-1 items-center rounded-2xl py-4"
+          style={{ backgroundColor: `${theme.primary}30` }}>
+          <Image
             source={HEALTH_SERVICE_ICONS.APPLE_HEALTH}
-            className="w-8 h-8"
+            className="h-8 w-8"
             resizeMode="contain"
           />
-          <Text className="text-white text-xs font-medium mt-2">
-            APPLE HEALTH
-          </Text>
+          <Text className="mt-2 text-xs font-medium text-white">APPLE HEALTH</Text>
         </TouchableOpacity>
       );
     } else if (Platform.OS === 'android') {
+      const status = getHealthConnectStatus();
       services.push(
-        <TouchableOpacity 
-          key="google-fit"
-          onPress={() => {/* Handle Google Fit */}}
-          className="flex-1 items-center py-4 rounded-2xl mx-1"
-          style={{ backgroundColor: `${theme.primary}30` }}
-        >
-          <Image 
-            source={HEALTH_SERVICE_ICONS.GOOGLE_FIT}
-            className="w-8 h-8"
-            resizeMode="contain"
-          />
-          <Text className="text-white text-xs font-medium mt-2">
-            GOOGLE FIT
-          </Text>
+        <TouchableOpacity
+          key="health-connect"
+          onPress={handleHealthConnectPress}
+          className="mx-1 flex-1 items-center rounded-2xl py-4"
+          style={{ backgroundColor: `${theme.primary}30` }}>
+          <View className="relative">
+            <Image
+              source={HEALTH_SERVICE_ICONS.GOOGLE_FIT}
+              className="h-8 w-8"
+              resizeMode="contain"
+            />
+            <View
+              className="absolute -right-1 -top-1 h-4 w-4 items-center justify-center rounded-full"
+              style={{ backgroundColor: status.color }}>
+              <Text style={{ fontSize: 8 }}>{status.icon}</Text>
+            </View>
+          </View>
+          <Text className="mt-2 text-xs font-medium text-white">HEALTH CONNECT</Text>
+          <Text className="mt-1 text-[10px] text-gray-400">{status.text}</Text>
         </TouchableOpacity>
       );
     }
 
     // Always add Spoonacular
     services.push(
-      <TouchableOpacity 
+      <TouchableOpacity
         key="spoonacular"
-        onPress={() => {/* Handle Spoonacular */}}
-        className="flex-1 items-center py-4 rounded-2xl mx-1"
-        style={{ backgroundColor: `${theme.primary}30` }}
-      >
-        <Image 
-          source={HEALTH_SERVICE_ICONS.SPOONACULAR}
-          className="w-8 h-8"
-          resizeMode="contain"
-        />
-        <Text className="text-white text-xs font-medium mt-2">
-          SPOONACULAR
-        </Text>
+        onPress={() => {
+          /* Handle Spoonacular */
+        }}
+        className="mx-1 flex-1 items-center rounded-2xl py-4"
+        style={{ backgroundColor: `${theme.primary}30` }}>
+        <Image source={HEALTH_SERVICE_ICONS.SPOONACULAR} className="h-8 w-8" resizeMode="contain" />
+        <Text className="mt-2 text-xs font-medium text-white">SPOONACULAR</Text>
       </TouchableOpacity>
     );
 
@@ -106,16 +144,15 @@ export default function ProfilePage() {
         <View>
           {/* Header Image - Local workout composition image */}
           <View className="h-[300px]">
-            <Image 
+            <Image
               source={require('../../../assets/images/background-image/workout-composition-with-clipboard.jpg')}
-              className="absolute w-full h-full"
+              className="absolute h-full w-full"
               resizeMode="cover"
             />
             <View className="flex-row items-center justify-between px-6 pt-4">
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => router.back()}
-                className="h-12 w-12 items-center justify-center rounded-xl bg-black/20"
-              >
+                className="h-12 w-12 items-center justify-center rounded-xl bg-black/20">
                 <ArrowLeft size={24} color="white" />
               </TouchableOpacity>
               <TouchableOpacity className="h-9 w-9 items-center justify-center rounded-xl bg-white/30">
@@ -125,178 +162,174 @@ export default function ProfilePage() {
           </View>
 
           {/* Profile Content */}
-          <Animated.View 
+          <Animated.View
             entering={FadeInDown.springify()}
-            className="-mt-10 rounded-t-[36px] pt-12 px-6"
-            style={{ backgroundColor: theme.background }}
-          >
+            className="-mt-10 rounded-t-[36px] px-6 pt-12"
+            style={{ backgroundColor: theme.background }}>
             {/* Profile Avatar with First Letter */}
             <View className="absolute -top-8 left-6">
-              <View 
-                className="w-[60px] h-[60px] rounded-2xl border-2 border-white items-center justify-center"
-                style={{ backgroundColor: theme.primary }}
-              >
-                <Text className="text-white text-2xl font-bold">
+              <View
+                className="h-[60px] w-[60px] items-center justify-center rounded-2xl border-2 border-white"
+                style={{ backgroundColor: theme.primary }}>
+                <Text className="text-2xl font-bold text-white">
                   {(profile?.username || user?.email || 'U').charAt(0).toUpperCase()}
                 </Text>
               </View>
             </View>
 
             {/* Profile Info */}
-            <Animated.View 
+            <Animated.View
               entering={FadeInDown.delay(200)}
-              className="flex-row items-center justify-between mt-6"
-            >
+              className="mt-6 flex-row items-center justify-between">
               <View>
                 <Text className="text-xl font-bold text-white">
-                  {displayProfile?.username && displayProfile.username !== 'User' 
-                    ? displayProfile.username 
-                    : user?.user_metadata?.full_name?.split(' ')[0] || user?.user_metadata?.name?.split(' ')[0] || 'User'}
+                  {displayProfile?.username && displayProfile.username !== 'User'
+                    ? displayProfile.username
+                    : user?.user_metadata?.full_name?.split(' ')[0] ||
+                      user?.user_metadata?.name?.split(' ')[0] ||
+                      'User'}
                 </Text>
-                <Text className="text-sm font-medium mt-1" style={{ color: theme.primary }}>
+                <Text className="mt-1 text-sm font-medium" style={{ color: theme.primary }}>
                   {displayOnboarding?.expertise?.toUpperCase() || 'BEGINNER'} MEMBER
                 </Text>
               </View>
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => router.push('/profile/edit')}
-                className="px-6 py-3 rounded-xl"
-                style={{ backgroundColor: `${theme.primary}10` }}
-              >
-                <Text className="font-medium" style={{ color: theme.primary }}>Edit</Text>
+                className="rounded-xl px-6 py-3"
+                style={{ backgroundColor: `${theme.primary}10` }}>
+                <Text className="font-medium" style={{ color: theme.primary }}>
+                  Edit
+                </Text>
               </TouchableOpacity>
             </Animated.View>
 
             {/* Bio */}
-            <Animated.Text 
+            <Animated.Text
               entering={FadeInDown.delay(400)}
-              className="text-gray-400 mt-6 leading-5"
-            >
+              className="mt-6 leading-5 text-gray-400">
               {displayProfile?.bio}
             </Animated.Text>
 
             {/* Goal Section - Updated styling */}
-            <Animated.View 
+            <Animated.View
               entering={FadeInDown.delay(400)}
-              className="mt-6 p-4 rounded-2xl"
-              style={{ backgroundColor: `${theme.primary}10` }}
-            >
+              className="mt-6 rounded-2xl p-4"
+              style={{ backgroundColor: `${theme.primary}10` }}>
               <Text className="text-xs font-medium tracking-wider" style={{ color: theme.primary }}>
                 GOAL
               </Text>
-              <View className="flex-row items-center mt-2">
+              <View className="mt-2 flex-row items-center">
                 <Text className="text-xl font-bold text-white">
                   {displayOnboarding?.goal || 'Improve Health'}
                 </Text>
                 {displayOnboarding?.reason && (
-                  <Text className="text-gray-400 ml-2 flex-1">
-                    • {onboarding.reason}
-                  </Text>
+                  <Text className="ml-2 flex-1 text-gray-400">• {onboarding.reason}</Text>
                 )}
               </View>
             </Animated.View>
 
             {/* Stats */}
-            <Animated.View 
+            <Animated.View
               entering={FadeInDown.delay(600)}
-              className="flex-row justify-between mt-12"
-            >
+              className="mt-12 flex-row justify-between">
               <View>
-                <Text className="text-xs font-medium tracking-wider" style={{ color: theme.primary }}>WEIGHT</Text>
-                <View className="flex-row items-baseline mt-2">
+                <Text
+                  className="text-xs font-medium tracking-wider"
+                  style={{ color: theme.primary }}>
+                  WEIGHT
+                </Text>
+                <View className="mt-2 flex-row items-baseline">
                   <Text className="text-2xl font-bold text-white">
                     {displayOnboarding?.current_weight || '--'}
                   </Text>
-                  <Text className="text-gray-400 ml-1">kg</Text>
+                  <Text className="ml-1 text-gray-400">kg</Text>
                 </View>
               </View>
               <View className="h-12 w-[1px]" style={{ backgroundColor: theme.backgroundDark }} />
               <View>
-                <Text className="text-xs font-medium tracking-wider" style={{ color: theme.primary }}>AGE</Text>
-                <View className="flex-row items-baseline mt-2">
+                <Text
+                  className="text-xs font-medium tracking-wider"
+                  style={{ color: theme.primary }}>
+                  AGE
+                </Text>
+                <View className="mt-2 flex-row items-baseline">
                   <Text className="text-2xl font-bold text-white">
                     {displayOnboarding?.age || '--'}
                   </Text>
-                  <Text className="text-gray-400 ml-1">yo</Text>
+                  <Text className="ml-1 text-gray-400">yo</Text>
                 </View>
               </View>
               <View className="h-12 w-[1px]" style={{ backgroundColor: theme.backgroundDark }} />
               <View>
-                <Text className="text-xs font-medium tracking-wider" style={{ color: theme.primary }}>HEIGHT</Text>
-                <View className="flex-row items-baseline mt-2">
+                <Text
+                  className="text-xs font-medium tracking-wider"
+                  style={{ color: theme.primary }}>
+                  HEIGHT
+                </Text>
+                <View className="mt-2 flex-row items-baseline">
                   <Text className="text-2xl font-bold text-white">
                     {displayOnboarding?.height || '--'}
                   </Text>
-                  <Text className="text-gray-400 ml-1">cm</Text>
+                  <Text className="ml-1 text-gray-400">cm</Text>
                 </View>
               </View>
             </Animated.View>
 
             {/* Health Integrations */}
-            <Animated.View 
-              entering={FadeInDown.delay(700)}
-              className="mt-12 mb-9"
-            >
-              <Text className="text-white text-lg font-bold mb-4">
-                Connect Health Services
-              </Text>
-              <View className="flex-row justify-between">
-                {renderHealthServices()}
-              </View>
+            <Animated.View entering={FadeInDown.delay(700)} className="mb-9 mt-12">
+              <Text className="mb-4 text-lg font-bold text-white">Connect Health Services</Text>
+              <View className="flex-row justify-between">{renderHealthServices()}</View>
             </Animated.View>
-            <Animated.View 
-              entering={FadeInDown.delay(750)}
-              className="mt-6 mb-6"
-            >
-              <TouchableOpacity 
+            <Animated.View entering={FadeInDown.delay(750)} className="mb-6 mt-6">
+              <TouchableOpacity
                 onPress={async () => {
                   setIsLoggingOut(true);
                   // Small delay to show loading state
-                  await new Promise(resolve => setTimeout(resolve, 300));
+                  await new Promise((resolve) => setTimeout(resolve, 300));
                   await signOut();
                   router.replace('/signin');
                 }}
                 disabled={isLoggingOut}
-                className="w-full h-[54px] bg-red-500/20 rounded-2xl items-center justify-center"
-                style={{ opacity: isLoggingOut ? 0.7 : 1 }}
-              >
-                <Text className="text-red-500 font-medium">
+                className="h-[54px] w-full items-center justify-center rounded-2xl bg-red-500/20"
+                style={{ opacity: isLoggingOut ? 0.7 : 1 }}>
+                <Text className="font-medium text-red-500">
                   {isLoggingOut ? 'Logging out...' : 'Log Out'}
                 </Text>
               </TouchableOpacity>
             </Animated.View>
 
             {/* Premium Card - Updated with darker green background */}
-            <Animated.View 
+            <Animated.View
               entering={FadeInDown.delay(800)}
-              className="mt-9 mb-6 rounded-3xl p-6"
-              style={{ backgroundColor: theme.primaryDark }}
-            >
-              <Text className="text-xs font-medium" style={{ color: theme.primary }}>GO PREMIUM</Text>
-              <Text className="text-white text-xl font-medium mt-2">
+              className="mb-6 mt-9 rounded-3xl p-6"
+              style={{ backgroundColor: theme.primaryDark }}>
+              <Text className="text-xs font-medium" style={{ color: theme.primary }}>
+                GO PREMIUM
+              </Text>
+              <Text className="mt-2 text-xl font-medium text-white">
                 Unlock all features to improve your health
               </Text>
-              <Text className="text-white/60 mt-1">
-                Be a part of our healthy group
-              </Text>
+              <Text className="mt-1 text-white/60">Be a part of our healthy group</Text>
 
               {/* Member Images */}
-              <View className="flex-row mt-6">
-                {[1,2,3,4].map((_, i) => (
-                  <Image 
+              <View className="mt-6 flex-row">
+                {[1, 2, 3, 4].map((_, i) => (
+                  <Image
                     key={i}
-                    source={{ uri: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=688&q=80' }}
-                    className="w-[42px] h-[42px] rounded-xl ml-3 first:ml-0"
+                    source={{
+                      uri: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=688&q=80',
+                    }}
+                    className="ml-3 h-[42px] w-[42px] rounded-xl first:ml-0"
                   />
                 ))}
               </View>
 
               {/* Unlock Button */}
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => router.push('/subscription')}
-                className="w-full h-[54px] rounded-2xl mt-6 items-center justify-center"
-                style={{ backgroundColor: theme.primary }}
-              >
-                <Text className="text-white font-medium">Unlock now</Text>
+                className="mt-6 h-[54px] w-full items-center justify-center rounded-2xl"
+                style={{ backgroundColor: theme.primary }}>
+                <Text className="font-medium text-white">Unlock now</Text>
               </TouchableOpacity>
             </Animated.View>
           </Animated.View>
@@ -305,7 +338,9 @@ export default function ProfilePage() {
 
       {/* Full-screen loading overlay for logout */}
       {isLoggingOut && (
-        <View className="absolute inset-0 items-center justify-center" style={{ backgroundColor: '#1A1B1E' }}>
+        <View
+          className="absolute inset-0 items-center justify-center"
+          style={{ backgroundColor: '#1A1B1E' }}>
           <ActivityIndicator size="large" color="#EF4444" />
           <Text className="mt-4 text-lg text-white">Logging out...</Text>
         </View>

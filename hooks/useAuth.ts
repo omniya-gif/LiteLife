@@ -17,8 +17,8 @@ export function useAuth() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
-    }); 
-    
+    });
+
     // Listen for auth changes
     const {
       data: { subscription },
@@ -108,20 +108,20 @@ export function useAuth() {
   };
   const signOut = async (): Promise<void> => {
     console.log('🚪 Signing out, clearing all user data');
-    
+
     // Clear user data
     clearUserData();
-    
+
     // Reset onboarding form
     const { resetFormData } = useOnboardingStore.getState();
     resetFormData();
     console.log('🧹 Onboarding form cleared');
-    
+
     // Reset theme to default (green/male)
     const { setGender } = useThemeStore.getState();
     setGender('male');
     console.log('🎨 Theme reset to default (green)');
-    
+
     await supabase.auth.signOut();
   };
 

@@ -8,8 +8,8 @@ import { useQuery } from 'react-query';
 import { NotificationBell } from '../../components/notifications/NotificationBell';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../hooks/useTheme';
-import { supabase } from '../../lib/supabase';
 import { useUserStore } from '../../lib/store/userStore';
+import { supabase } from '../../lib/supabase';
 import { CoinsDisplay } from '../coins/CoinsDisplay';
 
 interface HeaderProps {
@@ -121,10 +121,12 @@ export const Header = ({ userName }: HeaderProps) => {
       </Animated.View>
 
       <View className="flex-row items-center justify-between">
-        <View className="flex-1 mr-4">
+        <View className="mr-4 flex-1">
           <Animated.View entering={FadeIn.delay(200)} className="flex-row items-center">
             <Sun size={16} color={theme.primary} />
-            <Text className="ml-1.5 text-xs font-medium" style={{ color: theme.primary }}>{date}</Text>
+            <Text className="ml-1.5 text-xs font-medium" style={{ color: theme.primary }}>
+              {date}
+            </Text>
           </Animated.View>
           <Text className="mt-1.5 text-2xl text-white" numberOfLines={1} ellipsizeMode="tail">
             Hi, <Text className="font-bold">{username}</Text>

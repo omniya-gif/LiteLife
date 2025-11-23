@@ -14,8 +14,8 @@ import { BottomNavigation } from './components/BottomNavigation';
 import { MetricsOverview } from './components/MetricsOverview';
 import { Header } from '../../../components/home/Header';
 import { useAuth } from '../../../hooks/useAuth';
-import { useUserStore } from '../../../lib/store/userStore';
 import { useTheme } from '../../../hooks/useTheme';
+import { useUserStore } from '../../../lib/store/userStore';
 
 export default function HomePage() {
   const headerScale = useSharedValue(0.8);
@@ -58,7 +58,7 @@ export default function HomePage() {
   // Fetch user data only if not already cached
   useEffect(() => {
     const { profile } = useUserStore.getState();
-    
+
     // Only fetch if we don't have profile data or it doesn't match current user
     if (user?.id && (!profile || profile.id !== user.id)) {
       console.log('🏠 Home Page - Profile not cached, fetching for ID:', user.id);
@@ -176,8 +176,12 @@ export default function HomePage() {
                       Recent Workout
                     </Text>
                     <Text className="mb-4 text-lg text-white/95">Core - 15 min completed</Text>
-                    <View className="self-start rounded-full px-4 py-2" style={{ backgroundColor: `${theme.primary}20` }}>
-                      <Text className="text-sm font-semibold" style={{ color: theme.primary }}>Explore more →</Text>
+                    <View
+                      className="self-start rounded-full px-4 py-2"
+                      style={{ backgroundColor: `${theme.primary}20` }}>
+                      <Text className="text-sm font-semibold" style={{ color: theme.primary }}>
+                        Explore more →
+                      </Text>
                     </View>
                   </View>
                 </View>
@@ -222,8 +226,12 @@ export default function HomePage() {
                     <Text className="mb-4 text-lg text-white/95">
                       Grilled Chicken Salad - 420 cal
                     </Text>
-                    <View className="self-start rounded-full px-4 py-2" style={{ backgroundColor: `${theme.primary}20` }}>
-                      <Text className="text-sm font-semibold" style={{ color: theme.primary }}>Explore more →</Text>
+                    <View
+                      className="self-start rounded-full px-4 py-2"
+                      style={{ backgroundColor: `${theme.primary}20` }}>
+                      <Text className="text-sm font-semibold" style={{ color: theme.primary }}>
+                        Explore more →
+                      </Text>
                     </View>
                   </View>
                 </View>
