@@ -8,7 +8,7 @@ import ChefTypingIndicator from '../../../components/chat/ChefTypingIndicator';
 import MessageBubble from '../../../components/chat/MessageBubble';
 import MessageInput from '../../../components/chat/MessageInput';
 import { analyzeImage, getChatResponse } from '../../../lib/openaiApi';
-import { useChatStore } from '../../../store/chatStore';
+import { useChatStore } from '../../../stores/chatStore';
 
 export default function ChatPage() {
   const router = useRouter();

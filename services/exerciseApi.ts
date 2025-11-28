@@ -6,7 +6,7 @@ const BASE_URL = 'https://exercisedb.p.rapidapi.com';
 
 // Validate API keys on module load
 if (!RAPID_API_KEY || RAPID_API_KEY === 'undefined') {
-  console.error('⚠️ EXPO_PUBLIC_EXERCISEDB_API_KEY is not set in .env file!');
+  console.error(' EXPO_PUBLIC_EXERCISEDB_API_KEY is not set in .env file!');
 }
 
 /**

@@ -1,9 +1,3 @@
-// YouTube Data API v3 - FREE (10,000 requests/day)
-// Get your API key: https://console.cloud.google.com/
-// 1. Create a project
-// 2. Enable "YouTube Data API v3"
-// 3. Create credentials -> API Key
-// 4. Add to .env: EXPO_PUBLIC_YOUTUBE_API_KEY=your_key_here
 
 const YOUTUBE_API_KEY = process.env.EXPO_PUBLIC_YOUTUBE_API_KEY;
 const YOUTUBE_API_BASE = 'https://www.googleapis.com/youtube/v3';

@@ -13,9 +13,13 @@ export function useAuth() {
   const { clearUserData } = useUserStore();
 
   useEffect(() => {
+    let lastUserId: string | null = null;
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+      const newUser = session?.user ?? null;
+      lastUserId = newUser?.id ?? null;
+      setUser(newUser);
       setLoading(false);
     });
 
@@ -24,24 +28,25 @@ export function useAuth() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       const newUser = session?.user ?? null;
-      const currentUserId = user?.id;
+      const newUserId = newUser?.id ?? null;
 
-      // If user changed (including logout), clear cached user data
-      if (currentUserId !== newUser?.id) {
+      // Only clear data if user actually changed (different ID or logout)
+      if (lastUserId !== newUserId) {
         console.log(
           'User changed, clearing cached data. Old user:',
-          currentUserId,
+          lastUserId,
           'New user:',
-          newUser?.id
+          newUserId
         );
         clearUserData();
+        lastUserId = newUserId;
       }
 
       setUser(newUser);
     });
 
     return () => subscription.unsubscribe();
-  }, [clearUserData]);
+  }, []); // Remove clearUserData from dependencies to prevent re-running
 
   const validateEmail = (email: string): string | null => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
