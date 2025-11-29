@@ -83,6 +83,13 @@ export const Header = ({ userName }: HeaderProps) => {
     // If we have a user but profile is still loading or doesn't match current user
     // Show "there" as a friendly placeholder
     if (!profile || profile.id !== user?.id) {
+      // But if we have auth metadata, use that while profile loads
+      if (user?.user_metadata?.full_name) {
+        return user.user_metadata.full_name.split(' ')[0];
+      }
+      if (user?.user_metadata?.name) {
+        return user.user_metadata.name.split(' ')[0];
+      }
       return 'there';
     }
 
@@ -104,6 +111,7 @@ export const Header = ({ userName }: HeaderProps) => {
     // Fallback to 'there'
     return 'there';
   }, [
+    profile,
     profile?.id,
     profile?.username,
     user?.id,
