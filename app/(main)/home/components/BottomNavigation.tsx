@@ -49,11 +49,11 @@ export const BottomNavigation = () => {
             style={{ width: 64, height: 64, marginTop: -16 }}
           />
         </TouchableOpacity>
-        <TouchableOpacity className="items-center" onPress={() => router.push('/nutrition/meal-planner')}>
-          <CalendarDays size={24} color={isActive('/nutrition/meal-planner') ? theme.primary : '#666'} />
+        <TouchableOpacity className="items-center" onPress={() => router.push('/calculators/calorie')}>
+          <CalendarDays size={24} color={isActive('/calculators/calorie') ? theme.primary : '#666'} />
           <Text
             className="mt-1 text-xs"
-            style={{ color: isActive('/nutrition/meal-planner') ? theme.primary : '#9CA3AF' }}>
+            style={{ color: isActive('/calculators/calorie') ? theme.primary : '#9CA3AF' }}>
             Meals
           </Text>
         </TouchableOpacity>
