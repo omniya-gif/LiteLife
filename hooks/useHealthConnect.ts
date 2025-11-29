@@ -125,10 +125,11 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
     }
   };
 
-  const requestHealthPermissions = async (): Promise<boolean> => {
+  const requestHealthPermissions = async (forceDialog: boolean = true): Promise<boolean> => {
     try {
       console.log('🔓 Requesting Health Connect permissions...');
       console.log('📋 Permissions to request:', requiredPermissions);
+      console.log('🎯 Force dialog mode:', forceDialog);
       
       if (!state.isInitialized) {
         console.log('⚠️ Health Connect not initialized, initializing now...');
@@ -144,69 +145,83 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
         console.log('✅ Health Connect initialized');
       }
 
+      // Force show permission dialog by requesting permissions directly
+      console.log('🚀 Triggering permission dialog...');
       const granted = await requestPermission(requiredPermissions as any);
       console.log('🔐 Permission request result:', granted);
       console.log('🔐 Result type:', typeof granted, 'Is array:', Array.isArray(granted));
 
+      // Always re-check status after permission request
+      await checkHealthConnectStatus();
+      
       // Check if any permissions were actually granted
-      // requestPermission returns an array of granted permissions
       const hasGrantedPermissions = Array.isArray(granted) && granted.length > 0;
       
       if (hasGrantedPermissions) {
         console.log('✅ Permissions granted!', granted);
-        // Re-check status to update state correctly
-        await checkHealthConnectStatus();
         return true;
       } else {
-        console.log('⚠️ Permissions not granted (empty result)');
-        console.log('🔧 Attempting to open Health Connect settings directly...');
+        console.log('⚠️ Permission dialog not shown or dismissed - likely blocked/denied');
         
-        // The permission dialog didn't show, so open settings directly
-        try {
-          openHealthConnectSettings();
-          console.log('✅ Health Connect settings opened');
-        } catch (error) {
-          console.error('❌ Failed to open Health Connect settings:', error);
-          Alert.alert(
-            'Permission Required',
-            'Please open Health Connect app and grant permissions to LiteLife manually.',
-            [{ text: 'OK' }]
-          );
-        }
+        // If no dialog appeared (empty result), guide user to Health Connect settings
+        Alert.alert(
+          'Health Connect Permissions',
+          'LiteLife needs access to your fitness data through Health Connect.\n\nSince the permission dialog cannot be shown automatically, please:\n\n1. Open Health Connect settings\n2. Search for "LiteLife" or find it in the apps list\n3. Enable the fitness permissions you want to share',
+          [
+            {
+              text: 'Open Health Connect',
+              onPress: () => {
+                try {
+                  openHealthConnectSettings();
+                } catch (error) {
+                  console.error('❌ Failed to open settings:', error);
+                  Alert.alert(
+                    'Cannot Open Settings',
+                    'Please manually open the Health Connect app from your device and look for LiteLife in the connected apps section.',
+                    [{ text: 'OK' }]
+                  );
+                }
+              },
+            },
+            {
+              text: 'Cancel',
+              style: 'cancel',
+            },
+          ]
+        );
         return false;
       }
     } catch (error) {
       console.error('Health Connect permission request error:', error);
       
-      // Check if error is about missing permissions
-      if (error instanceof Error && error.message.includes('lacks the following permissions')) {
-        Alert.alert(
-          'Permissions Not Granted',
-          'LiteLife needs permission to access your health data. Would you like to grant permissions in Health Connect?',
-          [
-            {
-              text: 'Not Now',
-              style: 'cancel',
+      // Always show the permission dialog option first
+      Alert.alert(
+        'Health Connect Permissions',
+        'Would you like to grant Health Connect permissions to sync your fitness data?',
+        [
+          {
+            text: 'Grant Permissions',
+            onPress: async () => {
+              try {
+                // Try requesting permissions again
+                await requestPermission(requiredPermissions);
+                await checkHealthConnectStatus();
+              } catch (retryError) {
+                console.log('🔧 Fallback to settings after retry failed');
+                openHealthConnectSettings();
+              }
             },
-            {
-              text: 'Grant Permissions',
-              onPress: async () => {
-                try {
-                  await requestPermission(requiredPermissions);
-                  await checkHealthConnectStatus();
-                } catch (retryError) {
-                  openHealthConnectSettings();
-                }
-              },
-            },
-          ]
-        );
-      } else {
-        Alert.alert(
-          'Error',
-          'An error occurred while requesting permissions. Please try again.'
-        );
-      }
+          },
+          {
+            text: 'Open Settings',
+            onPress: () => openHealthConnectSettings(),
+          },
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+        ]
+      );
       return false;
     }
   };

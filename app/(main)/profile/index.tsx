@@ -8,7 +8,6 @@ import {
   Image,
   ScrollView,
   Platform,
-  ActivityIndicator,
 } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -284,8 +283,6 @@ export default function ProfilePage() {
               <TouchableOpacity
                 onPress={async () => {
                   setIsLoggingOut(true);
-                  // Small delay to show loading state
-                  await new Promise((resolve) => setTimeout(resolve, 300));
                   await signOut();
                   router.replace('/signin');
                 }}
@@ -335,16 +332,6 @@ export default function ProfilePage() {
           </Animated.View>
         </View>
       </ScrollView>
-
-      {/* Full-screen loading overlay for logout */}
-      {isLoggingOut && (
-        <View
-          className="absolute inset-0 items-center justify-center"
-          style={{ backgroundColor: '#1A1B1E' }}>
-          <ActivityIndicator size="large" color="#EF4444" />
-          <Text className="mt-4 text-lg text-white">Logging out...</Text>
-        </View>
-      )}
     </SafeAreaView>
   );
 }

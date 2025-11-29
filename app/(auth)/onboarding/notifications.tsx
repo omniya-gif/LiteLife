@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Bell, Zap, PersonStanding } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, SafeAreaView } from 'react-native';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { useQueryClient } from 'react-query';
 
@@ -36,7 +36,6 @@ export default function NotificationsPage() {
   const handleSubmit = async (notificationsEnabled: boolean) => {
     if (isSubmitting) return;
 
-    // Show loading immediately to cover theme reset
     setIsSubmitting(true);
     
     try {
@@ -45,25 +44,20 @@ export default function NotificationsPage() {
       console.log('📤 NOTIFICATIONS PAGE - Final submission payload:', JSON.stringify(updatedData, null, 2));
       console.log('📤 daily_calories in payload:', updatedData.daily_calories);
 
-      // First update local state
+      // Update local state
       updateFormData({ notifications_enabled: notificationsEnabled });
 
-      // Submit onboarding data (this will reset theme and clear state)
+      // Submit onboarding data
       await onboardingSubmit.mutateAsync(updatedData as any);
 
-      // Keep loading screen visible during navigation
-      // The theme reset happens here, but user sees loading screen
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // Navigate to main app (loading screen still visible)
+      // Navigate to main app
       router.replace('/(main)/home');
     } catch (error) {
       console.error('Error saving onboarding data:', error);
       setIsSubmitting(false);
-      // Optionally revert the form data if submission failed
+      // Revert the form data if submission failed
       updateFormData({ notifications_enabled: formData.notifications_enabled });
     }
-    // Don't set isSubmitting to false - let the next screen handle it
   };
 
   return (
@@ -130,17 +124,6 @@ export default function NotificationsPage() {
           </Text>
         </TouchableOpacity>
       </Animated.View>
-
-      {/* Full-screen loading overlay to hide theme reset */}
-      {isSubmitting && (
-        <Animated.View
-          entering={FadeIn.duration(200)}
-          className="absolute inset-0 items-center justify-center"
-          style={{ backgroundColor: '#1A1B1E' }}>
-          <ActivityIndicator size="large" color={theme.primary} />
-          <Text className="mt-4 text-lg text-white">Setting up your account...</Text>
-        </Animated.View>
-      )}
     </SafeAreaView>
   );
 }
