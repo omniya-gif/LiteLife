@@ -137,6 +137,26 @@ export default function CalorieTrackerPage() {
     }
   ];
 
+  // Show loading while checking permissions
+  if (Platform.OS === 'android' && healthConnect.isChecking) {
+    return (
+      <SafeAreaView className="flex-1" style={{ backgroundColor: theme.background }}>
+        <Animated.View 
+          entering={FadeInDown.springify()}
+          className="flex-row items-center justify-between px-6 pt-4"
+          style={{ backgroundColor: theme.backgroundLight }}
+        >
+          <TouchableOpacity onPress={() => router.back()}>
+            <ArrowLeft size={24} color="#fff" />
+          </TouchableOpacity>
+        </Animated.View>
+        <View className="flex-1 items-center justify-center">
+          <Text className="text-gray-400">Loading...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   // Handle permission screen
   if (!healthConnect.isAvailable) {
     return (
@@ -163,6 +183,42 @@ export default function CalorieTrackerPage() {
     );
   }
 
+  // Show permission request screen
+  if (Platform.OS === 'android' && !healthConnect.hasPermissions) {
+    return (
+      <SafeAreaView className="flex-1" style={{ backgroundColor: theme.background }}>
+        <Animated.View 
+          entering={FadeInDown.springify()}
+          className="flex-row items-center justify-between px-6 pt-4"
+          style={{ backgroundColor: theme.backgroundLight }}
+        >
+          <TouchableOpacity onPress={() => router.back()}>
+            <ArrowLeft size={24} color="#fff" />
+          </TouchableOpacity>
+        </Animated.View>
+        <View className="flex-1 items-center justify-center px-6">
+          <AlertCircle size={64} color={theme.primary} />
+          <Text className="mt-6 text-center text-xl font-bold text-white">
+            Permission Required
+          </Text>
+          <Text className="mt-2 text-center text-gray-400">
+            Grant access to track your daily nutrition and calories
+          </Text>
+          <TouchableOpacity
+            onPress={healthConnect.requestHealthPermissions}
+            className="mt-6 rounded-2xl px-8 py-4"
+            style={{ backgroundColor: theme.primary }}
+          >
+            <Text className="text-lg font-semibold text-[#1A1B1E]">
+              Grant Permission
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Main Content - Only show when permissions are confirmed granted
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: theme.background }}>
       {/* Header */}
@@ -183,36 +239,11 @@ export default function CalorieTrackerPage() {
         </TouchableOpacity>
       </Animated.View>
 
-      {/* Full Screen Permission State */}
-      {Platform.OS === 'android' && !healthConnect.hasPermissions && (
-        <View className="flex-1 items-center justify-center px-6">
-          <AlertCircle size={64} color={theme.primary} />
-          <Text className="mt-6 text-center text-xl font-bold text-white">
-            Permission Required
-          </Text>
-          <Text className="mt-2 text-center text-gray-400">
-            Grant access to track your daily nutrition and calories
-          </Text>
-          <TouchableOpacity
-            onPress={healthConnect.requestHealthPermissions}
-            className="mt-6 rounded-2xl px-8 py-4"
-            style={{ backgroundColor: theme.primary }}
-          >
-            <Text className="text-lg font-semibold text-[#1A1B1E]">
-              Grant Permission
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Main Content - Only show when permissions granted */}
-      {Platform.OS === 'android' && healthConnect.hasPermissions && (
-        <>
-          {/* Daily Activity */}
-          <Animated.View 
-            entering={FadeIn.delay(300).springify()}
-            className="px-6 pt-12"
-          >
+      {/* Daily Activity */}
+      <Animated.View 
+        entering={FadeIn.delay(300).springify()}
+        className="px-6 pt-12"
+      >
         <Text className="text-center text-lg font-medium" style={{ color: theme.primary }}>CALORIES CONSUMED</Text>
         <Text className="mt-4 text-center text-3xl font-bold text-white">
           <Text style={{ color: theme.primary }}>{caloriesConsumed}</Text>
@@ -278,8 +309,6 @@ export default function CalorieTrackerPage() {
               </Text>
             </TouchableOpacity>
           </Animated.View>
-        </>
-      )}
     </SafeAreaView>
   );
 }

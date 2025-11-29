@@ -28,15 +28,18 @@ export const CircularProgress = ({
   const animatedProgress = useSharedValue(0);
 
   React.useEffect(() => {
-    animatedProgress.value = withSpring(progress);
+    animatedProgress.value = withSpring(progress, {
+      damping: 15,
+      stiffness: 100,
+    });
   }, [progress]);
 
-  const animatedProps = useAnimatedProps(() => ({
-    strokeDashoffset: withTiming(
-      circumference - (circumference * animatedProgress.value),
-      { duration: 1000 }
-    ),
-  }));
+  const animatedProps = useAnimatedProps(() => {
+    const strokeDashoffset = circumference - (circumference * animatedProgress.value);
+    return {
+      strokeDashoffset: withTiming(strokeDashoffset, { duration: 1000 }),
+    };
+  });
 
   return (
     <View style={{ width: size, height: size }}>

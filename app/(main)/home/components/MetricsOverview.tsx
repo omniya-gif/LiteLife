@@ -1,6 +1,7 @@
 import { Activity, Droplets, Scale } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 
 import { useAuth } from '../../../../hooks/useAuth';
 import { useTheme } from '../../../../hooks/useTheme';
@@ -48,40 +49,59 @@ export const MetricsOverview = () => {
   ]);
 
   // Fetch today's metrics from Health Connect
-  useEffect(() => {
-    const fetchTodayMetrics = async () => {
-      // Only fetch if Health Connect is available and has permissions
-      if (!healthConnect.isAvailable || !healthConnect.hasPermissions) {
-        // Leave as 0 if not available or no permission
-        return;
-      }
+  const fetchTodayMetrics = async () => {
+    // Only fetch if Health Connect is available and initialized
+    if (!healthConnect.isAvailable || !healthConnect.isInitialized) {
+      console.log('🏠 Home - Health Connect not available or not initialized');
+      return;
+    }
 
+    try {
+      const today = new Date();
+      const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+      const endOfDay = new Date(today.setHours(23, 59, 59, 999));
+
+      // Always try to fetch calories if we have the permission (even if Hydration is missing)
       try {
-        const today = new Date();
-        const startOfDay = new Date(today.setHours(0, 0, 0, 0));
-        const endOfDay = new Date(today.setHours(23, 59, 59, 999));
-
-        // Fetch calories from Health Connect
         const calories = await readNutritionData(
           startOfDay.toISOString(),
           endOfDay.toISOString()
         );
+        console.log('🏠 Home - Fetched calories from Health Connect:', calories);
         setTodayCalories(calories);
+      } catch (calorieError) {
+        console.error('🏠 Home - Error fetching calories:', calorieError);
+        // Keep calories at 0 on error
+      }
 
-        // Fetch hydration from Health Connect
+      // Try to fetch hydration separately
+      try {
         const hydration = await readHydrationData(
           startOfDay.toISOString(),
           endOfDay.toISOString()
         );
+        console.log('🏠 Home - Fetched hydration from Health Connect:', hydration);
         setTodayWater(hydration / 1000); // Convert ml to liters
-      } catch (error) {
-        console.error('Error fetching Health Connect data:', error);
-        // Keep at 0 on error
+      } catch (hydrationError) {
+        console.error('🏠 Home - Error fetching hydration:', hydrationError);
+        // Keep water at 0 on error
       }
-    };
+    } catch (error) {
+      console.error('🏠 Home - Error fetching Health Connect data:', error);
+    }
+  };
 
+  // Fetch on mount and when permissions change
+  useEffect(() => {
     fetchTodayMetrics();
-  }, [healthConnect.isAvailable, healthConnect.hasPermissions]);
+  }, [healthConnect.isAvailable, healthConnect.isInitialized]);
+
+  // Refetch when screen comes into focus (e.g., returning from calorie tracker)
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchTodayMetrics();
+    }, [healthConnect.isAvailable, healthConnect.isInitialized])
+  );
 
   // Calculate values
   const calorieGoal = onboarding?.daily_calories || 2000;
