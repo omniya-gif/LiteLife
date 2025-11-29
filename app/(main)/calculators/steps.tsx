@@ -185,8 +185,9 @@ export default function StepsTrackerPage() {
         <TouchableOpacity onPress={() => router.back()}>
           <ArrowLeft size={24} color="white" />
         </TouchableOpacity>
-        <TouchableOpacity className="rounded-lg px-6 py-2" style={{ backgroundColor: `${theme.primary}10` }}>
-          <Text style={{ color: theme.primary }}>Insight</Text>
+        <Text className="text-2xl font-bold text-white">Steps Tracker</Text>
+        <TouchableOpacity onPress={() => router.push('/calculators/steps-history')}>
+          <TrendingUp size={24} color={theme.primary} />
         </TouchableOpacity>
       </Animated.View>
 
@@ -294,50 +295,6 @@ export default function StepsTrackerPage() {
           gradient={['#A78BFA', '#7C3AED']}
           delay={500}
         />
-      </View>
-
-      <View className="mt-9 flex-1 rounded-t-[36px] px-6 pt-6" style={{ backgroundColor: theme.backgroundLight }}>
-        <View className="flex-row justify-between">
-          {['DAY', 'WEEK', 'MONTH'].map((tab) => (
-            <TouchableOpacity
-              key={tab}
-              onPress={() => setActiveTab(tab)}
-              className="rounded-xl px-6 py-3"
-              style={{ backgroundColor: activeTab === tab ? theme.primary : 'transparent' }}
-            >
-              <Text className="text-white">{tab}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <Animated.View
-          entering={FadeIn.delay(600)}
-        >
-          <LineChart
-            data={data}
-            width={width - 48}
-            height={180}
-            chartConfig={{
-              backgroundColor: theme.backgroundLight,
-              backgroundGradientFrom: theme.backgroundLight,
-              backgroundGradientTo: theme.backgroundLight,
-              decimalPlaces: 0,
-              color: () => theme.primary,
-              labelColor: () => '#9CA3AF',
-              style: { borderRadius: 16 },
-              propsForDots: {
-                r: '6',
-                strokeWidth: '2',
-                stroke: theme.primary
-              }
-            }}
-            bezier
-            style={{
-              marginVertical: 8,
-              borderRadius: 16
-            }}
-          />
-        </Animated.View>
       </View>
     </SafeAreaView>
   );

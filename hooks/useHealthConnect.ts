@@ -484,3 +484,95 @@ export const readHydrationData = async (startTime: string, endTime: string) => {
     throw error;
   }
 };
+
+// Helper function to read weight data
+export const readWeightData = async (startTime: string, endTime: string) => {
+  try {
+    console.log('⚖️ Reading weight data from', startTime, 'to', endTime);
+    const timeRangeFilter = {
+      operator: 'between' as const,
+      startTime,
+      endTime,
+    };
+
+    interface WeightRecord {
+      weight: {
+        inKilograms: number;
+        inPounds: number;
+        inGrams: number;
+      };
+      time: string;
+    }
+
+    const weightRecords = await readRecords('Weight', { timeRangeFilter });
+    console.log('⚖️ Weight records fetched:', weightRecords);
+    console.log('⚖️ Number of weight records:', weightRecords.records?.length || 0);
+    
+    // Return all weight records with timestamps for history
+    const weights = (weightRecords.records as WeightRecord[]).map(record => ({
+      weight: record.weight?.inKilograms || 0,
+      date: record.time,
+    }));
+    
+    console.log('⚖️ Weight history from Health Connect:', weights);
+    return weights;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (!errorMessage.includes('lacks the following permissions')) {
+      console.error('❌ Error reading weight data:', error);
+    }
+    throw error;
+  }
+};
+
+// Helper function to get the most recent weight
+export const getCurrentWeight = async () => {
+  try {
+    const now = new Date();
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(now.getFullYear() - 1);
+    
+    const weights = await readWeightData(oneYearAgo.toISOString(), now.toISOString());
+    
+    if (weights.length === 0) {
+      return null;
+    }
+    
+    // Sort by date descending and get the most recent
+    const sortedWeights = weights.sort((a, b) => 
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+    
+    return sortedWeights[0].weight;
+  } catch (error) {
+    console.error('❌ Error getting current weight:', error);
+    return null;
+  }
+};
+
+// Helper function to write weight data to Health Connect
+export const writeWeightData = async (weightInKg: number, time?: string) => {
+  try {
+    const { insertRecords } = require('react-native-health-connect');
+    
+    const recordTime = time || new Date().toISOString();
+    
+    console.log('⚖️ Writing weight to Health Connect:', weightInKg, 'kg at', recordTime);
+    
+    const weightRecord = {
+      recordType: 'Weight' as const,
+      weight: {
+        value: weightInKg,
+        unit: 'kilograms' as const,
+      },
+      time: recordTime,
+    };
+
+    const result = await insertRecords([weightRecord]);
+    console.log('✅ Weight written to Health Connect:', result);
+    return true;
+  } catch (error) {
+    console.error('❌ Error writing weight data:', error);
+    throw error;
+  }
+};

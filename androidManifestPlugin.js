@@ -32,6 +32,14 @@ module.exports = function androidManifestPlugin(config) {
       'android.permission.health.READ_ACTIVE_CALORIES_BURNED',
       'android.permission.health.WRITE_NUTRITION',
       'android.permission.health.READ_NUTRITION',
+      'android.permission.health.WRITE_HYDRATION',
+      'android.permission.health.READ_HYDRATION',
+      'android.permission.health.WRITE_WEIGHT',
+      'android.permission.health.READ_WEIGHT',
+      'android.permission.health.WRITE_BODY_FAT',
+      'android.permission.health.READ_BODY_FAT',
+      'android.permission.health.WRITE_HEIGHT',
+      'android.permission.health.READ_HEIGHT',
     ];
 
     healthPermissions.forEach((permission) => {
