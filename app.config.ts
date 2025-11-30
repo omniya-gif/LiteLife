@@ -49,6 +49,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'android.permission.health.READ_BODY_FAT',
       'android.permission.health.WRITE_HEIGHT',
       'android.permission.health.READ_HEIGHT',
+      'android.permission.health.WRITE_SLEEP',
+      'android.permission.health.READ_SLEEP',
       'android.permission.ACTIVITY_RECOGNITION',
       'android.permission.CAMERA',
       'android.permission.READ_EXTERNAL_STORAGE',

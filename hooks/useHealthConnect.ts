@@ -576,3 +576,94 @@ export const writeWeightData = async (weightInKg: number, time?: string) => {
     throw error;
   }
 };
+
+// Helper function to read sleep session data
+export const readSleepData = async (startTime: string, endTime: string) => {
+  try {
+    console.log('😴 Reading sleep data from', startTime, 'to', endTime);
+    const timeRangeFilter = {
+      operator: 'between' as const,
+      startTime,
+      endTime,
+    };
+
+    interface SleepRecord {
+      startTime: string;
+      endTime: string;
+    }
+
+    const sleepRecords = await readRecords('SleepSession', { timeRangeFilter });
+    console.log('😴 Sleep records fetched:', sleepRecords);
+    console.log('😴 Number of sleep records:', sleepRecords.records?.length || 0);
+    
+    // Return all sleep sessions with duration in minutes
+    const sleepSessions = (sleepRecords.records as SleepRecord[]).map(record => {
+      const start = new Date(record.startTime);
+      const end = new Date(record.endTime);
+      const durationMs = end.getTime() - start.getTime();
+      const durationMinutes = Math.round(durationMs / (1000 * 60));
+      
+      return {
+        bedtime: record.startTime,
+        wakeTime: record.endTime,
+        duration: durationMinutes, // in minutes
+      };
+    });
+    
+    console.log('😴 Sleep history from Health Connect:', sleepSessions);
+    return sleepSessions;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (!errorMessage.includes('lacks the following permissions')) {
+      console.error('❌ Error reading sleep data:', error);
+    }
+    throw error;
+  }
+};
+
+// Helper function to get the most recent sleep session
+export const getCurrentSleep = async () => {
+  try {
+    const now = new Date();
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(now.getDate() - 30);
+    
+    const sleepSessions = await readSleepData(thirtyDaysAgo.toISOString(), now.toISOString());
+    
+    if (sleepSessions.length === 0) {
+      return null;
+    }
+    
+    // Sort by wake time descending and get the most recent
+    const sortedSleep = sleepSessions.sort((a, b) => 
+      new Date(b.wakeTime).getTime() - new Date(a.wakeTime).getTime()
+    );
+    
+    return sortedSleep[0];
+  } catch (error) {
+    console.error('❌ Error getting current sleep:', error);
+    return null;
+  }
+};
+
+// Helper function to write sleep session data to Health Connect
+export const writeSleepData = async (startTime: string, endTime: string) => {
+  try {
+    const { insertRecords } = require('react-native-health-connect');
+    
+    console.log('😴 Writing sleep to Health Connect:', startTime, 'to', endTime);
+    
+    const sleepRecord = {
+      recordType: 'SleepSession' as const,
+      startTime,
+      endTime,
+    };
+
+    const result = await insertRecords([sleepRecord]);
+    console.log('✅ Sleep written to Health Connect:', result);
+    return true;
+  } catch (error) {
+    console.error('❌ Error writing sleep data:', error);
+    throw error;
+  }
+};

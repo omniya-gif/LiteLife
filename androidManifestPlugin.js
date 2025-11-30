@@ -40,6 +40,8 @@ module.exports = function androidManifestPlugin(config) {
       'android.permission.health.READ_BODY_FAT',
       'android.permission.health.WRITE_HEIGHT',
       'android.permission.health.READ_HEIGHT',
+      'android.permission.health.WRITE_SLEEP',
+      'android.permission.health.READ_SLEEP',
     ];
 
     healthPermissions.forEach((permission) => {
