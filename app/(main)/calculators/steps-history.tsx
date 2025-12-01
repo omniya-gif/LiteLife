@@ -2,9 +2,9 @@ import { useRouter } from 'expo-router';
 import { ArrowLeft, Footprints } from 'lucide-react-native';
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Dimensions } from 'react-native';
+import { LineChart } from 'react-native-chart-kit';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LineChart } from 'react-native-chart-kit';
 
 import { useHealthConnect, readStepsData } from '../../../hooks/useHealthConnect';
 import { useTheme } from '../../../hooks/useTheme';
@@ -19,9 +19,7 @@ export default function StepsHistory() {
   const [activeTab, setActiveTab] = useState<ViewMode>('WEEK');
   const [steps, setSteps] = useState(0);
 
-  const healthConnect = useHealthConnect([
-    { accessType: 'read', recordType: 'Steps' },
-  ]);
+  const healthConnect = useHealthConnect([{ accessType: 'read', recordType: 'Steps' }]);
 
   useEffect(() => {
     const fetchSteps = async () => {
@@ -49,21 +47,21 @@ export default function StepsHistory() {
       {
         data: [6000, 7500, 5000, 8000, steps, 0, 0],
         color: () => theme.primary,
-        strokeWidth: 2
+        strokeWidth: 2,
       },
       {
         data: [5000, 6500, 4000, 7000, steps - 1000, 0, 0],
         color: () => theme.primaryDark,
-        strokeWidth: 2
-      }
-    ]
+        strokeWidth: 2,
+      },
+    ],
   };
 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: theme.background }}>
       <Animated.View
         entering={FadeInDown.springify()}
-        className="flex-row items-center justify-between px-6 pt-4 pb-6">
+        className="flex-row items-center justify-between px-6 pb-6 pt-4">
         <TouchableOpacity onPress={() => router.back()}>
           <ArrowLeft size={24} color="white" />
         </TouchableOpacity>
@@ -73,15 +71,17 @@ export default function StepsHistory() {
 
       <View className="flex-1 px-6">
         {/* Tab Selector */}
-        <View className="flex-row justify-between mb-6">
+        <View className="mb-6 flex-row justify-between">
           {(['DAY', 'WEEK', 'MONTH'] as ViewMode[]).map((tab) => (
             <TouchableOpacity
               key={tab}
               onPress={() => setActiveTab(tab)}
-              className="flex-1 mx-1 rounded-xl py-3"
-              style={{ backgroundColor: activeTab === tab ? theme.primary : theme.backgroundLight }}
-            >
-              <Text className={`text-center font-semibold ${activeTab === tab ? 'text-[#1A1B1E]' : 'text-white'}`}>
+              className="mx-1 flex-1 rounded-xl py-3"
+              style={{
+                backgroundColor: activeTab === tab ? theme.primary : theme.backgroundLight,
+              }}>
+              <Text
+                className={`text-center font-semibold ${activeTab === tab ? 'text-[#1A1B1E]' : 'text-white'}`}>
                 {tab}
               </Text>
             </TouchableOpacity>
@@ -92,8 +92,7 @@ export default function StepsHistory() {
         <Animated.View
           entering={FadeIn.delay(300)}
           className="rounded-2xl p-4"
-          style={{ backgroundColor: theme.backgroundLight }}
-        >
+          style={{ backgroundColor: theme.backgroundLight }}>
           <LineChart
             data={data}
             width={width - 80}
@@ -109,12 +108,12 @@ export default function StepsHistory() {
               propsForDots: {
                 r: '6',
                 strokeWidth: '2',
-                stroke: theme.primary
-              }
+                stroke: theme.primary,
+              },
             }}
             bezier
             style={{
-              borderRadius: 16
+              borderRadius: 16,
             }}
           />
         </Animated.View>
@@ -123,23 +122,24 @@ export default function StepsHistory() {
         <Animated.View
           entering={FadeIn.delay(500)}
           className="mt-6 rounded-2xl p-6"
-          style={{ backgroundColor: theme.backgroundLight }}
-        >
-          <View className="flex-row items-center mb-4">
+          style={{ backgroundColor: theme.backgroundLight }}>
+          <View className="mb-4 flex-row items-center">
             <Footprints size={24} color={theme.primary} />
             <Text className="ml-3 text-xl font-bold text-white">Weekly Summary</Text>
           </View>
-          
-          <View className="flex-row justify-between mb-3">
+
+          <View className="mb-3 flex-row justify-between">
             <Text className="text-gray-400">Average Daily Steps</Text>
-            <Text className="font-semibold text-white">{Math.round(steps / 7).toLocaleString()}</Text>
+            <Text className="font-semibold text-white">
+              {Math.round(steps / 7).toLocaleString()}
+            </Text>
           </View>
-          
-          <View className="flex-row justify-between mb-3">
+
+          <View className="mb-3 flex-row justify-between">
             <Text className="text-gray-400">Total Steps</Text>
             <Text className="font-semibold text-white">{steps.toLocaleString()}</Text>
           </View>
-          
+
           <View className="flex-row justify-between">
             <Text className="text-gray-400">Goal Achievement</Text>
             <Text className="font-semibold" style={{ color: theme.primary }}>

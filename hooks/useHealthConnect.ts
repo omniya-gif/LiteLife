@@ -95,12 +95,11 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
       console.log('✅ Health Connect initialized successfully');
       console.log('📋 Granted permissions:', grantedPermissions);
       console.log('📋 Required permissions:', requiredPermissions);
-      
+
       const hasAllPermissions = requiredPermissions.every((required) =>
         grantedPermissions.some(
           (granted) =>
-            granted.accessType === required.accessType &&
-            granted.recordType === required.recordType
+            granted.accessType === required.accessType && granted.recordType === required.recordType
         )
       );
 
@@ -130,7 +129,7 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
       console.log('🔓 Requesting Health Connect permissions...');
       console.log('📋 Permissions to request:', requiredPermissions);
       console.log('🎯 Force dialog mode:', forceDialog);
-      
+
       if (!state.isInitialized) {
         console.log('⚠️ Health Connect not initialized, initializing now...');
         const isInitialized = await initialize();
@@ -153,16 +152,16 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
 
       // Always re-check status after permission request
       await checkHealthConnectStatus();
-      
+
       // Check if any permissions were actually granted
       const hasGrantedPermissions = Array.isArray(granted) && granted.length > 0;
-      
+
       if (hasGrantedPermissions) {
         console.log('✅ Permissions granted!', granted);
         return true;
       } else {
         console.log('⚠️ Permission dialog not shown or dismissed - likely blocked/denied');
-        
+
         // If no dialog appeared (empty result), guide user to Health Connect settings
         Alert.alert(
           'Health Connect Permissions',
@@ -193,7 +192,7 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
       }
     } catch (error) {
       console.error('Health Connect permission request error:', error);
-      
+
       // Always show the permission dialog option first
       Alert.alert(
         'Health Connect Permissions',
@@ -238,7 +237,8 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
         {
           text: 'Install',
           onPress: () => {
-            const url = 'https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata';
+            const url =
+              'https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata';
             Linking.openURL(url);
           },
         },
@@ -247,23 +247,20 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
   };
 
   const updateHealthConnect = () => {
-    Alert.alert(
-      'Update Required',
-      'Health Connect needs to be updated to the latest version.',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
+    Alert.alert('Update Required', 'Health Connect needs to be updated to the latest version.', [
+      {
+        text: 'Cancel',
+        style: 'cancel',
+      },
+      {
+        text: 'Update',
+        onPress: () => {
+          const url =
+            'https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata';
+          Linking.openURL(url);
         },
-        {
-          text: 'Update',
-          onPress: () => {
-            const url = 'https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata';
-            Linking.openURL(url);
-          },
-        },
-      ]
-    );
+      },
+    ]);
   };
 
   return {
@@ -296,12 +293,14 @@ export const readStepsData = async (startTime: string, endTime: string) => {
     );
     return totalSteps;
   } catch (error) {
-    // Only log if it's not a permission error (those should be handled by the UI)
+    // Return 0 if permissions aren't granted (handle gracefully)
     const errorMessage = error instanceof Error ? error.message : String(error);
-    if (!errorMessage.includes('lacks the following permissions')) {
-      console.error('Error reading steps data:', error);
+    if (errorMessage.includes('lacks the following permissions')) {
+      console.log('⚠️ No permission to read steps data, returning 0');
+      return 0;
     }
-    throw error;
+    console.error('Error reading steps data:', error);
+    return 0;
   }
 };
 
@@ -327,12 +326,14 @@ export const readDistanceData = async (startTime: string, endTime: string) => {
     );
     return totalDistance;
   } catch (error) {
-    // Only log if it's not a permission error
+    // Return 0 if permissions aren't granted (handle gracefully)
     const errorMessage = error instanceof Error ? error.message : String(error);
-    if (!errorMessage.includes('lacks the following permissions')) {
-      console.error('Error reading distance data:', error);
+    if (errorMessage.includes('lacks the following permissions')) {
+      console.log('⚠️ No permission to read distance data, returning 0');
+      return 0;
     }
-    throw error;
+    console.error('Error reading distance data:', error);
+    return 0;
   }
 };
 
@@ -356,12 +357,14 @@ export const readFloorsData = async (startTime: string, endTime: string) => {
     );
     return totalFloors;
   } catch (error) {
-    // Only log if it's not a permission error
+    // Return 0 if permissions aren't granted (handle gracefully)
     const errorMessage = error instanceof Error ? error.message : String(error);
-    if (!errorMessage.includes('lacks the following permissions')) {
-      console.error('Error reading floors data:', error);
+    if (errorMessage.includes('lacks the following permissions')) {
+      console.log('⚠️ No permission to read floors data, returning 0');
+      return 0;
     }
-    throw error;
+    console.error('Error reading floors data:', error);
+    return 0;
   }
 };
 
@@ -388,12 +391,14 @@ export const readActiveCaloriesData = async (startTime: string, endTime: string)
     console.log('🔥 Active Calories Burned from Health Connect:', totalCalories);
     return Math.round(totalCalories);
   } catch (error) {
-    // Only log if it's not a permission error
+    // Return 0 if permissions aren't granted (handle gracefully)
     const errorMessage = error instanceof Error ? error.message : String(error);
-    if (!errorMessage.includes('lacks the following permissions')) {
-      console.error('Error reading calories data:', error);
+    if (errorMessage.includes('lacks the following permissions')) {
+      console.log('⚠️ No permission to read calories data, returning 0');
+      return 0;
     }
-    throw error;
+    console.error('Error reading calories data:', error);
+    return 0;
   }
 };
 
@@ -420,7 +425,7 @@ export const readNutritionData = async (startTime: string, endTime: string) => {
     console.log('🍽️ Nutrition records fetched:', nutritionRecords);
     console.log('🍽️ Number of nutrition records:', nutritionRecords.records?.length || 0);
     console.log('🍽️ Raw nutrition records:', JSON.stringify(nutritionRecords.records, null, 2));
-    
+
     const totalCalories = (nutritionRecords.records as NutritionRecord[]).reduce(
       (sum: number, record) => {
         console.log('🍽️ Processing record:', record);
@@ -435,12 +440,14 @@ export const readNutritionData = async (startTime: string, endTime: string) => {
     console.log('🍽️ TOTAL Calories Consumed from Health Connect:', totalCalories);
     return Math.round(totalCalories);
   } catch (error) {
-    // Only log if it's not a permission error
+    // Return 0 if permissions aren't granted (handle gracefully)
     const errorMessage = error instanceof Error ? error.message : String(error);
-    if (!errorMessage.includes('lacks the following permissions')) {
-      console.error('❌ Error reading nutrition data:', error);
+    if (errorMessage.includes('lacks the following permissions')) {
+      console.log('⚠️ No permission to read nutrition data, returning 0');
+      return 0;
     }
-    throw error;
+    console.error('❌ Error reading nutrition data:', error);
+    return 0;
   }
 };
 
@@ -458,14 +465,13 @@ export const readHydrationData = async (startTime: string, endTime: string) => {
       volume: {
         inLiters: number;
         inMilliliters: number;
-        inFluidOuncesUS: number;
       };
     }
 
     const hydrationRecords = await readRecords('Hydration', { timeRangeFilter });
     console.log('💧 Hydration records fetched:', hydrationRecords);
     console.log('💧 Number of hydration records:', hydrationRecords.records?.length || 0);
-    
+
     const totalWater = (hydrationRecords.records as HydrationRecord[]).reduce(
       (sum: number, record) => {
         const ml = record.volume?.inMilliliters || 0;
@@ -477,11 +483,14 @@ export const readHydrationData = async (startTime: string, endTime: string) => {
     console.log('💧 TOTAL Water Consumed from Health Connect:', totalWater, 'ml');
     return Math.round(totalWater);
   } catch (error) {
+    // Return 0 if permissions aren't granted (handle gracefully)
     const errorMessage = error instanceof Error ? error.message : String(error);
-    if (!errorMessage.includes('lacks the following permissions')) {
-      console.error('❌ Error reading hydration data:', error);
+    if (errorMessage.includes('lacks the following permissions')) {
+      console.log('⚠️ No permission to read hydration data, returning 0');
+      return 0;
     }
-    throw error;
+    console.error('❌ Error reading hydration data:', error);
+    return 0;
   }
 };
 
@@ -507,21 +516,24 @@ export const readWeightData = async (startTime: string, endTime: string) => {
     const weightRecords = await readRecords('Weight', { timeRangeFilter });
     console.log('⚖️ Weight records fetched:', weightRecords);
     console.log('⚖️ Number of weight records:', weightRecords.records?.length || 0);
-    
+
     // Return all weight records with timestamps for history
-    const weights = (weightRecords.records as WeightRecord[]).map(record => ({
+    const weights = (weightRecords.records as WeightRecord[]).map((record) => ({
       weight: record.weight?.inKilograms || 0,
       date: record.time,
     }));
-    
+
     console.log('⚖️ Weight history from Health Connect:', weights);
     return weights;
   } catch (error) {
+    // Return empty array if permissions aren't granted (handle gracefully)
     const errorMessage = error instanceof Error ? error.message : String(error);
-    if (!errorMessage.includes('lacks the following permissions')) {
-      console.error('❌ Error reading weight data:', error);
+    if (errorMessage.includes('lacks the following permissions')) {
+      console.log('⚠️ No permission to read weight data, returning empty array');
+      return [];
     }
-    throw error;
+    console.error('❌ Error reading weight data:', error);
+    return [];
   }
 };
 
@@ -531,18 +543,18 @@ export const getCurrentWeight = async () => {
     const now = new Date();
     const oneYearAgo = new Date();
     oneYearAgo.setFullYear(now.getFullYear() - 1);
-    
+
     const weights = await readWeightData(oneYearAgo.toISOString(), now.toISOString());
-    
+
     if (weights.length === 0) {
       return null;
     }
-    
+
     // Sort by date descending and get the most recent
-    const sortedWeights = weights.sort((a, b) => 
-      new Date(b.date).getTime() - new Date(a.date).getTime()
+    const sortedWeights = weights.sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );
-    
+
     return sortedWeights[0].weight;
   } catch (error) {
     console.error('❌ Error getting current weight:', error);
@@ -554,11 +566,11 @@ export const getCurrentWeight = async () => {
 export const writeWeightData = async (weightInKg: number, time?: string) => {
   try {
     const { insertRecords } = require('react-native-health-connect');
-    
+
     const recordTime = time || new Date().toISOString();
-    
+
     console.log('⚖️ Writing weight to Health Connect:', weightInKg, 'kg at', recordTime);
-    
+
     const weightRecord = {
       recordType: 'Weight' as const,
       weight: {
@@ -595,29 +607,32 @@ export const readSleepData = async (startTime: string, endTime: string) => {
     const sleepRecords = await readRecords('SleepSession', { timeRangeFilter });
     console.log('😴 Sleep records fetched:', sleepRecords);
     console.log('😴 Number of sleep records:', sleepRecords.records?.length || 0);
-    
+
     // Return all sleep sessions with duration in minutes
-    const sleepSessions = (sleepRecords.records as SleepRecord[]).map(record => {
+    const sleepSessions = (sleepRecords.records as SleepRecord[]).map((record) => {
       const start = new Date(record.startTime);
       const end = new Date(record.endTime);
       const durationMs = end.getTime() - start.getTime();
       const durationMinutes = Math.round(durationMs / (1000 * 60));
-      
+
       return {
         bedtime: record.startTime,
         wakeTime: record.endTime,
         duration: durationMinutes, // in minutes
       };
     });
-    
+
     console.log('😴 Sleep history from Health Connect:', sleepSessions);
     return sleepSessions;
   } catch (error) {
+    // Return empty array if permissions aren't granted (handle gracefully)
     const errorMessage = error instanceof Error ? error.message : String(error);
-    if (!errorMessage.includes('lacks the following permissions')) {
-      console.error('❌ Error reading sleep data:', error);
+    if (errorMessage.includes('lacks the following permissions')) {
+      console.log('⚠️ No permission to read sleep data, returning empty array');
+      return [];
     }
-    throw error;
+    console.error('❌ Error reading sleep data:', error);
+    return [];
   }
 };
 
@@ -627,18 +642,18 @@ export const getCurrentSleep = async () => {
     const now = new Date();
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(now.getDate() - 30);
-    
+
     const sleepSessions = await readSleepData(thirtyDaysAgo.toISOString(), now.toISOString());
-    
+
     if (sleepSessions.length === 0) {
       return null;
     }
-    
+
     // Sort by wake time descending and get the most recent
-    const sortedSleep = sleepSessions.sort((a, b) => 
-      new Date(b.wakeTime).getTime() - new Date(a.wakeTime).getTime()
+    const sortedSleep = sleepSessions.sort(
+      (a, b) => new Date(b.wakeTime).getTime() - new Date(a.wakeTime).getTime()
     );
-    
+
     return sortedSleep[0];
   } catch (error) {
     console.error('❌ Error getting current sleep:', error);
@@ -650,9 +665,9 @@ export const getCurrentSleep = async () => {
 export const writeSleepData = async (startTime: string, endTime: string) => {
   try {
     const { insertRecords } = require('react-native-health-connect');
-    
+
     console.log('😴 Writing sleep to Health Connect:', startTime, 'to', endTime);
-    
+
     const sleepRecord = {
       recordType: 'SleepSession' as const,
       startTime,
