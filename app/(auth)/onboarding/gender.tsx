@@ -54,7 +54,7 @@ export default function GenderPage() {
         <View className="h-2 flex-1 mx-4 rounded-full bg-[#2C2D32]">
           <View className="h-2 w-[62.5%] rounded-full" style={{ backgroundColor: theme.primary }} />
         </View>
-        <Text className="font-medium" style={{ color: theme.primary }}>STEP 5/8</Text>
+        <Text className="font-medium" style={{ color: theme.primary }}>STEP 6/11</Text>
       </Animated.View>
 
       <View className="flex-1 justify-center px-6">

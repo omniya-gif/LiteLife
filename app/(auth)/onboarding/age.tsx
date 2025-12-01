@@ -36,7 +36,7 @@ export default function AgeSelection() {
         <View className="h-2 flex-1 mx-4 rounded-full bg-[#2C2D32]">
           <View className="h-2 w-[37.5%] bg-[#4ADE80] rounded-full" />
         </View>
-        <Text className="text-[#4ADE80] font-medium">STEP 3/8</Text>
+        <Text className="text-[#4ADE80] font-medium">STEP 3/11</Text>
       </Animated.View>
 
       <View className="flex-1 px-6 pt-12">

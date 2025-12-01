@@ -59,7 +59,7 @@ export default function UsernamePage() {
           <View className="h-2 flex-1 mx-4 rounded-full bg-[#2C2D32]">
             <View className="h-2 w-[25%] rounded-full" style={{ backgroundColor: PRIMARY_COLOR }} />
           </View>
-          <Text className="font-medium" style={{ color: PRIMARY_COLOR }}>STEP 2/8</Text>
+          <Text className="font-medium" style={{ color: PRIMARY_COLOR }}>STEP 2/11</Text>
         </Animated.View>
 
         <View className="flex-1 justify-center px-6">

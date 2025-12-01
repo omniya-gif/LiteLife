@@ -50,7 +50,7 @@ export default function InterestsPage() {
         <View className="h-2 flex-1 mx-4 rounded-full bg-[#2C2D32]">
           <View className="h-2 w-[87.5%] rounded-full" style={{ backgroundColor: theme.primary }} />
         </View>
-        <Text className="font-medium" style={{ color: theme.primary }}>STEP 7/8</Text>
+        <Text className="font-medium" style={{ color: theme.primary }}>STEP 10/11</Text>
       </Animated.View>
 
       <View className="flex-1 px-6 pt-12">

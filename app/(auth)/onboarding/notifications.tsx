@@ -71,7 +71,7 @@ export default function NotificationsPage() {
         <View className="mx-4 h-2 flex-1 rounded-full bg-[#2C2D32]">
           <View className="h-2 w-full rounded-full" style={{ backgroundColor: theme.primary }} />
         </View>
-        <Text className="font-medium" style={{ color: theme.primary }}>STEP 8/8</Text>
+        <Text className="font-medium" style={{ color: theme.primary }}>STEP 11/11</Text>
       </Animated.View>
 
       <Animated.View entering={FadeInDown.delay(200)} className="mt-12 px-6">

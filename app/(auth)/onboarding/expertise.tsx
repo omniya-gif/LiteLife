@@ -49,7 +49,7 @@ export default function ExpertiseLevel() {
         <View className="h-2 flex-1 mx-4 rounded-full bg-[#2C2D32]">
           <View className="h-2 w-[12.5%] rounded-full" style={{ backgroundColor: PRIMARY_COLOR }} />
         </View>
-        <Text className="font-medium" style={{ color: PRIMARY_COLOR }}>STEP 1/8</Text>
+        <Text className="font-medium" style={{ color: PRIMARY_COLOR }}>STEP 1/11</Text>
       </Animated.View>
 
       <View className="flex-1 px-6 pt-12">

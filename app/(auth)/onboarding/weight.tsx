@@ -37,7 +37,7 @@ export default function WeightSelection() {
         <View className="h-2 flex-1 mx-4 rounded-full bg-[#2C2D32]">
           <View className="h-2 w-[50%] rounded-full bg-[#4ADE80]" />
         </View>
-        <Text className="text-[#4ADE80] font-medium">STEP 4/8</Text>
+        <Text className="text-[#4ADE80] font-medium">STEP 5/11</Text>
       </Animated.View>
 
       <View className="flex-1 px-6 pt-12">

@@ -89,7 +89,7 @@ export default function HydrationPage() {
           <View className="h-2 w-[62.5%] rounded-full" style={{ backgroundColor: theme.primary }} />
         </View>
         <Text className="font-medium" style={{ color: theme.primary }}>
-          STEP 5/8
+          STEP 8/11
         </Text>
       </Animated.View>
 
