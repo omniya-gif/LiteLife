@@ -22,6 +22,7 @@ export interface Recipe {
   protein?: number;
   fat?: number;
   carbs?: number;
+  sugar?: number;
   dishTypes?: string[];
   summary?: string;
 }
@@ -112,6 +113,7 @@ export const searchRecipes = async (
       const protein = nutrients.find((n: any) => n.name === 'Protein');
       const fat = nutrients.find((n: any) => n.name === 'Fat');
       const carbs = nutrients.find((n: any) => n.name === 'Carbohydrates');
+      const sugar = nutrients.find((n: any) => n.name === 'Sugar');
 
       return {
         id: recipe.id,
@@ -123,6 +125,7 @@ export const searchRecipes = async (
         protein: protein?.amount || 0,
         fat: fat?.amount || 0,
         carbs: carbs?.amount || 0,
+        sugar: sugar?.amount || 0,
         dishTypes: recipe.dishTypes || [],
         summary: recipe.summary || '',
       };
@@ -181,6 +184,7 @@ export const getFeaturedRecipes = async (limit = 6, tags?: string): Promise<Reci
       const protein = nutrients.find((n: any) => n.name === 'Protein');
       const fat = nutrients.find((n: any) => n.name === 'Fat');
       const carbs = nutrients.find((n: any) => n.name === 'Carbohydrates');
+      const sugar = nutrients.find((n: any) => n.name === 'Sugar');
 
       return {
         id: recipe.id,
@@ -192,6 +196,7 @@ export const getFeaturedRecipes = async (limit = 6, tags?: string): Promise<Reci
         protein: protein?.amount || 0,
         fat: fat?.amount || 0,
         carbs: carbs?.amount || 0,
+        sugar: sugar?.amount || 0,
         dishTypes: recipe.dishTypes || [],
         summary: recipe.summary
           ? recipe.summary.replace(/<[^>]*>?/gm, '').substring(0, 120) + '...'

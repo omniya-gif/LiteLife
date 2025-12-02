@@ -12,7 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { useTheme } from '../../../hooks/useTheme';
-import { useHealthConnect, readNutritionData, readMacronutrientData } from '../../../hooks/useHealthConnect';
+import { useHealthConnect, readNutritionData, readMacronutrientData, readCaloriesByMealType, readMealsByType } from '../../../hooks/useHealthConnect';
 import { useHealthConnectWrite } from '../../../hooks/useHealthConnectWrite';
 import { useUserStore } from '../../../stores/userStore';
 import { searchRecipes, Recipe } from '../../../services/recipeService';
@@ -58,6 +58,7 @@ export default function JournalPage() {
   const [searching, setSearching] = useState(false);
   const [expandedMeal, setExpandedMeal] = useState(false);
   const [macronutrients, setMacronutrients] = useState({ protein: 0, fat: 0, carbs: 0 });
+  const [mealTypeCalories, setMealTypeCalories] = useState({ breakfast: 0, lunch: 0, dinner: 0, snack: 0 });
   const translateX = useSharedValue(0);
 
   // Health Connect integration
@@ -71,113 +72,35 @@ export default function JournalPage() {
 
   const { writeMealToHealthConnect, isWriting } = useHealthConnectWrite();
 
-  // Fetch meals from Spoonacular
+  // Initialize empty meals - they will be populated from Health Connect
   useEffect(() => {
-    const fetchMeals = async () => {
-      setLoadingMeals(true);
-      try {
-        // Fetch breakfast recipes
-        const breakfastRecipes = await searchRecipes('breakfast', { type: 'breakfast' }, 3);
-        
-        // Fetch lunch recipes (main course with lunch-specific query)
-        const lunchRecipes = await searchRecipes('lunch', { type: 'main course' }, 3);
-        
-        // Fetch dinner recipes (main course with dinner-specific query)
-        const dinnerRecipes = await searchRecipes('dinner', { type: 'main course' }, 3);
-
-        const mealsData = [
-          {
-            id: 'breakfast',
-            title: 'BREAKFAST',
-            icon: <Coffee size={24} color={theme.primary} />,
-            calories: breakfastRecipes.reduce((sum, r) => sum + (r.calories || 0), 0),
-            maxCalories: 450,
-            items: breakfastRecipes.map(recipe => ({
-              id: recipe.id,
-              name: recipe.title,
-              calories: Math.round(recipe.calories || 0),
-              protein: Math.round(recipe.protein || 0),
-              fat: Math.round(recipe.fat || 0),
-              carbs: Math.round(recipe.carbs || 0),
-              image: recipe.image,
-              readyInMinutes: recipe.readyInMinutes,
-              servings: recipe.servings,
-            }))
-          },
-          {
-            id: 'lunch',
-            title: 'LUNCH',
-            icon: <Sun size={24} color={theme.primary} />,
-            calories: lunchRecipes.reduce((sum, r) => sum + (r.calories || 0), 0),
-            maxCalories: 850,
-            items: lunchRecipes.map(recipe => ({
-              id: recipe.id,
-              name: recipe.title,
-              calories: Math.round(recipe.calories || 0),
-              protein: Math.round(recipe.protein || 0),
-              fat: Math.round(recipe.fat || 0),
-              carbs: Math.round(recipe.carbs || 0),
-              image: recipe.image,
-              readyInMinutes: recipe.readyInMinutes,
-              servings: recipe.servings,
-            }))
-          },
-          {
-            id: 'dinner',
-            title: 'DINNER',
-            icon: <Flame size={24} color={theme.primary} />,
-            calories: dinnerRecipes.reduce((sum, r) => sum + (r.calories || 0), 0),
-            maxCalories: 550,
-            items: dinnerRecipes.map(recipe => ({
-              id: recipe.id,
-              name: recipe.title,
-              calories: Math.round(recipe.calories || 0),
-              protein: Math.round(recipe.protein || 0),
-              fat: Math.round(recipe.fat || 0),
-              carbs: Math.round(recipe.carbs || 0),
-              image: recipe.image,
-              readyInMinutes: recipe.readyInMinutes,
-              servings: recipe.servings,
-            }))
-          }
-        ];
-
-        setMeals(mealsData);
-      } catch (error) {
-        console.error('Error fetching meals:', error);
-        // Fallback to empty meals on error
-        setMeals([
-          {
-            id: 'breakfast',
-            title: 'BREAKFAST',
-            icon: <Coffee size={24} color={theme.primary} />,
-            calories: 0,
-            maxCalories: 450,
-            items: []
-          },
-          {
-            id: 'lunch',
-            title: 'LUNCH',
-            icon: <Sun size={24} color={theme.primary} />,
-            calories: 0,
-            maxCalories: 850,
-            items: []
-          },
-          {
-            id: 'dinner',
-            title: 'DINNER',
-            icon: <Flame size={24} color={theme.primary} />,
-            calories: 0,
-            maxCalories: 550,
-            items: []
-          }
-        ]);
-      } finally {
-        setLoadingMeals(false);
+    setMeals([
+      {
+        id: 'breakfast',
+        title: 'BREAKFAST',
+        icon: <Coffee size={24} color={theme.primary} />,
+        calories: 0,
+        maxCalories: 450,
+        items: []
+      },
+      {
+        id: 'lunch',
+        title: 'LUNCH',
+        icon: <Sun size={24} color={theme.primary} />,
+        calories: 0,
+        maxCalories: 850,
+        items: []
+      },
+      {
+        id: 'dinner',
+        title: 'DINNER',
+        icon: <Flame size={24} color={theme.primary} />,
+        calories: 0,
+        maxCalories: 550,
+        items: []
       }
-    };
-
-    fetchMeals();
+    ]);
+    setLoadingMeals(false);
   }, [theme.primary]);
 
   // Search recipes with debounce
@@ -217,6 +140,7 @@ export default function JournalPage() {
             protein: Math.round(recipe.protein || 0),
             fat: Math.round(recipe.fat || 0),
             carbs: Math.round(recipe.carbs || 0),
+            sugar: Math.round(recipe.sugar || 0),
             image: recipe.image,
             readyInMinutes: recipe.readyInMinutes,
             servings: recipe.servings,
@@ -257,12 +181,74 @@ export default function JournalPage() {
           endOfDay.toISOString()
         );
         
+        // Fetch calories by meal type
+        const mealCalories = await readCaloriesByMealType(
+          startOfDay.toISOString(),
+          endOfDay.toISOString()
+        );
+        
+        // Fetch actual meals from Health Connect for each meal type
+        const [breakfastMeals, lunchMeals, dinnerMeals] = await Promise.all([
+          readMealsByType(startOfDay.toISOString(), endOfDay.toISOString(), 1), // breakfast
+          readMealsByType(startOfDay.toISOString(), endOfDay.toISOString(), 2), // lunch
+          readMealsByType(startOfDay.toISOString(), endOfDay.toISOString(), 3), // dinner
+        ]);
+
+        // Fetch images for meals with recipe IDs
+        const fetchMealImages = async (meals: any[]) => {
+          return Promise.all(
+            meals.map(async (meal) => {
+              if (meal.recipeId) {
+                // Generate Spoonacular image URL from recipe ID
+                const imageUrl = `https://spoonacular.com/recipeImages/${meal.recipeId}-312x231.jpg`;
+                return { ...meal, image: imageUrl };
+              }
+              return meal;
+            })
+          );
+        };
+
+        const [breakfastWithImages, lunchWithImages, dinnerWithImages] = await Promise.all([
+          fetchMealImages(breakfastMeals),
+          fetchMealImages(lunchMeals),
+          fetchMealImages(dinnerMeals),
+        ]);
+
+        // Update meals with actual data from Health Connect
+        setMeals([
+          {
+            id: 'breakfast',
+            title: 'BREAKFAST',
+            icon: <Coffee size={24} color={theme.primary} />,
+            calories: mealCalories.breakfast,
+            maxCalories: 450,
+            items: breakfastWithImages,
+          },
+          {
+            id: 'lunch',
+            title: 'LUNCH',
+            icon: <Sun size={24} color={theme.primary} />,
+            calories: mealCalories.lunch,
+            maxCalories: 850,
+            items: lunchWithImages,
+          },
+          {
+            id: 'dinner',
+            title: 'DINNER',
+            icon: <Flame size={24} color={theme.primary} />,
+            calories: mealCalories.dinner,
+            maxCalories: 550,
+            items: dinnerWithImages,
+          },
+        ]);
+        
         setDailyCalories(macros.calories);
         setMacronutrients({
           protein: macros.protein,
           fat: macros.fat,
           carbs: macros.carbs,
         });
+        setMealTypeCalories(mealCalories);
       } catch (error) {
         console.error('Error fetching daily calories:', error);
       } finally {
@@ -326,8 +312,10 @@ export default function JournalPage() {
         protein: mealItem.protein,
         carbs: mealItem.carbs,
         fat: mealItem.fat,
+        sugar: mealItem.sugar,
         mealType: mealType.toLowerCase(),
         timestamp: new Date().toISOString(),
+        recipeId: mealItem.id,
       });    if (success) {
       Alert.alert('✅ Success', 'Meal saved to Health Connect and will appear in Google Fit!');
     } else {
@@ -371,7 +359,12 @@ export default function JournalPage() {
         <View className="flex-row items-center justify-between mb-3 rounded-2xl p-4" style={{ backgroundColor: `${theme.primary}08` }}>
           <View className="flex-row items-center space-x-2">
             {meal.icon}
-            <Text className="text-xl font-bold" style={{ color: theme.primary }}>{meal.title}</Text>
+            <View>
+              <Text className="text-xl font-bold" style={{ color: theme.primary }}>{meal.title}</Text>
+              <Text className="text-sm text-gray-400 mt-1">
+                {mealTypeCalories[meal.id as keyof typeof mealTypeCalories] || 0} cal consumed
+              </Text>
+            </View>
           </View>
           <View className="flex-row items-center gap-3">
             {!isInExpandedView && (
@@ -513,18 +506,36 @@ export default function JournalPage() {
           </View>
         )}
 
+        {/* Show meals from Health Connect or empty state */}
+        {!isSearching && meal.items.length === 0 && (
+          <View className="mt-4 items-center justify-center rounded-2xl bg-[#25262B] py-12">
+            <Text className="text-base text-gray-400">
+              No meals added to {meal.title.toLowerCase()} yet
+            </Text>
+            <Text className="mt-2 text-sm text-gray-500">
+              Search and add recipes to track your nutrition
+            </Text>
+          </View>
+        )}
+
         {!isSearching && meal.items.map((item, index) => (
           <TouchableOpacity 
-            key={item.id || index} 
+            key={item.recipeId || index} 
             className="mt-3 flex-row items-center rounded-2xl bg-[#25262B] p-3"
-            onPress={() => router.push(`/recipes/${item.id}`)}
-            activeOpacity={0.7}
+            onPress={() => item.recipeId ? router.push(`/recipes/${item.recipeId}`) : null}
+            activeOpacity={item.recipeId ? 0.7 : 1}
           >
-            <Image
-              source={{ uri: item.image }}
-              className="h-20 w-20 rounded-xl"
-              resizeMode="cover"
-            />
+            {item.image ? (
+              <Image
+                source={{ uri: item.image }}
+                className="h-20 w-20 rounded-xl"
+                resizeMode="cover"
+              />
+            ) : (
+              <View className="h-20 w-20 rounded-xl bg-[#1A1B1E] items-center justify-center">
+                <Utensils size={32} color="#6B7280" />
+              </View>
+            )}
             <View className="ml-4 flex-1">
               <Text className="text-base font-semibold text-white" numberOfLines={2}>
                 {item.name}
@@ -536,27 +547,15 @@ export default function JournalPage() {
                 >
                   {Math.round(item.calories)} cal
                 </Text>
-                {item.readyInMinutes && (
+                {item.protein > 0 && (
                   <>
                     <Text className="text-gray-600">•</Text>
-                    <Text className="text-xs text-gray-500">{item.readyInMinutes} min</Text>
+                    <Text className="text-xs text-gray-500">P: {item.protein}g</Text>
                   </>
                 )}
               </View>
             </View>
-            <TouchableOpacity
-              onPress={(e) => {
-                e.stopPropagation();
-                handleSaveMealToHealthConnect(item, meal.title);
-              }}
-              disabled={isWriting}
-              className="ml-2 rounded-xl px-4 py-2"
-              style={{ backgroundColor: `${theme.primary}20` }}
-            >
-              <Text className="text-sm font-semibold" style={{ color: theme.primary }}>
-                {isWriting ? 'Adding...' : '+ Add'}
-              </Text>
-            </TouchableOpacity>
+            {/* No Add button - these meals are already in Health Connect */}
           </TouchableOpacity>
         ))}
       </View>
@@ -915,8 +914,8 @@ export default function JournalPage() {
                   borderColor: `${theme.primary}30`
                 }}
                 onPress={() => {
-                  // TODO: Implement browse recipes logic
                   setShowAddMealModal(false);
+                  router.push('/(main)/recipes');
                 }}
               >
                 <View className="flex-row items-center space-x-4">

@@ -8,8 +8,10 @@ interface MealData {
   protein?: number; // in grams
   carbs?: number; // in grams
   fat?: number; // in grams
+  sugar?: number; // in grams
   mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snack';
   timestamp?: string; // ISO string, defaults to now
+  recipeId?: number; // Spoonacular recipe ID for image fetching
 }
 
 export const useHealthConnectWrite = () => {
@@ -54,7 +56,26 @@ export const useHealthConnectWrite = () => {
       if (mealData.fat) {
         nutritionRecord.totalFat = { value: mealData.fat, unit: 'grams' };
       }
-      // Note: mealType and name are not supported by Health Connect Nutrition records
+      if (mealData.sugar) {
+        nutritionRecord.sugar = { value: mealData.sugar, unit: 'grams' };
+      }
+      // Add meal type if provided (MEAL_TYPE_BREAKFAST = 1, LUNCH = 2, DINNER = 3, SNACK = 4)
+      if (mealData.mealType) {
+        const mealTypeMap: { [key: string]: number } = {
+          breakfast: 1,
+          lunch: 2,
+          dinner: 3,
+          snack: 4,
+        };
+        nutritionRecord.mealType = mealTypeMap[mealData.mealType.toLowerCase()] || 0;
+      }
+      // Add meal name with recipe ID embedded for image fetching later
+      if (mealData.name) {
+        // If recipeId is provided, embed it in the name: "Recipe Name #12345"
+        nutritionRecord.name = mealData.recipeId 
+          ? `${mealData.name} #${mealData.recipeId}`
+          : mealData.name;
+      }
 
       console.log('📝 Writing meal to Health Connect:', nutritionRecord);
 

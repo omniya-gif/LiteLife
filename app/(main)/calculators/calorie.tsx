@@ -35,6 +35,7 @@ export default function CalorieTrackerPage() {
   const [protein, setProtein] = useState(0);
   const [fat, setFat] = useState(0);
   const [carbs, setCarbs] = useState(0);
+  const [sugar, setSugar] = useState(0);
   const [caloriesConsumed, setCaloriesConsumed] = useState(0);
   const [isLoadingData, setIsLoadingData] = useState(false);
 
@@ -77,6 +78,7 @@ export default function CalorieTrackerPage() {
       setProtein(macros.protein);
       setFat(macros.fat);
       setCarbs(macros.carbs);
+      setSugar(macros.sugar);
       setCaloriesConsumed(macros.calories);
       
       console.log('🍽️ Setting macros from Health Connect:', macros);
@@ -125,6 +127,12 @@ export default function CalorieTrackerPage() {
       amount: `${carbs}g`, 
       percentage: Math.round((carbs / 300) * 100), // Assuming 300g daily carbs goal
       color: '#4ade80' 
+    },
+    { 
+      name: 'Sugar', 
+      amount: `${sugar}g`, 
+      percentage: Math.round((sugar / 50) * 100), // Assuming 50g daily sugar limit
+      color: '#f59e0b' 
     }
   ];
 

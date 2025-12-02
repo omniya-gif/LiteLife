@@ -474,6 +474,9 @@ export const readMacronutrientData = async (startTime: string, endTime: string) 
       totalCarbohydrate: {
         inGrams: number;
       };
+      sugar: {
+        inGrams: number;
+      };
     }
 
     const nutritionRecords = await readRecords('Nutrition', { timeRangeFilter });
@@ -485,9 +488,10 @@ export const readMacronutrientData = async (startTime: string, endTime: string) 
           protein: totals.protein + (record.protein?.inGrams || 0),
           fat: totals.fat + (record.totalFat?.inGrams || 0),
           carbs: totals.carbs + (record.totalCarbohydrate?.inGrams || 0),
+          sugar: totals.sugar + (record.sugar?.inGrams || 0),
         };
       },
-      { calories: 0, protein: 0, fat: 0, carbs: 0 }
+      { calories: 0, protein: 0, fat: 0, carbs: 0, sugar: 0 }
     );
 
     console.log('🥗 Total Macronutrients:', macros);
@@ -496,16 +500,152 @@ export const readMacronutrientData = async (startTime: string, endTime: string) 
       protein: Math.round(macros.protein),
       fat: Math.round(macros.fat),
       carbs: Math.round(macros.carbs),
+      sugar: Math.round(macros.sugar),
     };
   } catch (error) {
     // Return 0s if permissions aren't granted (handle gracefully)
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('lacks the following permissions')) {
       console.log('⚠️ No permission to read macronutrient data, returning 0s');
-      return { calories: 0, protein: 0, fat: 0, carbs: 0 };
+      return { calories: 0, protein: 0, fat: 0, carbs: 0, sugar: 0 };
     }
     console.error('❌ Error reading macronutrient data:', error);
-    return { calories: 0, protein: 0, fat: 0, carbs: 0 };
+    return { calories: 0, protein: 0, fat: 0, carbs: 0, sugar: 0 };
+  }
+};
+
+// Helper function to read calories by meal type
+export const readCaloriesByMealType = async (startTime: string, endTime: string) => {
+  try {
+    console.log('🍽️ Reading calories by meal type from', startTime, 'to', endTime);
+    const timeRangeFilter = {
+      operator: 'between' as const,
+      startTime,
+      endTime,
+    };
+
+    interface NutritionRecord {
+      energy: {
+        inKilocalories: number;
+      };
+      mealType?: number; // 1=breakfast, 2=lunch, 3=dinner, 4=snack, 0=unknown
+      name?: string;
+      metadata?: {
+        recordingMethod?: number;
+      };
+    }
+
+    const nutritionRecords = await readRecords('Nutrition', { timeRangeFilter });
+    
+    const mealCalories = {
+      breakfast: 0,
+      lunch: 0,
+      dinner: 0,
+      snack: 0,
+    };
+
+    (nutritionRecords.records as NutritionRecord[]).forEach((record) => {
+      const calories = record.energy?.inKilocalories || 0;
+      // mealType is a number: 1=breakfast, 2=lunch, 3=dinner, 4=snack, 0=unknown
+      const mealTypeNum = typeof record.mealType === 'number' ? record.mealType : 0;
+      
+      if (mealTypeNum === 1) {
+        mealCalories.breakfast += calories;
+      } else if (mealTypeNum === 2) {
+        mealCalories.lunch += calories;
+      } else if (mealTypeNum === 3) {
+        mealCalories.dinner += calories;
+      } else if (mealTypeNum === 4) {
+        mealCalories.snack += calories;
+      }
+    });
+
+    console.log('🍽️ Calories by meal type:', mealCalories);
+    return {
+      breakfast: Math.round(mealCalories.breakfast),
+      lunch: Math.round(mealCalories.lunch),
+      dinner: Math.round(mealCalories.dinner),
+      snack: Math.round(mealCalories.snack),
+    };
+  } catch (error) {
+    // Return 0s if permissions aren't granted (handle gracefully)
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('lacks the following permissions')) {
+      console.log('⚠️ No permission to read meal type data, returning 0s');
+      return { breakfast: 0, lunch: 0, dinner: 0, snack: 0 };
+    }
+    console.error('❌ Error reading calories by meal type:', error);
+    return { breakfast: 0, lunch: 0, dinner: 0, snack: 0 };
+  }
+};
+
+// Helper function to read actual meals from Health Connect by meal type
+export const readMealsByType = async (startTime: string, endTime: string, mealType: number) => {
+  try {
+    console.log(`🍽️ Reading ${mealType} meals from`, startTime, 'to', endTime);
+    const timeRangeFilter = {
+      operator: 'between' as const,
+      startTime,
+      endTime,
+    };
+
+    interface NutritionRecord {
+      energy: {
+        inKilocalories: number;
+      };
+      protein?: {
+        inGrams: number;
+      };
+      totalFat?: {
+        inGrams: number;
+      };
+      totalCarbohydrate?: {
+        inGrams: number;
+      };
+      sugar?: {
+        inGrams: number;
+      };
+      mealType?: number;
+      name?: string;
+      startTime: string;
+    }
+
+    const nutritionRecords = await readRecords('Nutrition', { timeRangeFilter });
+    
+    const meals = (nutritionRecords.records as NutritionRecord[])
+      .filter((record) => {
+        const recordMealType = typeof record.mealType === 'number' ? record.mealType : 0;
+        return recordMealType === mealType;
+      })
+      .map((record) => {
+        const fullName = record.name || 'Meal';
+        // Extract recipe ID if embedded in format "Recipe Name #12345"
+        const idMatch = fullName.match(/#(\d+)$/);
+        const recipeId = idMatch ? parseInt(idMatch[1], 10) : undefined;
+        const cleanName = idMatch ? fullName.replace(/#\d+$/, '').trim() : fullName;
+        
+        return {
+          name: cleanName,
+          recipeId,
+          calories: Math.round(record.energy?.inKilocalories || 0),
+          protein: Math.round(record.protein?.inGrams || 0),
+          fat: Math.round(record.totalFat?.inGrams || 0),
+          carbs: Math.round(record.totalCarbohydrate?.inGrams || 0),
+          sugar: Math.round(record.sugar?.inGrams || 0),
+          timestamp: record.startTime,
+        };
+      });
+
+    console.log(`🍽️ Found ${meals.length} meals for type ${mealType}`);
+    return meals;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('lacks the following permissions')) {
+      console.log('⚠️ No permission to read meals data, returning empty array');
+      return [];
+    }
+    console.error('❌ Error reading meals by type:', error);
+    return [];
   }
 };
 

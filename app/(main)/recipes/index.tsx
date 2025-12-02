@@ -13,6 +13,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -69,6 +70,9 @@ export default function RecipesPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [showMealTypeModal, setShowMealTypeModal] = useState(false);
+  const [selectedRecipeForMeal, setSelectedRecipeForMeal] = useState<Recipe | null>(null);
+  const [selectedMealType, setSelectedMealType] = useState<string>('breakfast');
 
   // Health Connect
   const nutritionPermissions = [
@@ -216,6 +220,16 @@ export default function RecipesPage() {
       return;
     }
 
+    // Show meal type selection modal
+    setSelectedRecipeForMeal(recipe);
+    setShowMealTypeModal(true);
+  };
+
+  const confirmAddMeal = async () => {
+    if (!selectedRecipeForMeal) return;
+
+    const recipe = selectedRecipeForMeal;
+
     // Get nutrition info from recipe (use direct properties or fallback to nutrition.nutrients)
     const calories = recipe.calories || 0;
     const recipeWithNutrition = recipe as any;
@@ -226,31 +240,49 @@ export default function RecipesPage() {
         ?.amount || 0;
     const fat = recipe.fat ||
       recipeWithNutrition.nutrition?.nutrients?.find((n: any) => n.name === 'Fat')?.amount || 0;
+    const sugar = recipe.sugar ||
+      recipeWithNutrition.nutrition?.nutrients?.find((n: any) => n.name === 'Sugar')?.amount || 0;
 
     if (calories === 0) {
       Alert.alert('No Nutrition Data', 'This recipe does not have calorie information available.');
+      setShowMealTypeModal(false);
+      setSelectedRecipeForMeal(null);
       return;
     }
 
-    // Write to Health Connect
-    const success = await writeMealToHealthConnect({
-      name: recipe.title,
-      calories,
-      protein: protein > 0 ? protein : undefined,
-      carbs: carbs > 0 ? carbs : undefined,
-      fat: fat > 0 ? fat : undefined,
-    });
+    try {
+      // Write to Health Connect
+      const success = await writeMealToHealthConnect({
+        name: recipe.title,
+        calories,
+        protein: protein > 0 ? protein : undefined,
+        carbs: carbs > 0 ? carbs : undefined,
+        fat: fat > 0 ? fat : undefined,
+        sugar: sugar > 0 ? sugar : undefined,
+        mealType: selectedMealType as 'breakfast' | 'lunch' | 'dinner' | 'snack',
+        timestamp: new Date().toISOString(),
+        recipeId: recipe.id,
+      });
 
-    if (success) {
-      Alert.alert(
-        'Success! ✅',
-        `Added ${Math.round(calories)} calories from "${recipe.title}" to Health Connect`
-      );
-    } else {
-      Alert.alert(
-        'Error',
-        'Failed to add calories to Health Connect. Please check your permissions and try again.'
-      );
+      setShowMealTypeModal(false);
+      setSelectedRecipeForMeal(null);
+
+      if (success) {
+        Alert.alert(
+          'Success! ✅',
+          `Added ${Math.round(calories)} calories from "${recipe.title}" to Health Connect`
+        );
+      } else {
+        Alert.alert(
+          'Error',
+          'Failed to add calories to Health Connect. Please check your permissions and try again.'
+        );
+      }
+    } catch (error) {
+      console.error('Error adding meal:', error);
+      Alert.alert('Error', 'Failed to add meal. Please try again.');
+      setShowMealTypeModal(false);
+      setSelectedRecipeForMeal(null);
     }
   };
 
@@ -633,6 +665,58 @@ export default function RecipesPage() {
         )}
       </ScrollView>
       <BottomNavigation />
+
+      {/* Meal Type Selection Modal */}
+      <Modal
+        visible={showMealTypeModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowMealTypeModal(false)}>
+        <View className="flex-1 justify-end bg-black/50">
+          <View className="bg-[#25262B] rounded-t-3xl p-6">
+            <Text className="text-2xl font-bold text-white mb-6">Add Meal</Text>
+            
+            {/* Meal Type Selection */}
+            <Text className="text-base font-semibold text-gray-400 mb-3">Meal Type</Text>
+            <View className="flex-row flex-wrap gap-3 mb-6">
+              {['breakfast', 'lunch', 'dinner', 'snack'].map((type) => (
+                <TouchableOpacity
+                  key={type}
+                  onPress={() => setSelectedMealType(type)}
+                  className={`px-6 py-3 rounded-xl ${
+                    selectedMealType === type ? 'bg-[#4F46E5]' : 'bg-[#1A1B1E]'
+                  }`}>
+                  <Text className={`text-base font-semibold capitalize ${
+                    selectedMealType === type ? 'text-white' : 'text-gray-400'
+                  }`}>
+                    {type}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Action Buttons */}
+            <View className="flex-row gap-3 mt-6">
+              <TouchableOpacity
+                onPress={() => {
+                  setShowMealTypeModal(false);
+                  setSelectedRecipeForMeal(null);
+                }}
+                className="flex-1 py-4 rounded-xl bg-[#1A1B1E]">
+                <Text className="text-base font-semibold text-white text-center">Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={confirmAddMeal}
+                disabled={isWriting}
+                className="flex-1 py-4 rounded-xl bg-[#4F46E5]">
+                <Text className="text-base font-semibold text-white text-center">
+                  {isWriting ? 'Adding...' : 'Add Meal'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

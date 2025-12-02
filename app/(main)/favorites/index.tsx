@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
+  Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -34,6 +35,9 @@ export default function FavoritesPage() {
   const theme = useTheme();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [addingRecipeId, setAddingRecipeId] = useState<number | null>(null);
+  const [showMealTypeModal, setShowMealTypeModal] = useState(false);
+  const [selectedRecipeForMeal, setSelectedRecipeForMeal] = useState<Recipe | null>(null);
+  const [selectedMealType, setSelectedMealType] = useState<string>('breakfast');
   const {
     favorites,
     isLoading,
@@ -115,11 +119,34 @@ export default function FavoritesPage() {
         ?.amount || 0;
     const fat = recipe.fat ||
       recipeWithNutrition.nutrition?.nutrients?.find((n: any) => n.name === 'Fat')?.amount || 0;
+    const sugar = recipe.sugar ||
+      recipeWithNutrition.nutrition?.nutrients?.find((n: any) => n.name === 'Sugar')?.amount || 0;
 
     if (calories === 0) {
       Alert.alert('No Nutrition Data', 'This recipe does not have calorie information available.');
       return;
     }
+
+    // Show meal type selection modal
+    setSelectedRecipeForMeal(recipe);
+    setShowMealTypeModal(true);
+  };
+
+  const confirmAddMeal = async () => {
+    if (!selectedRecipeForMeal) return;
+
+    const recipe = selectedRecipeForMeal;
+    const calories = recipe.calories || 0;
+    const recipeWithNutrition = recipe as any;
+    const protein = recipe.protein ||
+      recipeWithNutrition.nutrition?.nutrients?.find((n: any) => n.name === 'Protein')?.amount || 0;
+    const carbs = recipe.carbs ||
+      recipeWithNutrition.nutrition?.nutrients?.find((n: any) => n.name === 'Carbohydrates')
+        ?.amount || 0;
+    const fat = recipe.fat ||
+      recipeWithNutrition.nutrition?.nutrients?.find((n: any) => n.name === 'Fat')?.amount || 0;
+    const sugar = recipe.sugar ||
+      recipeWithNutrition.nutrition?.nutrients?.find((n: any) => n.name === 'Sugar')?.amount || 0;
 
     setAddingRecipeId(recipe.id);
     try {
@@ -130,7 +157,14 @@ export default function FavoritesPage() {
         protein: protein > 0 ? protein : undefined,
         carbs: carbs > 0 ? carbs : undefined,
         fat: fat > 0 ? fat : undefined,
+        sugar: sugar > 0 ? sugar : undefined,
+        mealType: selectedMealType as 'breakfast' | 'lunch' | 'dinner' | 'snack',
+        timestamp: new Date().toISOString(),
+        recipeId: recipe.id,
       });
+
+      setShowMealTypeModal(false);
+      setSelectedRecipeForMeal(null);
 
       if (success) {
         Alert.alert(
@@ -375,6 +409,58 @@ export default function FavoritesPage() {
           </View>
         )}
       </ScrollView>
+
+      {/* Meal Type Selection Modal */}
+      <Modal
+        visible={showMealTypeModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowMealTypeModal(false)}>
+        <View className="flex-1 justify-end bg-black/50">
+          <View className="bg-[#25262B] rounded-t-3xl p-6">
+            <Text className="text-2xl font-bold text-white mb-6">Add Meal</Text>
+            
+            {/* Meal Type Selection */}
+            <Text className="text-base font-semibold text-gray-400 mb-3">Meal Type</Text>
+            <View className="flex-row flex-wrap gap-3 mb-6">
+              {['breakfast', 'lunch', 'dinner', 'snack'].map((type) => (
+                <TouchableOpacity
+                  key={type}
+                  onPress={() => setSelectedMealType(type)}
+                  className={`px-6 py-3 rounded-xl ${
+                    selectedMealType === type ? 'bg-[#4F46E5]' : 'bg-[#1A1B1E]'
+                  }`}>
+                  <Text className={`text-base font-semibold capitalize ${
+                    selectedMealType === type ? 'text-white' : 'text-gray-400'
+                  }`}>
+                    {type}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Action Buttons */}
+            <View className="flex-row gap-3 mt-6">
+              <TouchableOpacity
+                onPress={() => {
+                  setShowMealTypeModal(false);
+                  setSelectedRecipeForMeal(null);
+                }}
+                className="flex-1 py-4 rounded-xl bg-[#1A1B1E]">
+                <Text className="text-base font-semibold text-white text-center">Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={confirmAddMeal}
+                disabled={addingRecipeId !== null}
+                className="flex-1 py-4 rounded-xl bg-[#4F46E5]">
+                <Text className="text-base font-semibold text-white text-center">
+                  {addingRecipeId !== null ? 'Adding...' : 'Add Meal'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
