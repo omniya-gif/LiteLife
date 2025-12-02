@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, SafeAreaView, Image, Dimensions, Alert, ActivityIndicator, ScrollView, Modal, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, MoreVertical, BarChart2, Utensils, Plus, Trash2, Flame, Coffee, Sun, ChevronLeft, ChevronRight, TrendingUp, Calendar, Upload, Edit3, Book, X, Search, Maximize2 } from 'lucide-react-native';
+import LottieView from 'lottie-react-native';
 import Animated, { 
   useAnimatedStyle, 
   withSpring,
@@ -508,14 +509,27 @@ export default function JournalPage() {
 
         {/* Show meals from Health Connect or empty state */}
         {!isSearching && meal.items.length === 0 && (
-          <View className="mt-4 items-center justify-center rounded-2xl bg-[#25262B] py-12">
-            <Text className="text-base text-gray-400">
+          <TouchableOpacity 
+            className="mt-4 items-center justify-center rounded-2xl bg-[#25262B] py-12"
+            onPress={() => {
+              setSelectedMealType(meal.title);
+              setShowAddMealModal(true);
+            }}
+            activeOpacity={0.7}
+          >
+            <LottieView
+              source={require('@/assets/lottie_animations/food.json')}
+              autoPlay
+              loop
+              style={{ width: 120, height: 120 }}
+            />
+            <Text className="mt-4 text-base text-gray-400">
               No meals added to {meal.title.toLowerCase()} yet
             </Text>
             <Text className="mt-2 text-sm text-gray-500">
-              Search and add recipes to track your nutrition
+              Tap to add your first meal
             </Text>
-          </View>
+          </TouchableOpacity>
         )}
 
         {!isSearching && meal.items.map((item, index) => (
