@@ -9,10 +9,7 @@ import { useTheme } from '../../../hooks/useTheme';
 import { useUserStore } from '../../../lib/store/userStore';
 import { 
   useHealthConnect, 
-  readStepsData, 
-  readDistanceData, 
-  readFloorsData,
-  readNutritionData
+  readMacronutrientData
 } from '../../../hooks/useHealthConnect';
 
 const MacroRow = ({ name, amount, percentage, color, index }) => (
@@ -35,9 +32,9 @@ export default function CalorieTrackerPage() {
   const router = useRouter();
   const theme = useTheme();
   const onboarding = useUserStore((state) => state.onboarding);
-  const [steps, setSteps] = useState(0);
-  const [distance, setDistance] = useState(0);
-  const [floors, setFloors] = useState(0);
+  const [protein, setProtein] = useState(0);
+  const [fat, setFat] = useState(0);
+  const [carbs, setCarbs] = useState(0);
   const [caloriesConsumed, setCaloriesConsumed] = useState(0);
   const [isLoadingData, setIsLoadingData] = useState(false);
 
@@ -54,9 +51,6 @@ export default function CalorieTrackerPage() {
 
   // Health Connect setup
   const healthConnect = useHealthConnect([
-    { accessType: 'read', recordType: 'Steps' },
-    { accessType: 'read', recordType: 'Distance' },
-    { accessType: 'read', recordType: 'FloorsClimbed' },
     { accessType: 'read', recordType: 'Nutrition' },
   ]);
 
@@ -74,21 +68,18 @@ export default function CalorieTrackerPage() {
       const startOfDay = new Date(now.setHours(0, 0, 0, 0));
       const endOfDay = new Date(now.setHours(23, 59, 59, 999));
 
-      // Fetch all health data including nutrition (calories consumed)
-      const [totalSteps, totalDistance, totalFloors, nutritionCalories] = await Promise.all([
-        readStepsData(startOfDay.toISOString(), endOfDay.toISOString()),
-        readDistanceData(startOfDay.toISOString(), endOfDay.toISOString()),
-        readFloorsData(startOfDay.toISOString(), endOfDay.toISOString()),
-        readNutritionData(startOfDay.toISOString(), endOfDay.toISOString()),
-      ]);
+      // Fetch macronutrient data (includes calories, protein, fat, carbs)
+      const macros = await readMacronutrientData(
+        startOfDay.toISOString(), 
+        endOfDay.toISOString()
+      );
 
-      setSteps(totalSteps);
-      setDistance(totalDistance);
-      setFloors(totalFloors);
+      setProtein(macros.protein);
+      setFat(macros.fat);
+      setCarbs(macros.carbs);
+      setCaloriesConsumed(macros.calories);
       
-      // Use calories consumed from nutrition data (meals eaten)
-      setCaloriesConsumed(nutritionCalories);
-      console.log('🍽️ Setting calories consumed from Health Connect:', nutritionCalories);
+      console.log('🍽️ Setting macros from Health Connect:', macros);
     } catch (error) {
       // Only log and show alert if it's not a permission error
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -118,22 +109,22 @@ export default function CalorieTrackerPage() {
 
   const metrics = [
     { 
-      name: 'Steps', 
-      amount: steps.toLocaleString(), 
-      percentage: Math.round((steps / 10000) * 100), 
-      color: '#3B82F6' 
-    },
-    { 
-      name: 'Distance', 
-      amount: `${(distance / 1000).toFixed(2)} km`, 
-      percentage: Math.round((distance / 5000) * 100), 
+      name: 'Protein', 
+      amount: `${protein}g`, 
+      percentage: Math.round((protein / 150) * 100), // Assuming 150g daily protein goal
       color: theme.primary 
     },
     { 
-      name: 'Floors', 
-      amount: floors.toString(), 
-      percentage: Math.round((floors / 10) * 100), 
-      color: '#06B6D4' 
+      name: 'Fat', 
+      amount: `${fat}g`, 
+      percentage: Math.round((fat / 65) * 100), // Assuming 65g daily fat goal
+      color: '#ff6b35' 
+    },
+    { 
+      name: 'Carbs', 
+      amount: `${carbs}g`, 
+      percentage: Math.round((carbs / 300) * 100), // Assuming 300g daily carbs goal
+      color: '#4ade80' 
     }
   ];
 

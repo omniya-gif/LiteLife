@@ -451,6 +451,64 @@ export const readNutritionData = async (startTime: string, endTime: string) => {
   }
 };
 
+// Helper function to read detailed macronutrient data (protein, fat, carbs)
+export const readMacronutrientData = async (startTime: string, endTime: string) => {
+  try {
+    console.log('🥗 Reading macronutrient data from', startTime, 'to', endTime);
+    const timeRangeFilter = {
+      operator: 'between' as const,
+      startTime,
+      endTime,
+    };
+
+    interface NutritionRecord {
+      energy: {
+        inKilocalories: number;
+      };
+      protein: {
+        inGrams: number;
+      };
+      totalFat: {
+        inGrams: number;
+      };
+      totalCarbohydrate: {
+        inGrams: number;
+      };
+    }
+
+    const nutritionRecords = await readRecords('Nutrition', { timeRangeFilter });
+    
+    const macros = (nutritionRecords.records as NutritionRecord[]).reduce(
+      (totals, record) => {
+        return {
+          calories: totals.calories + (record.energy?.inKilocalories || 0),
+          protein: totals.protein + (record.protein?.inGrams || 0),
+          fat: totals.fat + (record.totalFat?.inGrams || 0),
+          carbs: totals.carbs + (record.totalCarbohydrate?.inGrams || 0),
+        };
+      },
+      { calories: 0, protein: 0, fat: 0, carbs: 0 }
+    );
+
+    console.log('🥗 Total Macronutrients:', macros);
+    return {
+      calories: Math.round(macros.calories),
+      protein: Math.round(macros.protein),
+      fat: Math.round(macros.fat),
+      carbs: Math.round(macros.carbs),
+    };
+  } catch (error) {
+    // Return 0s if permissions aren't granted (handle gracefully)
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('lacks the following permissions')) {
+      console.log('⚠️ No permission to read macronutrient data, returning 0s');
+      return { calories: 0, protein: 0, fat: 0, carbs: 0 };
+    }
+    console.error('❌ Error reading macronutrient data:', error);
+    return { calories: 0, protein: 0, fat: 0, carbs: 0 };
+  }
+};
+
 // Helper function to read hydration data
 export const readHydrationData = async (startTime: string, endTime: string) => {
   try {

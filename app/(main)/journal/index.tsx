@@ -12,7 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { useTheme } from '../../../hooks/useTheme';
-import { useHealthConnect, readNutritionData } from '../../../hooks/useHealthConnect';
+import { useHealthConnect, readNutritionData, readMacronutrientData } from '../../../hooks/useHealthConnect';
 import { useHealthConnectWrite } from '../../../hooks/useHealthConnectWrite';
 import { useUserStore } from '../../../stores/userStore';
 import { searchRecipes, Recipe } from '../../../services/recipeService';
@@ -57,6 +57,7 @@ export default function JournalPage() {
   const [searchResults, setSearchResults] = useState<Recipe[]>([]);
   const [searching, setSearching] = useState(false);
   const [expandedMeal, setExpandedMeal] = useState(false);
+  const [macronutrients, setMacronutrients] = useState({ protein: 0, fat: 0, carbs: 0 });
   const translateX = useSharedValue(0);
 
   // Health Connect integration
@@ -238,11 +239,18 @@ export default function JournalPage() {
         const endOfDay = new Date(selectedDay.fullDate);
         endOfDay.setHours(23, 59, 59, 999);
 
-        const calories = await readNutritionData(
+        // Fetch both calories and macronutrients
+        const macros = await readMacronutrientData(
           startOfDay.toISOString(),
           endOfDay.toISOString()
         );
-        setDailyCalories(calories);
+        
+        setDailyCalories(macros.calories);
+        setMacronutrients({
+          protein: macros.protein,
+          fat: macros.fat,
+          carbs: macros.carbs,
+        });
       } catch (error) {
         console.error('Error fetching daily calories:', error);
       } finally {
