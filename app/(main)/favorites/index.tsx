@@ -105,15 +105,15 @@ export default function FavoritesPage() {
       return;
     }
 
-    // Get nutrition info from recipe
+    // Get nutrition info from recipe (use direct properties or fallback to nutrition.nutrients)
     const calories = recipe.calories || 0;
     const recipeWithNutrition = recipe as any;
-    const protein =
+    const protein = recipe.protein ||
       recipeWithNutrition.nutrition?.nutrients?.find((n: any) => n.name === 'Protein')?.amount || 0;
-    const carbs =
+    const carbs = recipe.carbs ||
       recipeWithNutrition.nutrition?.nutrients?.find((n: any) => n.name === 'Carbohydrates')
         ?.amount || 0;
-    const fat =
+    const fat = recipe.fat ||
       recipeWithNutrition.nutrition?.nutrients?.find((n: any) => n.name === 'Fat')?.amount || 0;
 
     if (calories === 0) {

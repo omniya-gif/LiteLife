@@ -96,6 +96,9 @@ export default function JournalPage() {
               id: recipe.id,
               name: recipe.title,
               calories: Math.round(recipe.calories || 0),
+              protein: Math.round(recipe.protein || 0),
+              fat: Math.round(recipe.fat || 0),
+              carbs: Math.round(recipe.carbs || 0),
               image: recipe.image,
               readyInMinutes: recipe.readyInMinutes,
               servings: recipe.servings,
@@ -111,6 +114,9 @@ export default function JournalPage() {
               id: recipe.id,
               name: recipe.title,
               calories: Math.round(recipe.calories || 0),
+              protein: Math.round(recipe.protein || 0),
+              fat: Math.round(recipe.fat || 0),
+              carbs: Math.round(recipe.carbs || 0),
               image: recipe.image,
               readyInMinutes: recipe.readyInMinutes,
               servings: recipe.servings,
@@ -126,6 +132,9 @@ export default function JournalPage() {
               id: recipe.id,
               name: recipe.title,
               calories: Math.round(recipe.calories || 0),
+              protein: Math.round(recipe.protein || 0),
+              fat: Math.round(recipe.fat || 0),
+              carbs: Math.round(recipe.carbs || 0),
               image: recipe.image,
               readyInMinutes: recipe.readyInMinutes,
               servings: recipe.servings,
@@ -205,6 +214,9 @@ export default function JournalPage() {
             id: recipe.id,
             name: recipe.title,
             calories: Math.round(recipe.calories || 0),
+            protein: Math.round(recipe.protein || 0),
+            fat: Math.round(recipe.fat || 0),
+            carbs: Math.round(recipe.carbs || 0),
             image: recipe.image,
             readyInMinutes: recipe.readyInMinutes,
             servings: recipe.servings,
@@ -308,14 +320,15 @@ export default function JournalPage() {
       return;
     }
 
-    const success = await writeMealToHealthConnect({
-      name: mealItem.name,
-      calories: mealItem.calories,
-      mealType: mealType.toLowerCase(),
-      timestamp: new Date().toISOString(),
-    });
-
-    if (success) {
+      const success = await writeMealToHealthConnect({
+        name: mealItem.name,
+        calories: mealItem.calories,
+        protein: mealItem.protein,
+        carbs: mealItem.carbs,
+        fat: mealItem.fat,
+        mealType: mealType.toLowerCase(),
+        timestamp: new Date().toISOString(),
+      });    if (success) {
       Alert.alert('✅ Success', 'Meal saved to Health Connect and will appear in Google Fit!');
     } else {
       Alert.alert('Error', 'Failed to save meal to Health Connect');

@@ -19,6 +19,9 @@ export interface Recipe {
   readyInMinutes: number;
   servings: number;
   calories?: number;
+  protein?: number;
+  fat?: number;
+  carbs?: number;
   dishTypes?: string[];
   summary?: string;
 }
@@ -104,9 +107,11 @@ export const searchRecipes = async (
     const data = await response.json();
 
     return data.results.map((recipe: any) => {
-      const calories = recipe.nutrition?.nutrients?.find(
-        (nutrient: any) => nutrient.name === 'Calories'
-      );
+      const nutrients = recipe.nutrition?.nutrients || [];
+      const calories = nutrients.find((n: any) => n.name === 'Calories');
+      const protein = nutrients.find((n: any) => n.name === 'Protein');
+      const fat = nutrients.find((n: any) => n.name === 'Fat');
+      const carbs = nutrients.find((n: any) => n.name === 'Carbohydrates');
 
       return {
         id: recipe.id,
@@ -115,6 +120,9 @@ export const searchRecipes = async (
         readyInMinutes: recipe.readyInMinutes,
         servings: recipe.servings,
         calories: calories?.amount || 0,
+        protein: protein?.amount || 0,
+        fat: fat?.amount || 0,
+        carbs: carbs?.amount || 0,
         dishTypes: recipe.dishTypes || [],
         summary: recipe.summary || '',
       };
@@ -167,10 +175,12 @@ export const getFeaturedRecipes = async (limit = 6, tags?: string): Promise<Reci
     console.log('✅ Received recipes:', data.recipes?.length || 0);
 
     return data.recipes.map((recipe: any) => {
-      // Extract calories from nutrition data if available
-      const calories = recipe.nutrition?.nutrients?.find(
-        (nutrient: any) => nutrient.name === 'Calories'
-      );
+      // Extract nutrition data
+      const nutrients = recipe.nutrition?.nutrients || [];
+      const calories = nutrients.find((n: any) => n.name === 'Calories');
+      const protein = nutrients.find((n: any) => n.name === 'Protein');
+      const fat = nutrients.find((n: any) => n.name === 'Fat');
+      const carbs = nutrients.find((n: any) => n.name === 'Carbohydrates');
 
       return {
         id: recipe.id,
@@ -179,6 +189,9 @@ export const getFeaturedRecipes = async (limit = 6, tags?: string): Promise<Reci
         readyInMinutes: recipe.readyInMinutes,
         servings: recipe.servings,
         calories: calories?.amount || 0,
+        protein: protein?.amount || 0,
+        fat: fat?.amount || 0,
+        carbs: carbs?.amount || 0,
         dishTypes: recipe.dishTypes || [],
         summary: recipe.summary
           ? recipe.summary.replace(/<[^>]*>?/gm, '').substring(0, 120) + '...'
