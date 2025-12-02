@@ -173,38 +173,39 @@ export default function WaterTrackerPage() {
       <View className="flex-1 justify-center px-6">
         {/* Water Intake Summary */}
         <Animated.View entering={FadeIn.delay(300).springify()} className="items-center">
-          <Text className="text-center text-3xl font-bold text-white">
+          <Text className="text-center text-2xl font-bold text-white">
             You drank <Text style={{ color: theme.primary }}>{waterAmount}ml</Text> of{' '}
             <Text className="text-gray-400">{goal}ml</Text>
           </Text>
-          <Text className="mt-2 text-gray-400">
+          <Text className="mt-1 text-sm text-gray-400">
             {progress < 0.5 ? 'Keep going!' : progress < 0.8 ? 'Almost there!' : 'Great job!'}
           </Text>
         </Animated.View>
 
         {/* Progress Circle with Liquid Animation */}
-        <Animated.View entering={FadeInUp.delay(400).springify()} className="items-center py-8">
-          <View className="relative" style={{ width: width * 0.6, height: width * 0.6 }}>
+        <Animated.View entering={FadeInUp.delay(400).springify()} className="items-center py-6">
+          <View className="relative" style={{ width: width * 0.5, height: width * 0.5 }}>
             <View className="absolute inset-0 overflow-hidden rounded-full" style={{ backgroundColor: theme.backgroundLight }}>
               <WavesContainer />
             </View>
             <CircularProgress
-              size={width * 0.6}
-              strokeWidth={16}
+              size={width * 0.5}
+              strokeWidth={14}
               progress={progress}
               colors={[theme.primary, theme.primary, theme.primary]}
             />
             <Animated.View
               entering={FadeIn.delay(500)}
               className="absolute inset-0 items-center justify-center">
-              <Text className="text-4xl font-bold text-white">{Math.round(progress * 100)}%</Text>
+              <Text className="text-3xl font-bold text-white">{Math.round(progress * 100)}%</Text>
+              <Text className="text-xs text-gray-400 mt-1">of daily goal</Text>
             </Animated.View>
           </View>
         </Animated.View>
 
         {/* Quick Add Buttons */}
         <Animated.View entering={FadeInUp.delay(600)}>
-          <Text className="mb-4 text-center text-xl font-bold text-white">Quick Add</Text>
+          <Text className="mb-3 text-center text-lg font-bold text-white">Quick Add</Text>
           <View className="flex-row justify-around">
             {waterCups.map((cup) => (
               <TouchableOpacity

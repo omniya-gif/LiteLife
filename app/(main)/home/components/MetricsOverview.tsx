@@ -1,17 +1,15 @@
 import { Activity, Droplets, Scale, Footprints } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, Dimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import Animated, { 
   useSharedValue, 
-  useAnimatedProps,
+  useAnimatedStyle,
   withSpring,
-  withRepeat,
-  withTiming,
-  Easing,
-  interpolate
+  interpolate,
+  Extrapolate
 } from 'react-native-reanimated';
-import Svg, { Rect, Defs, ClipPath, Path } from 'react-native-svg';
+import LottieView from 'lottie-react-native';
 
 import { useAuth } from '../../../../hooks/useAuth';
 import { useTheme } from '../../../../hooks/useTheme';
@@ -24,121 +22,74 @@ import {
 } from '../../../../hooks/useHealthConnect';
 
 const { width } = Dimensions.get('window');
-const AnimatedPath = Animated.createAnimatedComponent(Path);
-const AnimatedRect = Animated.createAnimatedComponent(Rect);
 
 const WaterMetricCard = ({ value, unit, lastUpdate }) => {
   const theme = useTheme();
   const { onboarding } = useUserStore();
+  const lottieRef = useRef<LottieView>(null);
   const waterGoalMl = onboarding?.water_target || 2000;
   const waterGoalL = waterGoalMl / 1000;
   const progress = Math.min(value / waterGoalL, 1);
 
-  const waveAnimation = useSharedValue(0);
-  const fillHeight = useSharedValue(0);
-  
+  const animatedProgress = useSharedValue(0);
   const cardWidth = (width - 48) / 3 - 10;
   const cardHeight = 120;
 
   useEffect(() => {
-    // Continuous wave animation
-    waveAnimation.value = withRepeat(
-      withTiming(1, {
-        duration: 2000,
-        easing: Easing.linear,
-      }),
-      -1,
-      false
-    );
-
-    // Animate fill height
-    fillHeight.value = withSpring(progress, {
+    // Animate progress
+    animatedProgress.value = withSpring(progress, {
       damping: 15,
       stiffness: 90,
     });
+    
+    // Play lottie animation
+    lottieRef.current?.play();
   }, [progress]);
 
-  // Animated wave path for smooth sine wave
-  const animatedWaveProps = useAnimatedProps(() => {
-    const waveWidth = cardWidth + 20;
-    const amplitude = 6;
-    const frequency = 2;
-    const phase = waveAnimation.value * Math.PI * 2;
+  // Animated styles for the water container
+  const waterContainerStyle = useAnimatedStyle(() => {
+    const height = interpolate(
+      animatedProgress.value,
+      [0, 1],
+      [0, 100],
+      Extrapolate.CLAMP
+    );
     
-    let path = `M -10,${cardHeight}`;
-    
-    // Create smooth wave using many points
-    for (let x = -10; x <= waveWidth; x += 2) {
-      const normalizedX = x / waveWidth;
-      const y = cardHeight - (fillHeight.value * cardHeight) + 
-                Math.sin((normalizedX * frequency * Math.PI * 2) + phase) * amplitude;
-      path += ` L ${x},${y}`;
-    }
-    
-    path += ` L ${waveWidth},${cardHeight}`;
-    path += ` L -10,${cardHeight}`;
-    path += ' Z';
-    
-    return { d: path };
-  });
-
-  // Animated wave path for second wave (offset)
-  const animatedWave2Props = useAnimatedProps(() => {
-    const waveWidth = cardWidth + 20;
-    const amplitude = 8;
-    const frequency = 1.5;
-    const phase = waveAnimation.value * Math.PI * 2 + Math.PI; // Phase offset
-    
-    let path = `M -10,${cardHeight}`;
-    
-    for (let x = -10; x <= waveWidth; x += 2) {
-      const normalizedX = x / waveWidth;
-      const y = cardHeight - (fillHeight.value * cardHeight) + 
-                Math.sin((normalizedX * frequency * Math.PI * 2) + phase) * amplitude - 3;
-      path += ` L ${x},${y}`;
-    }
-    
-    path += ` L ${waveWidth},${cardHeight}`;
-    path += ` L -10,${cardHeight}`;
-    path += ' Z';
-    
-    return { d: path };
+    return {
+      height: `${height}%`,
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      overflow: 'hidden',
+    };
   });
 
   return (
     <View className="min-w-0 flex-1 rounded-2xl bg-[#2C2D32] overflow-hidden" style={{ position: 'relative', height: cardHeight }}>
-      {/* Water Wave SVG with ClipPath */}
-      <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, top: 0 }}>
-        <Svg width={cardWidth + 10} height={cardHeight} style={{ position: 'absolute', left: -5 }}>
-          <Defs>
-            <ClipPath id="wave-clip">
-              <AnimatedPath animatedProps={animatedWaveProps} />
-            </ClipPath>
-          </Defs>
-          
-          {/* Base water fill with wave clip */}
-          <AnimatedRect
-            x="0"
-            y="0"
-            width={cardWidth + 10}
-            height={cardHeight}
-            fill={`${theme.primary}40`}
-            clipPath="url(#wave-clip)"
+      {/* Lottie Water Animation */}
+      <Animated.View style={waterContainerStyle}>
+        <View style={{ 
+          position: 'absolute',
+          bottom: -20,
+          left: -10,
+          right: -10,
+          height: cardHeight + 40,
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+          <LottieView
+            ref={lottieRef}
+            source={require('../../../../assets/lottie_animations/Water Animation.json')}
+            autoPlay
+            loop
+            style={{ 
+              width: cardWidth + 40, 
+              height: cardHeight + 40,
+            }}
           />
-          
-          {/* Second wave layer for depth */}
-          <AnimatedPath
-            animatedProps={animatedWave2Props}
-            fill={`${theme.primary}25`}
-          />
-          
-          {/* Main wave layer */}
-          <AnimatedPath
-            animatedProps={animatedWaveProps}
-            fill={`${theme.primary}60`}
-          />
-        </Svg>
-      </View>
+        </View>
+      </Animated.View>
 
       {/* Content */}
       <View className="p-4 relative z-10" style={{ flex: 1, justifyContent: 'space-between' }}>
