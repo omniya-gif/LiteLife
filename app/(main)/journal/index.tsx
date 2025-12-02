@@ -518,7 +518,7 @@ export default function JournalPage() {
             activeOpacity={0.7}
           >
             <LottieView
-              source={require('@/assets/lottie_animations/food.json')}
+              source={require('../../../assets/lottie_animations/food.json')}
               autoPlay
               loop
               style={{ width: 120, height: 120 }}
