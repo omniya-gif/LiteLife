@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "fithass",
-    "slug": "fithass",
+    "name": "LiteLife",
+    "slug": "litelife",
     "version": "1.0.0",
     "scheme": "myexpoapp",
     "web": {
@@ -78,7 +78,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.fithass.app",
+      "package": "com.litelife.app",
       "permissions": [
       "android.permission.health.READ_STEPS",
       "android.permission.health.READ_FLOORS_CLIMBED",

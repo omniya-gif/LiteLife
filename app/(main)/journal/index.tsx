@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, Image, Dimensions, Alert, ActivityIndicator, ScrollView, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, SafeAreaView, Image, Dimensions, Alert, ActivityIndicator, ScrollView, Modal, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, MoreVertical, BarChart2, Utensils, Plus, Trash2, Flame, Coffee, Sun, ChevronLeft, ChevronRight, TrendingUp, Calendar, Upload, Edit3, Book, X } from 'lucide-react-native';
+import { ArrowLeft, MoreVertical, BarChart2, Utensils, Plus, Trash2, Flame, Coffee, Sun, ChevronLeft, ChevronRight, TrendingUp, Calendar, Upload, Edit3, Book, X, Search, Maximize2 } from 'lucide-react-native';
 import Animated, { 
   useAnimatedStyle, 
   withSpring,
@@ -15,6 +15,7 @@ import { useTheme } from '../../../hooks/useTheme';
 import { useHealthConnect, readNutritionData } from '../../../hooks/useHealthConnect';
 import { useHealthConnectWrite } from '../../../hooks/useHealthConnectWrite';
 import { useUserStore } from '../../../stores/userStore';
+import { searchRecipes, Recipe } from '../../../services/recipeService';
 
 const { width } = Dimensions.get('window');
 
@@ -49,6 +50,13 @@ export default function JournalPage() {
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [showAddMealModal, setShowAddMealModal] = useState(false);
   const [selectedMealType, setSelectedMealType] = useState<string>('');
+  const [meals, setMeals] = useState<any[]>([]);
+  const [loadingMeals, setLoadingMeals] = useState(true);
+  const [searchVisible, setSearchVisible] = useState<string | null>(null); // 'breakfast', 'lunch', 'dinner', or null
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Recipe[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [expandedMeal, setExpandedMeal] = useState(false);
   const translateX = useSharedValue(0);
 
   // Health Connect integration
@@ -61,6 +69,160 @@ export default function JournalPage() {
   ]);
 
   const { writeMealToHealthConnect, isWriting } = useHealthConnectWrite();
+
+  // Fetch meals from Spoonacular
+  useEffect(() => {
+    const fetchMeals = async () => {
+      setLoadingMeals(true);
+      try {
+        // Fetch breakfast recipes
+        const breakfastRecipes = await searchRecipes('breakfast', { type: 'breakfast' }, 3);
+        
+        // Fetch lunch recipes (main course with lunch-specific query)
+        const lunchRecipes = await searchRecipes('lunch', { type: 'main course' }, 3);
+        
+        // Fetch dinner recipes (main course with dinner-specific query)
+        const dinnerRecipes = await searchRecipes('dinner', { type: 'main course' }, 3);
+
+        const mealsData = [
+          {
+            id: 'breakfast',
+            title: 'BREAKFAST',
+            icon: <Coffee size={24} color={theme.primary} />,
+            calories: breakfastRecipes.reduce((sum, r) => sum + (r.calories || 0), 0),
+            maxCalories: 450,
+            items: breakfastRecipes.map(recipe => ({
+              id: recipe.id,
+              name: recipe.title,
+              calories: Math.round(recipe.calories || 0),
+              image: recipe.image,
+              readyInMinutes: recipe.readyInMinutes,
+              servings: recipe.servings,
+            }))
+          },
+          {
+            id: 'lunch',
+            title: 'LUNCH',
+            icon: <Sun size={24} color={theme.primary} />,
+            calories: lunchRecipes.reduce((sum, r) => sum + (r.calories || 0), 0),
+            maxCalories: 850,
+            items: lunchRecipes.map(recipe => ({
+              id: recipe.id,
+              name: recipe.title,
+              calories: Math.round(recipe.calories || 0),
+              image: recipe.image,
+              readyInMinutes: recipe.readyInMinutes,
+              servings: recipe.servings,
+            }))
+          },
+          {
+            id: 'dinner',
+            title: 'DINNER',
+            icon: <Flame size={24} color={theme.primary} />,
+            calories: dinnerRecipes.reduce((sum, r) => sum + (r.calories || 0), 0),
+            maxCalories: 550,
+            items: dinnerRecipes.map(recipe => ({
+              id: recipe.id,
+              name: recipe.title,
+              calories: Math.round(recipe.calories || 0),
+              image: recipe.image,
+              readyInMinutes: recipe.readyInMinutes,
+              servings: recipe.servings,
+            }))
+          }
+        ];
+
+        setMeals(mealsData);
+      } catch (error) {
+        console.error('Error fetching meals:', error);
+        // Fallback to empty meals on error
+        setMeals([
+          {
+            id: 'breakfast',
+            title: 'BREAKFAST',
+            icon: <Coffee size={24} color={theme.primary} />,
+            calories: 0,
+            maxCalories: 450,
+            items: []
+          },
+          {
+            id: 'lunch',
+            title: 'LUNCH',
+            icon: <Sun size={24} color={theme.primary} />,
+            calories: 0,
+            maxCalories: 850,
+            items: []
+          },
+          {
+            id: 'dinner',
+            title: 'DINNER',
+            icon: <Flame size={24} color={theme.primary} />,
+            calories: 0,
+            maxCalories: 550,
+            items: []
+          }
+        ]);
+      } finally {
+        setLoadingMeals(false);
+      }
+    };
+
+    fetchMeals();
+  }, [theme.primary]);
+
+  // Search recipes with debounce
+  useEffect(() => {
+    if (!searchQuery.trim() || !searchVisible) {
+      setSearchResults([]);
+      return;
+    }
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        setSearching(true);
+        // Determine meal type based on which meal is being searched
+        const mealType = searchVisible === 'breakfast' ? 'breakfast' : 'main course';
+        const results = await searchRecipes(searchQuery, { type: mealType }, 10);
+        setSearchResults(results);
+      } catch (error) {
+        console.error('Error searching recipes:', error);
+        setSearchResults([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, searchVisible]);
+
+  const handleAddRecipeToMeal = (recipe: Recipe, mealType: string) => {
+    // Add recipe to the selected meal
+    setMeals(prevMeals => 
+      prevMeals.map(meal => {
+        if (meal.id === mealType.toLowerCase()) {
+          const newItem = {
+            id: recipe.id,
+            name: recipe.title,
+            calories: Math.round(recipe.calories || 0),
+            image: recipe.image,
+            readyInMinutes: recipe.readyInMinutes,
+            servings: recipe.servings,
+          };
+          return {
+            ...meal,
+            items: [...meal.items, newItem],
+            calories: meal.calories + (recipe.calories || 0)
+          };
+        }
+        return meal;
+      })
+    );
+    
+    // Close search
+    setSearchVisible(null);
+    setSearchQuery('');
+    Alert.alert('Success', `Added "${recipe.title}" to ${mealType}`);
+  };
 
   // Fetch nutrition data for selected date
   useEffect(() => {
@@ -108,55 +270,12 @@ export default function JournalPage() {
     setBaseDate(newDate);
   };
 
-  const MEALS = [
-    {
-      id: 'breakfast',
-      title: 'BREAKFAST',
-      icon: <Coffee size={24} color={theme.primary} />,
-      calories: 131,
-      maxCalories: 450,
-      items: [
-        {
-          name: "Salad with wheat and white egg",
-          calories: 200,
-          image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c"
-        },
-        {
-          name: "7 Nutrition Tips to Lose Weight Faster",
-          calories: 200,
-          image: "https://images.unsplash.com/photo-1547592166-23ac45744acd"
-        }
-      ]
-    },
-    {
-      id: 'lunch',
-      title: 'LUNCH',
-      icon: <Sun size={24} color={theme.primary} />,
-      calories: 450,
-      maxCalories: 850,
-      items: [
-        {
-          name: "Grilled Chicken Salad",
-          calories: 450,
-          image: "https://images.unsplash.com/photo-1546069901-d5bfd2cbfb1f"
-        }
-      ]
-    },
-    {
-      id: 'dinner',
-      title: 'DINNER',
-      icon: <Flame size={24} color={theme.primary} />,
-      calories: 320,
-      maxCalories: 550,
-      items: [
-        {
-          name: "Salmon with Vegetables",
-          calories: 320,
-          image: "https://images.unsplash.com/photo-1467003909585-2f8a72700288"
-        }
-      ]
-    }
-  ];
+  const getCalorieColor = (calories: number | undefined) => {
+    if (!calories) return theme.primary;
+    if (calories > 600) return '#ff6b35'; // High calories - orange
+    if (calories > 400) return '#ffa500'; // Medium-high - lighter orange
+    return theme.primary; // Normal - primary color
+  };
 
   const handleSaveMealToHealthConnect = async (mealItem: any, mealType: string) => {
     // Check if Health Connect permissions are granted
@@ -196,18 +315,104 @@ export default function JournalPage() {
   };
 
   const MealSection = ({ meal }) => {
+    if (loadingMeals) {
+      return (
+        <View className="mt-4 w-full items-center py-12">
+          <ActivityIndicator size="large" color={theme.primary} />
+          <Text className="mt-3 text-gray-400">Loading delicious recipes...</Text>
+        </View>
+      );
+    }
+
+    if (!meal || meal.items.length === 0) {
+      return (
+        <View className="mt-4 w-full items-center py-12">
+          <Text className="text-gray-400">No recipes available for this meal</Text>
+          <TouchableOpacity 
+            className="mt-4 rounded-xl px-6 py-3"
+            style={{ backgroundColor: theme.primary }}
+            onPress={() => {
+              setSelectedMealType(meal?.title || 'MEAL');
+              setShowAddMealModal(true);
+            }}
+          >
+            <Text className="font-semibold text-white">Add Meal</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    const isSearching = searchVisible === meal.id;
+    const isInExpandedView = expandedMeal;
+
     return (
       <View className="mt-4 w-full">
-        <View className="flex-row items-center justify-between">
+        <View className="flex-row items-center justify-between mb-3 rounded-2xl p-4" style={{ backgroundColor: `${theme.primary}08` }}>
           <View className="flex-row items-center space-x-2">
             {meal.icon}
             <Text className="text-xl font-bold" style={{ color: theme.primary }}>{meal.title}</Text>
           </View>
-          <View className="flex-row items-center space-x-2">
-            <Text className="text-lg text-gray-400">{meal.calories}kcal/{meal.maxCalories} kcal</Text>
+          <View className="flex-row items-center gap-3">
+            {!isInExpandedView && (
+              <>
+                <TouchableOpacity 
+                  className="rounded-full p-3" 
+                  style={{ 
+                    backgroundColor: `${theme.primary}20`,
+                    borderWidth: 1,
+                    borderColor: `${theme.primary}40`
+                  }}
+                  onPress={() => setExpandedMeal(true)}
+                >
+                  <Maximize2 size={20} color={theme.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  className="rounded-full p-3" 
+                  style={{ 
+                    backgroundColor: `${theme.primary}20`,
+                    borderWidth: 1,
+                    borderColor: `${theme.primary}40`
+                  }}
+                  onPress={() => {
+                    setExpandedMeal(true);
+                    setTimeout(() => setSearchVisible(meal.id), 300);
+                  }}
+                >
+                  <Search size={20} color={theme.primary} />
+                </TouchableOpacity>
+              </>
+            )}
+            {isInExpandedView && (
+              <TouchableOpacity 
+                className="rounded-full p-3" 
+                style={{ 
+                  backgroundColor: `${theme.primary}20`,
+                  borderWidth: 1,
+                  borderColor: `${theme.primary}40`
+                }}
+                onPress={() => {
+                  if (isSearching) {
+                    setSearchVisible(null);
+                    setSearchQuery('');
+                  } else {
+                    setSearchVisible(meal.id);
+                  }
+                }}
+              >
+                {isSearching ? (
+                  <X size={20} color={theme.primary} />
+                ) : (
+                  <Search size={20} color={theme.primary} />
+                )}
+              </TouchableOpacity>
+            )}
             <TouchableOpacity 
-              className="ml-2 rounded-full p-2" 
-              style={{ backgroundColor: `${theme.primary}10` }}
+              className="rounded-full p-3" 
+              style={{ 
+                backgroundColor: `${theme.primary}20`,
+                borderWidth: 1,
+                borderColor: `${theme.primary}40`
+              }}
               onPress={() => {
                 setSelectedMealType(meal.title);
                 setShowAddMealModal(true);
@@ -218,36 +423,127 @@ export default function JournalPage() {
           </View>
         </View>
 
-        {meal.items.map((item, index) => (
-          <View key={index} className="mt-4 flex-row items-center justify-between border-b border-[#2C2D32] pb-4">
-            <TouchableOpacity 
-              className="flex-row flex-1 items-center space-x-4"
-              onPress={() => handleSaveMealToHealthConnect(item, meal.title)}
-              disabled={isWriting}
-            >
-              <Image
-                source={{ uri: item.image }}
-                className="h-16 w-16 rounded-xl"
+        {isSearching && isInExpandedView && (
+          <View className="mb-4">
+            <View className="flex-row items-center rounded-2xl bg-[#2C2D32] px-4 py-3">
+              <Search size={20} color="#666" />
+              <TextInput
+                className="ml-3 flex-1 text-base text-white"
+                placeholder={`Search ${meal.title.toLowerCase()} recipes...`}
+                placeholderTextColor="#666"
+                autoFocus
+                value={searchQuery}
+                onChangeText={setSearchQuery}
               />
-              <View className="flex-1">
-                <Text className="text-lg font-medium text-white">{item.name}</Text>
-                <Text className="text-gray-400">{item.calories} cals</Text>
-                <Text className="text-xs mt-1" style={{ color: theme.primary }}>
-                  {isWriting ? 'Syncing...' : 'Tap to sync to Google Fit'}
-                </Text>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity className="rounded-full bg-[#2C2D32] p-2">
-              <Trash2 size={20} color="#666" />
-            </TouchableOpacity>
+            </View>
+
+            {searchQuery.length > 0 && (
+              <ScrollView className="mt-3 max-h-96">
+                {searching ? (
+                  <View className="items-center py-8">
+                    <ActivityIndicator size="large" color={theme.primary} />
+                    <Text className="mt-2 text-gray-400">Searching recipes...</Text>
+                  </View>
+                ) : searchResults.length > 0 ? (
+                  searchResults.map((recipe) => (
+                    <TouchableOpacity
+                      key={recipe.id}
+                      className="mb-3 flex-row items-center rounded-2xl bg-[#25262B] p-3"
+                      onPress={() => handleAddRecipeToMeal(recipe, meal.id)}
+                    >
+                      <Image
+                        source={{ uri: recipe.image }}
+                        className="h-16 w-16 rounded-xl"
+                        resizeMode="cover"
+                      />
+                      <View className="ml-4 flex-1">
+                        <Text className="text-base font-semibold text-white" numberOfLines={2}>
+                          {recipe.title}
+                        </Text>
+                        <View className="mt-1 flex-row items-center gap-2">
+                          <Text 
+                            className="text-sm font-bold"
+                            style={{ color: getCalorieColor(recipe.calories) }}
+                          >
+                            {Math.round(recipe.calories || 0)} cal
+                          </Text>
+                          {recipe.readyInMinutes && (
+                            <>
+                              <Text className="text-gray-600">•</Text>
+                              <Text className="text-xs text-gray-500">{recipe.readyInMinutes} min</Text>
+                            </>
+                          )}
+                        </View>
+                      </View>
+                      <View className="ml-2 rounded-xl px-3 py-2" style={{ backgroundColor: `${theme.primary}20` }}>
+                        <Text className="text-sm font-semibold" style={{ color: theme.primary }}>
+                          + Add
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))
+                ) : (
+                  <View className="items-center py-8">
+                    <Text className="text-gray-400">No recipes found</Text>
+                  </View>
+                )}
+              </ScrollView>
+            )}
           </View>
+        )}
+
+        {!isSearching && meal.items.map((item, index) => (
+          <TouchableOpacity 
+            key={item.id || index} 
+            className="mt-3 flex-row items-center rounded-2xl bg-[#25262B] p-3"
+            onPress={() => router.push(`/recipes/${item.id}`)}
+            activeOpacity={0.7}
+          >
+            <Image
+              source={{ uri: item.image }}
+              className="h-20 w-20 rounded-xl"
+              resizeMode="cover"
+            />
+            <View className="ml-4 flex-1">
+              <Text className="text-base font-semibold text-white" numberOfLines={2}>
+                {item.name}
+              </Text>
+              <View className="mt-1 flex-row items-center gap-2">
+                <Text 
+                  className="text-sm font-bold"
+                  style={{ color: getCalorieColor(item.calories) }}
+                >
+                  {Math.round(item.calories)} cal
+                </Text>
+                {item.readyInMinutes && (
+                  <>
+                    <Text className="text-gray-600">•</Text>
+                    <Text className="text-xs text-gray-500">{item.readyInMinutes} min</Text>
+                  </>
+                )}
+              </View>
+            </View>
+            <TouchableOpacity
+              onPress={(e) => {
+                e.stopPropagation();
+                handleSaveMealToHealthConnect(item, meal.title);
+              }}
+              disabled={isWriting}
+              className="ml-2 rounded-xl px-4 py-2"
+              style={{ backgroundColor: `${theme.primary}20` }}
+            >
+              <Text className="text-sm font-semibold" style={{ color: theme.primary }}>
+                {isWriting ? 'Adding...' : '+ Add'}
+              </Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
         ))}
       </View>
     );
   };
 
   const handleSwipe = (direction: 'left' | 'right') => {
-    if (direction === 'left' && currentMealIndex < MEALS.length - 1) {
+    if (direction === 'left' && currentMealIndex < meals.length - 1) {
       setCurrentMealIndex(prev => prev + 1);
     } else if (direction === 'right' && currentMealIndex > 0) {
       setCurrentMealIndex(prev => prev - 1);
@@ -457,12 +753,12 @@ export default function JournalPage() {
               <Text className="text-xs text-gray-500 mt-1">of Goal</Text>
             </View>
             <View className="flex-1 items-center py-4 border-r" style={{ borderRightColor: `${theme.primary}15` }}>
-              <Text className="text-2xl font-bold text-white">{MEALS.length}</Text>
+              <Text className="text-2xl font-bold text-white">{meals.length}</Text>
               <Text className="text-xs text-gray-500 mt-1">Meals</Text>
             </View>
             <View className="flex-1 items-center py-4">
               <Text className="text-2xl font-bold" style={{ color: theme.primary }}>
-                {MEALS.reduce((sum, meal) => sum + meal.calories, 0)}
+                {Math.round(meals.reduce((sum, meal) => sum + meal.calories, 0))}
               </Text>
               <Text className="text-xs text-gray-500 mt-1">Planned</Text>
             </View>
@@ -475,24 +771,26 @@ export default function JournalPage() {
             className="flex-1 pt-6"
             style={animatedStyle}
           >
-            <MealSection meal={MEALS[currentMealIndex]} />
+            {meals.length > 0 && <MealSection meal={meals[currentMealIndex]} />}
           </Animated.View>
         </GestureDetector>
 
         {/* Meal Navigation Pills */}
-        <View className="flex-row justify-center space-x-2 pb-6 pt-4">
-          {MEALS.map((meal, index) => (
-            <TouchableOpacity
-              key={index}
-              onPress={() => setCurrentMealIndex(index)}
-              className="h-2 rounded-full transition-all duration-300"
-              style={{
-                width: index === currentMealIndex ? 32 : 8,
-                backgroundColor: index === currentMealIndex ? theme.primary : '#4B5563'
-              }}
-            />
-          ))}
-        </View>
+        {meals.length > 0 && (
+          <View className="flex-row justify-center space-x-2 pb-6 pt-4">
+            {meals.map((meal, index) => (
+              <TouchableOpacity
+                key={index}
+                onPress={() => setCurrentMealIndex(index)}
+                className="h-2 rounded-full transition-all duration-300"
+                style={{
+                  width: index === currentMealIndex ? 32 : 8,
+                  backgroundColor: index === currentMealIndex ? theme.primary : '#4B5563'
+                }}
+              />
+            ))}
+          </View>
+        )}
       </View>
 
       {/* Add Meal Modal */}
@@ -637,6 +935,60 @@ export default function JournalPage() {
         </View>
       </Modal>
 
+      {/* Expanded Meal View Modal */}
+      <Modal
+        visible={expandedMeal}
+        animationType="slide"
+        onRequestClose={() => {
+          setExpandedMeal(false);
+          setSearchVisible(null);
+          setSearchQuery('');
+        }}
+      >
+        <SafeAreaView className="flex-1 bg-[#1A1B1E]">
+          {/* Header */}
+          <View className="flex-row items-center justify-between border-b border-[#2C2D32] px-6 py-4">
+            <TouchableOpacity onPress={() => {
+              setExpandedMeal(false);
+              setSearchVisible(null);
+              setSearchQuery('');
+            }}>
+              <ArrowLeft size={24} color="white" />
+            </TouchableOpacity>
+            <Text className="text-xl font-bold text-white">Meal Details</Text>
+            <View style={{ width: 24 }} />
+          </View>
+
+          {/* Meal Tabs */}
+          <View className="flex-row border-b border-[#2C2D32] px-4">
+            {meals.map((meal, index) => (
+              <TouchableOpacity
+                key={meal.id}
+                onPress={() => setCurrentMealIndex(index)}
+                className="flex-1 items-center py-4"
+                style={{
+                  borderBottomWidth: currentMealIndex === index ? 2 : 0,
+                  borderBottomColor: currentMealIndex === index ? theme.primary : 'transparent',
+                }}
+              >
+                <View className="mb-1">{meal.icon}</View>
+                <Text
+                  className="text-xs font-semibold"
+                  style={{ color: currentMealIndex === index ? theme.primary : '#666' }}
+                >
+                  {meal.title}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Expanded Meal Content */}
+          <ScrollView className="flex-1 px-6 pt-4">
+            {meals.length > 0 && <MealSection meal={meals[currentMealIndex]} />}
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
+
       {/* Detailed Stats Modal - Google Fit Style */}
       <Modal
         visible={showStatsModal}
@@ -716,7 +1068,7 @@ export default function JournalPage() {
 
                 {/* Meal Breakdown */}
                 <View className="space-y-3">
-                  {MEALS.map((meal, index) => (
+                  {meals.map((meal, index) => (
                     <View 
                       key={meal.id}
                       className="rounded-2xl bg-[#25262B] p-4"
@@ -732,7 +1084,7 @@ export default function JournalPage() {
                           </View>
                         </View>
                         <Text className="text-lg font-bold" style={{ color: theme.primary }}>
-                          {meal.calories} cal
+                          {Math.round(meal.calories)} cal
                         </Text>
                       </View>
                     </View>

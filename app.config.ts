@@ -2,10 +2,10 @@ import { ExpoConfig, ConfigContext } from 'expo/config';
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: 'fithass',
-  slug: 'fithass',
+  name: 'LiteLife',
+  slug: 'litelife',
   owner: 'hass12',
-  scheme: 'fithass',
+  scheme: 'litelife',
   plugins: [
     'expo-health-connect',
     [
@@ -29,7 +29,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ],
   ],
   android: {
-    package: 'com.fithass.app',
+    package: 'com.litelife.app',
     permissions: [
       'android.permission.health.READ_STEPS',
       'android.permission.health.READ_FLOORS_CLIMBED',

@@ -16,7 +16,7 @@ WebBrowser.maybeCompleteAuthSession();
 
 // Generate redirect URI - use native scheme for development builds
 const redirectTo = makeRedirectUri({
-  scheme: 'fithass',
+  scheme: 'litelife',
   path: 'auth/callback',
 });
 
