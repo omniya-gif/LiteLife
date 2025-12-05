@@ -1,22 +1,59 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, Image, Dimensions, Alert, ActivityIndicator, ScrollView, Modal, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, MoreVertical, BarChart2, Utensils, Plus, Trash2, Flame, Coffee, Sun, ChevronLeft, ChevronRight, TrendingUp, Calendar, Upload, Edit3, Book, X, Search, Maximize2 } from 'lucide-react-native';
 import LottieView from 'lottie-react-native';
-import Animated, { 
-  useAnimatedStyle, 
+import {
+  ArrowLeft,
+  MoreVertical,
+  BarChart2,
+  Utensils,
+  Trash2,
+  Flame,
+  Coffee,
+  Sun,
+  ChevronLeft,
+  ChevronRight,
+  TrendingUp,
+  Calendar,
+  Upload,
+  Edit3,
+  Book,
+  X,
+  Search,
+} from 'lucide-react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  SafeAreaView,
+  Image,
+  Dimensions,
+  Alert,
+  ActivityIndicator,
+  ScrollView,
+  Modal,
+  TextInput,
+} from 'react-native';
+import { GestureDetector, Gesture } from 'react-native-gesture-handler';
+import Animated, {
+  useAnimatedStyle,
   withSpring,
   useSharedValue,
   interpolate,
   Extrapolate,
-  runOnJS
+  runOnJS,
 } from 'react-native-reanimated';
-import { GestureDetector, Gesture } from 'react-native-gesture-handler';
-import { useTheme } from '../../../hooks/useTheme';
-import { useHealthConnect, readNutritionData, readMacronutrientData, readCaloriesByMealType, readMealsByType } from '../../../hooks/useHealthConnect';
+
+import {
+  useHealthConnect,
+  readNutritionData,
+  readMacronutrientData,
+  readCaloriesByMealType,
+  readMealsByType,
+} from '../../../hooks/useHealthConnect';
 import { useHealthConnectWrite } from '../../../hooks/useHealthConnectWrite';
-import { useUserStore } from '../../../stores/userStore';
+import { useTheme } from '../../../hooks/useTheme';
 import { searchRecipes, Recipe } from '../../../services/recipeService';
+import { useUserStore } from '../../../stores/userStore';
 
 const { width } = Dimensions.get('window');
 
@@ -24,7 +61,7 @@ const { width } = Dimensions.get('window');
 const generateCalendarDays = (baseDate: Date) => {
   const days = [];
   const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-  
+
   for (let i = -3; i <= 3; i++) {
     const date = new Date(baseDate);
     date.setDate(baseDate.getDate() + i);
@@ -32,7 +69,7 @@ const generateCalendarDays = (baseDate: Date) => {
       dayName: dayNames[date.getDay()],
       date: date.getDate(),
       fullDate: date,
-      isToday: i === 0
+      isToday: i === 0,
     });
   }
   return days;
@@ -59,7 +96,12 @@ export default function JournalPage() {
   const [searching, setSearching] = useState(false);
   const [expandedMeal, setExpandedMeal] = useState(false);
   const [macronutrients, setMacronutrients] = useState({ protein: 0, fat: 0, carbs: 0 });
-  const [mealTypeCalories, setMealTypeCalories] = useState({ breakfast: 0, lunch: 0, dinner: 0, snack: 0 });
+  const [mealTypeCalories, setMealTypeCalories] = useState({
+    breakfast: 0,
+    lunch: 0,
+    dinner: 0,
+    snack: 0,
+  });
   const translateX = useSharedValue(0);
 
   // Health Connect integration
@@ -82,7 +124,7 @@ export default function JournalPage() {
         icon: <Coffee size={24} color={theme.primary} />,
         calories: 0,
         maxCalories: 450,
-        items: []
+        items: [],
       },
       {
         id: 'lunch',
@@ -90,7 +132,7 @@ export default function JournalPage() {
         icon: <Sun size={24} color={theme.primary} />,
         calories: 0,
         maxCalories: 850,
-        items: []
+        items: [],
       },
       {
         id: 'dinner',
@@ -98,8 +140,8 @@ export default function JournalPage() {
         icon: <Flame size={24} color={theme.primary} />,
         calories: 0,
         maxCalories: 550,
-        items: []
-      }
+        items: [],
+      },
     ]);
     setLoadingMeals(false);
   }, [theme.primary]);
@@ -131,8 +173,8 @@ export default function JournalPage() {
 
   const handleAddRecipeToMeal = (recipe: Recipe, mealType: string) => {
     // Add recipe to the selected meal
-    setMeals(prevMeals => 
-      prevMeals.map(meal => {
+    setMeals((prevMeals) =>
+      prevMeals.map((meal) => {
         if (meal.id === mealType.toLowerCase()) {
           const newItem = {
             id: recipe.id,
@@ -149,13 +191,13 @@ export default function JournalPage() {
           return {
             ...meal,
             items: [...meal.items, newItem],
-            calories: meal.calories + (recipe.calories || 0)
+            calories: meal.calories + (recipe.calories || 0),
           };
         }
         return meal;
       })
     );
-    
+
     // Close search
     setSearchVisible(null);
     setSearchQuery('');
@@ -172,7 +214,7 @@ export default function JournalPage() {
         const selectedDay = calendarDays[selectedDateIndex];
         const startOfDay = new Date(selectedDay.fullDate);
         startOfDay.setHours(0, 0, 0, 0);
-        
+
         const endOfDay = new Date(selectedDay.fullDate);
         endOfDay.setHours(23, 59, 59, 999);
 
@@ -181,13 +223,13 @@ export default function JournalPage() {
           startOfDay.toISOString(),
           endOfDay.toISOString()
         );
-        
+
         // Fetch calories by meal type
         const mealCalories = await readCaloriesByMealType(
           startOfDay.toISOString(),
           endOfDay.toISOString()
         );
-        
+
         // Fetch actual meals from Health Connect for each meal type
         const [breakfastMeals, lunchMeals, dinnerMeals] = await Promise.all([
           readMealsByType(startOfDay.toISOString(), endOfDay.toISOString(), 1), // breakfast
@@ -209,11 +251,15 @@ export default function JournalPage() {
           );
         };
 
-        const [breakfastWithImages, lunchWithImages, dinnerWithImages] = await Promise.all([
-          fetchMealImages(breakfastMeals),
-          fetchMealImages(lunchMeals),
-          fetchMealImages(dinnerMeals),
-        ]);
+        const snackMeals = await readMealsByType(startOfDay.toISOString(), endOfDay.toISOString(), 4); // 4 = snack
+
+        const [breakfastWithImages, lunchWithImages, dinnerWithImages, snackWithImages] =
+          await Promise.all([
+            fetchMealImages(breakfastMeals),
+            fetchMealImages(lunchMeals),
+            fetchMealImages(dinnerMeals),
+            fetchMealImages(snackMeals),
+          ]);
 
         // Update meals with actual data from Health Connect
         setMeals([
@@ -241,8 +287,16 @@ export default function JournalPage() {
             maxCalories: 550,
             items: dinnerWithImages,
           },
+          {
+            id: 'snack',
+            title: 'SNACK',
+            icon: <Utensils size={24} color={theme.primary} />,
+            calories: mealCalories.snack,
+            maxCalories: 200,
+            items: snackWithImages,
+          },
         ]);
-        
+
         setDailyCalories(macros.calories);
         setMacronutrients({
           protein: macros.protein,
@@ -307,17 +361,18 @@ export default function JournalPage() {
       return;
     }
 
-      const success = await writeMealToHealthConnect({
-        name: mealItem.name,
-        calories: mealItem.calories,
-        protein: mealItem.protein,
-        carbs: mealItem.carbs,
-        fat: mealItem.fat,
-        sugar: mealItem.sugar,
-        mealType: mealType.toLowerCase(),
-        timestamp: new Date().toISOString(),
-        recipeId: mealItem.id,
-      });    if (success) {
+    const success = await writeMealToHealthConnect({
+      name: mealItem.name,
+      calories: mealItem.calories,
+      protein: mealItem.protein,
+      carbs: mealItem.carbs,
+      fat: mealItem.fat,
+      sugar: mealItem.sugar,
+      mealType: mealType.toLowerCase(),
+      timestamp: new Date().toISOString(),
+      recipeId: mealItem.id,
+    });
+    if (success) {
       Alert.alert('✅ Success', 'Meal saved to Health Connect and will appear in Google Fit!');
     } else {
       Alert.alert('Error', 'Failed to save meal to Health Connect');
@@ -334,108 +389,35 @@ export default function JournalPage() {
       );
     }
 
-    if (!meal || meal.items.length === 0) {
-      return (
-        <View className="mt-4 w-full items-center py-12">
-          <Text className="text-gray-400">No recipes available for this meal</Text>
-          <TouchableOpacity 
-            className="mt-4 rounded-xl px-6 py-3"
-            style={{ backgroundColor: theme.primary }}
-            onPress={() => {
-              setSelectedMealType(meal?.title || 'MEAL');
-              setShowAddMealModal(true);
-            }}
-          >
-            <Text className="font-semibold text-white">Add Meal</Text>
-          </TouchableOpacity>
-        </View>
-      );
+    if (!meal) {
+      return null;
     }
 
     const isSearching = searchVisible === meal.id;
     const isInExpandedView = expandedMeal;
 
+    const getLottieSource = () => {
+      switch (meal?.id) {
+        case 'breakfast':
+          return require('../../../assets/lottie_animations/Healthy Breaksfast.json');
+        case 'lunch':
+          return require('../../../assets/lottie_animations/lunch.json');
+        case 'dinner':
+          return require('../../../assets/lottie_animations/dinner.json');
+        case 'snack':
+          return require('../../../assets/lottie_animations/snack.json');
+        default:
+          return require('../../../assets/lottie_animations/food.json');
+      }
+    };
+
     return (
       <View className="mt-4 w-full">
-        <View className="flex-row items-center justify-between mb-3 rounded-2xl p-4" style={{ backgroundColor: `${theme.primary}08` }}>
-          <View className="flex-row items-center space-x-2">
-            {meal.icon}
-            <View>
-              <Text className="text-xl font-bold" style={{ color: theme.primary }}>{meal.title}</Text>
-              <Text className="text-sm text-gray-400 mt-1">
-                {mealTypeCalories[meal.id as keyof typeof mealTypeCalories] || 0} cal consumed
-              </Text>
-            </View>
-          </View>
-          <View className="flex-row items-center gap-3">
-            {!isInExpandedView && (
-              <>
-                <TouchableOpacity 
-                  className="rounded-full p-3" 
-                  style={{ 
-                    backgroundColor: `${theme.primary}20`,
-                    borderWidth: 1,
-                    borderColor: `${theme.primary}40`
-                  }}
-                  onPress={() => setExpandedMeal(true)}
-                >
-                  <Maximize2 size={20} color={theme.primary} />
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  className="rounded-full p-3" 
-                  style={{ 
-                    backgroundColor: `${theme.primary}20`,
-                    borderWidth: 1,
-                    borderColor: `${theme.primary}40`
-                  }}
-                  onPress={() => {
-                    setExpandedMeal(true);
-                    setTimeout(() => setSearchVisible(meal.id), 300);
-                  }}
-                >
-                  <Search size={20} color={theme.primary} />
-                </TouchableOpacity>
-              </>
-            )}
-            {isInExpandedView && (
-              <TouchableOpacity 
-                className="rounded-full p-3" 
-                style={{ 
-                  backgroundColor: `${theme.primary}20`,
-                  borderWidth: 1,
-                  borderColor: `${theme.primary}40`
-                }}
-                onPress={() => {
-                  if (isSearching) {
-                    setSearchVisible(null);
-                    setSearchQuery('');
-                  } else {
-                    setSearchVisible(meal.id);
-                  }
-                }}
-              >
-                {isSearching ? (
-                  <X size={20} color={theme.primary} />
-                ) : (
-                  <Search size={20} color={theme.primary} />
-                )}
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity 
-              className="rounded-full p-3" 
-              style={{ 
-                backgroundColor: `${theme.primary}20`,
-                borderWidth: 1,
-                borderColor: `${theme.primary}40`
-              }}
-              onPress={() => {
-                setSelectedMealType(meal.title);
-                setShowAddMealModal(true);
-              }}
-            >
-              <Plus size={20} color={theme.primary} />
-            </TouchableOpacity>
-          </View>
+        {/* Meal Header */}
+        <View className="mb-4 items-center">
+          <Text className="text-2xl font-bold" style={{ color: theme.primary }}>
+            {meal.title}
+          </Text>
         </View>
 
         {isSearching && isInExpandedView && (
@@ -464,8 +446,7 @@ export default function JournalPage() {
                     <TouchableOpacity
                       key={recipe.id}
                       className="mb-3 flex-row items-center rounded-2xl bg-[#25262B] p-3"
-                      onPress={() => handleAddRecipeToMeal(recipe, meal.id)}
-                    >
+                      onPress={() => handleAddRecipeToMeal(recipe, meal.id)}>
                       <Image
                         source={{ uri: recipe.image }}
                         className="h-16 w-16 rounded-xl"
@@ -476,21 +457,24 @@ export default function JournalPage() {
                           {recipe.title}
                         </Text>
                         <View className="mt-1 flex-row items-center gap-2">
-                          <Text 
+                          <Text
                             className="text-sm font-bold"
-                            style={{ color: getCalorieColor(recipe.calories) }}
-                          >
+                            style={{ color: getCalorieColor(recipe.calories) }}>
                             {Math.round(recipe.calories || 0)} cal
                           </Text>
                           {recipe.readyInMinutes && (
                             <>
                               <Text className="text-gray-600">•</Text>
-                              <Text className="text-xs text-gray-500">{recipe.readyInMinutes} min</Text>
+                              <Text className="text-xs text-gray-500">
+                                {recipe.readyInMinutes} min
+                              </Text>
                             </>
                           )}
                         </View>
                       </View>
-                      <View className="ml-2 rounded-xl px-3 py-2" style={{ backgroundColor: `${theme.primary}20` }}>
+                      <View
+                        className="ml-2 rounded-xl px-3 py-2"
+                        style={{ backgroundColor: `${theme.primary}20` }}>
                         <Text className="text-sm font-semibold" style={{ color: theme.primary }}>
                           + Add
                         </Text>
@@ -509,78 +493,99 @@ export default function JournalPage() {
 
         {/* Show meals from Health Connect or empty state */}
         {!isSearching && meal.items.length === 0 && (
-          <TouchableOpacity 
-            className="mt-4 items-center justify-center rounded-2xl bg-[#25262B] py-12"
-            onPress={() => {
-              setSelectedMealType(meal.title);
-              setShowAddMealModal(true);
-            }}
-            activeOpacity={0.7}
-          >
+          <View className="items-center justify-center rounded-2xl bg-[#25262B] py-1">
             <LottieView
-              source={require('../../../assets/lottie_animations/food.json')}
+              source={getLottieSource()}
               autoPlay
               loop
-              style={{ width: 120, height: 120 }}
+              style={{
+                width: meal.id === 'breakfast' ? 120 :120,
+                height: meal.id === 'breakfast' ? 120 : 120,
+              }}
             />
+
             <Text className="mt-4 text-base text-gray-400">
               No meals added to {meal.title.toLowerCase()} yet
             </Text>
-            <Text className="mt-2 text-sm text-gray-500">
-              Tap to add your first meal
-            </Text>
-          </TouchableOpacity>
+            <Text className="mt-1 text-sm text-gray-500">Tap to add your first meal</Text>
+
+            {/* Amazing Add Button */}
+            <TouchableOpacity
+              onPress={() => {
+                setSelectedMealType(meal.title);
+                setShowAddMealModal(true);
+              }}
+              style={{
+                marginTop: 20,
+                paddingHorizontal: 32,
+                paddingVertical: 14,
+                backgroundColor: theme.primary,
+                borderRadius: 30,
+                flexDirection: 'row',
+                alignItems: 'center',
+                shadowColor: theme.primary,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.4,
+                shadowRadius: 8,
+                elevation: 8,
+              }}
+              activeOpacity={0.8}>
+              <Text style={{ fontSize: 20, fontWeight: 'bold', color: 'white', marginRight: 8 }}>
+                +
+              </Text>
+              <Text style={{ fontSize: 16, fontWeight: '600', color: 'white' }}>Add Meal</Text>
+            </TouchableOpacity>
+          </View>
         )}
 
-        {!isSearching && meal.items.map((item, index) => (
-          <TouchableOpacity 
-            key={item.recipeId || index} 
-            className="mt-3 flex-row items-center rounded-2xl bg-[#25262B] p-3"
-            onPress={() => item.recipeId ? router.push(`/recipes/${item.recipeId}`) : null}
-            activeOpacity={item.recipeId ? 0.7 : 1}
-          >
-            {item.image ? (
-              <Image
-                source={{ uri: item.image }}
-                className="h-20 w-20 rounded-xl"
-                resizeMode="cover"
-              />
-            ) : (
-              <View className="h-20 w-20 rounded-xl bg-[#1A1B1E] items-center justify-center">
-                <Utensils size={32} color="#6B7280" />
-              </View>
-            )}
-            <View className="ml-4 flex-1">
-              <Text className="text-base font-semibold text-white" numberOfLines={2}>
-                {item.name}
-              </Text>
-              <View className="mt-1 flex-row items-center gap-2">
-                <Text 
-                  className="text-sm font-bold"
-                  style={{ color: getCalorieColor(item.calories) }}
-                >
-                  {Math.round(item.calories)} cal
+        {!isSearching &&
+          meal.items.map((item, index) => (
+            <TouchableOpacity
+              key={item.recipeId || index}
+              className="mt-3 flex-row items-center rounded-2xl bg-[#25262B] p-3"
+              onPress={() => (item.recipeId ? router.push(`/recipes/${item.recipeId}`) : null)}
+              activeOpacity={item.recipeId ? 0.7 : 1}>
+              {item.image ? (
+                <Image
+                  source={{ uri: item.image }}
+                  className="h-20 w-20 rounded-xl"
+                  resizeMode="cover"
+                />
+              ) : (
+                <View className="h-20 w-20 items-center justify-center rounded-xl bg-[#1A1B1E]">
+                  <Utensils size={32} color="#6B7280" />
+                </View>
+              )}
+              <View className="ml-4 flex-1">
+                <Text className="text-base font-semibold text-white" numberOfLines={2}>
+                  {item.name}
                 </Text>
-                {item.protein > 0 && (
-                  <>
-                    <Text className="text-gray-600">•</Text>
-                    <Text className="text-xs text-gray-500">P: {item.protein}g</Text>
-                  </>
-                )}
+                <View className="mt-1 flex-row items-center gap-2">
+                  <Text
+                    className="text-sm font-bold"
+                    style={{ color: getCalorieColor(item.calories) }}>
+                    {Math.round(item.calories)} cal
+                  </Text>
+                  {item.protein > 0 && (
+                    <>
+                      <Text className="text-gray-600">•</Text>
+                      <Text className="text-xs text-gray-500">P: {item.protein}g</Text>
+                    </>
+                  )}
+                </View>
               </View>
-            </View>
-            {/* No Add button - these meals are already in Health Connect */}
-          </TouchableOpacity>
-        ))}
+              {/* No Add button - these meals are already in Health Connect */}
+            </TouchableOpacity>
+          ))}
       </View>
     );
   };
 
   const handleSwipe = (direction: 'left' | 'right') => {
     if (direction === 'left' && currentMealIndex < meals.length - 1) {
-      setCurrentMealIndex(prev => prev + 1);
+      setCurrentMealIndex((prev) => prev + 1);
     } else if (direction === 'right' && currentMealIndex > 0) {
-      setCurrentMealIndex(prev => prev - 1);
+      setCurrentMealIndex((prev) => prev - 1);
     }
   };
 
@@ -589,7 +594,8 @@ export default function JournalPage() {
       translateX.value = event.translationX;
     })
     .onEnd((event) => {
-      const shouldSwipe = Math.abs(event.velocityX) > 500 || Math.abs(event.translationX) > width / 3;
+      const shouldSwipe =
+        Math.abs(event.velocityX) > 500 || Math.abs(event.translationX) > width / 3;
       if (shouldSwipe) {
         const direction = event.translationX > 0 ? 'right' : 'left';
         runOnJS(handleSwipe)(direction);
@@ -626,74 +632,67 @@ export default function JournalPage() {
 
       {/* Date Selector with Navigation */}
       <View className="mt-8 px-6">
-        <View className="flex-row items-center justify-between mb-4">
-          <TouchableOpacity 
+        <View className="mb-4 flex-row items-center justify-between">
+          <TouchableOpacity
             onPress={handlePreviousWeek}
             className="rounded-full p-2"
-            style={{ backgroundColor: `${theme.primary}15` }}
-          >
+            style={{ backgroundColor: `${theme.primary}15` }}>
             <ChevronLeft size={20} color={theme.primary} />
           </TouchableOpacity>
-          
+
           <Text className="text-lg font-semibold text-white">
             {baseDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
           </Text>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             onPress={handleNextWeek}
             className="rounded-full p-2"
-            style={{ backgroundColor: `${theme.primary}15` }}
-          >
+            style={{ backgroundColor: `${theme.primary}15` }}>
             <ChevronRight size={20} color={theme.primary} />
           </TouchableOpacity>
         </View>
 
-        <ScrollView 
-          horizontal 
+        <ScrollView
+          horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 4 }}
-        >
+          contentContainerStyle={{ paddingHorizontal: 4 }}>
           {calendarDays.map((day, index) => (
-            <View key={`${day.fullDate.toISOString()}-${index}`} className="items-center mx-2">
-              <Text className="text-sm text-gray-400 mb-2">{day.dayName}</Text>
+            <View key={`${day.fullDate.toISOString()}-${index}`} className="mx-2 items-center">
+              <Text className="mb-2 text-sm text-gray-400">{day.dayName}</Text>
               <TouchableOpacity
                 onPress={() => setSelectedDateIndex(index)}
                 className={`h-12 w-12 items-center justify-center rounded-full ${
-                  selectedDateIndex === index 
-                    ? day.isToday 
-                      ? 'border-2' 
-                      : ''
-                    : ''
+                  selectedDateIndex === index ? (day.isToday ? 'border-2' : '') : ''
                 }`}
                 style={{
-                  backgroundColor: selectedDateIndex === index 
-                    ? day.isToday 
-                      ? theme.primary 
-                      : 'white'
-                    : day.isToday
-                      ? `${theme.primary}20`
-                      : 'transparent',
-                  borderColor: selectedDateIndex === index && day.isToday ? 'white' : 'transparent'
-                }}
-              >
+                  backgroundColor:
+                    selectedDateIndex === index
+                      ? day.isToday
+                        ? theme.primary
+                        : 'white'
+                      : day.isToday
+                        ? `${theme.primary}20`
+                        : 'transparent',
+                  borderColor: selectedDateIndex === index && day.isToday ? 'white' : 'transparent',
+                }}>
                 <Text
                   className="text-lg font-semibold"
-                  style={{ 
-                    color: selectedDateIndex === index 
-                      ? day.isToday 
-                        ? 'white' 
-                        : theme.primary
-                      : 'white' 
-                  }}
-                >
+                  style={{
+                    color:
+                      selectedDateIndex === index
+                        ? day.isToday
+                          ? 'white'
+                          : theme.primary
+                        : 'white',
+                  }}>
                   {day.date}
                 </Text>
               </TouchableOpacity>
               {/* Indicator dot for days with data */}
               {!day.isToday && (
-                <View 
-                  className="mt-1 h-1 w-1 rounded-full" 
-                  style={{ backgroundColor: theme.primary, opacity: 0.5 }} 
+                <View
+                  className="mt-1 h-1 w-1 rounded-full"
+                  style={{ backgroundColor: theme.primary, opacity: 0.5 }}
                 />
               )}
             </View>
@@ -704,33 +703,32 @@ export default function JournalPage() {
       {/* Daily Summary */}
       <View className="mt-8 flex-1 rounded-t-[32px] bg-[#25262B] px-6 pt-8">
         {/* Enhanced Daily Nutrition Card */}
-        <View className="rounded-3xl overflow-hidden" style={{ backgroundColor: `${theme.primary}08` }}>
+        <View
+          className="overflow-hidden rounded-3xl"
+          style={{ backgroundColor: `${theme.primary}08` }}>
           <View className="p-6">
-            <View className="flex-row items-center justify-between mb-4">
+            <View className="mb-4 flex-row items-center justify-between">
               <View className="flex-row items-center space-x-3">
-                <View 
-                  className="rounded-2xl p-3" 
-                  style={{ backgroundColor: theme.primary }}
-                >
+                <View className="rounded-2xl p-3" style={{ backgroundColor: theme.primary }}>
                   <Utensils size={26} color="white" />
                 </View>
                 <View>
                   <Text className="text-sm text-gray-400">
-                    {calendarDays[selectedDateIndex].isToday ? 'Today' : 
-                     calendarDays[selectedDateIndex].fullDate.toLocaleDateString('en-US', { 
-                       weekday: 'long', 
-                       month: 'short', 
-                       day: 'numeric' 
-                     })}
+                    {calendarDays[selectedDateIndex].isToday
+                      ? 'Today'
+                      : calendarDays[selectedDateIndex].fullDate.toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          month: 'short',
+                          day: 'numeric',
+                        })}
                   </Text>
-                  <Text className="text-xs text-gray-500 mt-1">Nutrition Summary</Text>
+                  <Text className="mt-1 text-xs text-gray-500">Nutrition Summary</Text>
                 </View>
               </View>
-              <TouchableOpacity 
-                className="rounded-xl p-2" 
+              <TouchableOpacity
+                className="rounded-xl p-2"
                 style={{ backgroundColor: `${theme.primary}15` }}
-                onPress={() => setShowStatsModal(true)}
-              >
+                onPress={() => setShowStatsModal(true)}>
                 <BarChart2 size={22} color={theme.primary} />
               </TouchableOpacity>
             </View>
@@ -744,32 +742,29 @@ export default function JournalPage() {
               ) : (
                 <>
                   <View className="flex-row items-end">
-                    <Text 
-                      className="text-4xl font-bold" 
-                      style={{ color: theme.primary }}
-                    >
+                    <Text className="text-4xl font-bold" style={{ color: theme.primary }}>
                       {dailyCalories}
                     </Text>
-                    <Text className="text-xl font-semibold text-gray-400 ml-2 mb-1">
+                    <Text className="mb-1 ml-2 text-xl font-semibold text-gray-400">
                       / {onboarding?.daily_calories || 2850}
                     </Text>
-                    <Text className="text-lg text-gray-500 ml-1 mb-1">Cal</Text>
+                    <Text className="mb-1 ml-1 text-lg text-gray-500">Cal</Text>
                   </View>
 
                   {/* Progress Bar */}
-                  <View className="mt-4 h-3 rounded-full bg-[#2C2D32] overflow-hidden">
-                    <View 
+                  <View className="mt-4 h-3 overflow-hidden rounded-full bg-[#2C2D32]">
+                    <View
                       className="h-full rounded-full"
-                      style={{ 
+                      style={{
                         width: `${Math.min((dailyCalories / (onboarding?.daily_calories || 2850)) * 100, 100)}%`,
-                        backgroundColor: theme.primary
+                        backgroundColor: theme.primary,
                       }}
                     />
                   </View>
 
                   {/* Status Text */}
-                  <Text className="text-sm text-gray-400 mt-3">
-                    {dailyCalories < (onboarding?.daily_calories || 2850) 
+                  <Text className="mt-3 text-sm text-gray-400">
+                    {dailyCalories < (onboarding?.daily_calories || 2850)
                       ? `${(onboarding?.daily_calories || 2850) - dailyCalories} calories remaining to reach your goal`
                       : '🎉 Daily calorie goal achieved!'}
                   </Text>
@@ -777,54 +772,19 @@ export default function JournalPage() {
               )}
             </View>
           </View>
-
-          {/* Quick Stats Row */}
-          <View className="flex-row border-t" style={{ borderTopColor: `${theme.primary}15` }}>
-            <View className="flex-1 items-center py-4 border-r" style={{ borderRightColor: `${theme.primary}15` }}>
-              <Text className="text-2xl font-bold" style={{ color: theme.primary }}>
-                {Math.round((dailyCalories / (onboarding?.daily_calories || 2850)) * 100)}%
-              </Text>
-              <Text className="text-xs text-gray-500 mt-1">of Goal</Text>
-            </View>
-            <View className="flex-1 items-center py-4 border-r" style={{ borderRightColor: `${theme.primary}15` }}>
-              <Text className="text-2xl font-bold text-white">{meals.length}</Text>
-              <Text className="text-xs text-gray-500 mt-1">Meals</Text>
-            </View>
-            <View className="flex-1 items-center py-4">
-              <Text className="text-2xl font-bold" style={{ color: theme.primary }}>
-                {Math.round(meals.reduce((sum, meal) => sum + meal.calories, 0))}
-              </Text>
-              <Text className="text-xs text-gray-500 mt-1">Planned</Text>
-            </View>
-          </View>
         </View>
 
         {/* Swipeable Meal Content */}
-        <GestureDetector gesture={panGesture}>
-          <Animated.View 
-            className="flex-1 pt-6"
-            style={animatedStyle}
-          >
-            {meals.length > 0 && <MealSection meal={meals[currentMealIndex]} />}
-          </Animated.View>
-        </GestureDetector>
-
-        {/* Meal Navigation Pills */}
-        {meals.length > 0 && (
-          <View className="flex-row justify-center space-x-2 pb-6 pt-4">
-            {meals.map((meal, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={() => setCurrentMealIndex(index)}
-                className="h-2 rounded-full transition-all duration-300"
-                style={{
-                  width: index === currentMealIndex ? 32 : 8,
-                  backgroundColor: index === currentMealIndex ? theme.primary : '#4B5563'
-                }}
-              />
-            ))}
-          </View>
-        )}
+        <ScrollView
+          className="flex-1"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 24 }}>
+          <GestureDetector gesture={panGesture}>
+            <Animated.View className="pt-6" style={animatedStyle}>
+              {meals.length > 0 && <MealSection meal={meals[currentMealIndex]} />}
+            </Animated.View>
+          </GestureDetector>
+        </ScrollView>
       </View>
 
       {/* Add Meal Modal */}
@@ -832,21 +792,19 @@ export default function JournalPage() {
         visible={showAddMealModal}
         transparent
         animationType="fade"
-        onRequestClose={() => setShowAddMealModal(false)}
-      >
-        <View className="flex-1 bg-black/80 justify-end">
-          <View className="bg-[#1A1B1E] rounded-t-[32px] px-6 pt-6 pb-10">
+        onRequestClose={() => setShowAddMealModal(false)}>
+        <View className="flex-1 justify-end bg-black/80">
+          <View className="rounded-t-[32px] bg-[#1A1B1E] px-6 pb-10 pt-6">
             {/* Header */}
-            <View className="flex-row items-center justify-between mb-6">
+            <View className="mb-6 flex-row items-center justify-between">
               <View>
                 <Text className="text-2xl font-bold text-white">Add Meal</Text>
-                <Text className="text-sm text-gray-400 mt-1">{selectedMealType}</Text>
+                <Text className="mt-1 text-sm text-gray-400">{selectedMealType}</Text>
               </View>
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => setShowAddMealModal(false)}
                 className="rounded-full p-2"
-                style={{ backgroundColor: '#2C2D32' }}
-              >
+                style={{ backgroundColor: '#2C2D32' }}>
                 <X size={24} color="#fff" />
               </TouchableOpacity>
             </View>
@@ -854,34 +812,29 @@ export default function JournalPage() {
             {/* Options */}
             <View className="space-y-4">
               {/* Upload Meal Photo */}
-              <TouchableOpacity 
-                className="rounded-2xl p-5 border-2"
-                style={{ 
+              <TouchableOpacity
+                className="rounded-2xl border-2 p-5"
+                style={{
                   backgroundColor: `${theme.primary}08`,
-                  borderColor: `${theme.primary}30`
+                  borderColor: `${theme.primary}30`,
                 }}
                 onPress={() => {
                   // TODO: Implement upload meal logic
                   setShowAddMealModal(false);
-                }}
-              >
+                }}>
                 <View className="flex-row items-center space-x-4">
-                  <View 
-                    className="rounded-2xl p-4"
-                    style={{ backgroundColor: theme.primary }}
-                  >
+                  <View className="rounded-2xl p-4" style={{ backgroundColor: theme.primary }}>
                     <Upload size={28} color="white" />
                   </View>
                   <View className="flex-1">
-                    <Text className="text-lg font-bold text-white mb-1">Upload Meal Photo</Text>
+                    <Text className="mb-1 text-lg font-bold text-white">Upload Meal Photo</Text>
                     <Text className="text-sm text-gray-400">
                       Take a photo or upload from gallery
                     </Text>
                   </View>
-                  <View 
+                  <View
                     className="rounded-full px-3 py-1"
-                    style={{ backgroundColor: `${theme.primary}20` }}
-                  >
+                    style={{ backgroundColor: `${theme.primary}20` }}>
                     <Text className="text-xs font-semibold" style={{ color: theme.primary }}>
                       AI
                     </Text>
@@ -890,65 +843,52 @@ export default function JournalPage() {
               </TouchableOpacity>
 
               {/* Manual Entry */}
-              <TouchableOpacity 
-                className="rounded-2xl p-5 border-2"
-                style={{ 
+              <TouchableOpacity
+                className="rounded-2xl border-2 p-5"
+                style={{
                   backgroundColor: `${theme.primary}08`,
-                  borderColor: `${theme.primary}30`
+                  borderColor: `${theme.primary}30`,
                 }}
                 onPress={() => {
                   setShowAddMealModal(false);
                   router.push({
                     pathname: '/(main)/journal/add-meal-manual',
-                    params: { mealType: selectedMealType }
+                    params: { mealType: selectedMealType },
                   });
-                }}
-              >
+                }}>
                 <View className="flex-row items-center space-x-4">
-                  <View 
-                    className="rounded-2xl p-4"
-                    style={{ backgroundColor: theme.primary }}
-                  >
+                  <View className="rounded-2xl p-4" style={{ backgroundColor: theme.primary }}>
                     <Edit3 size={28} color="white" />
                   </View>
                   <View className="flex-1">
-                    <Text className="text-lg font-bold text-white mb-1">Manual Entry</Text>
-                    <Text className="text-sm text-gray-400">
-                      Enter meal details manually
-                    </Text>
+                    <Text className="mb-1 text-lg font-bold text-white">Manual Entry</Text>
+                    <Text className="text-sm text-gray-400">Enter meal details manually</Text>
                   </View>
                 </View>
               </TouchableOpacity>
 
               {/* Browse Recipes */}
-              <TouchableOpacity 
-                className="rounded-2xl p-5 border-2"
-                style={{ 
+              <TouchableOpacity
+                className="rounded-2xl border-2 p-5"
+                style={{
                   backgroundColor: `${theme.primary}08`,
-                  borderColor: `${theme.primary}30`
+                  borderColor: `${theme.primary}30`,
                 }}
                 onPress={() => {
                   setShowAddMealModal(false);
                   router.push('/(main)/recipes');
-                }}
-              >
+                }}>
                 <View className="flex-row items-center space-x-4">
-                  <View 
-                    className="rounded-2xl p-4"
-                    style={{ backgroundColor: theme.primary }}
-                  >
+                  <View className="rounded-2xl p-4" style={{ backgroundColor: theme.primary }}>
                     <Book size={28} color="white" />
                   </View>
                   <View className="flex-1">
-                    <Text className="text-lg font-bold text-white mb-1">Browse Recipes</Text>
-                    <Text className="text-sm text-gray-400">
-                      Choose from our recipe library
-                    </Text>
+                    <Text className="mb-1 text-lg font-bold text-white">Browse Recipes</Text>
+                    <Text className="text-sm text-gray-400">Choose from our recipe library</Text>
                   </View>
-                  <View 
+                  <View
                     className="rounded-full px-3 py-1"
-                    style={{ backgroundColor: `${theme.primary}20` }}
-                  >
+                    style={{ backgroundColor: `${theme.primary}20` }}>
                     <Text className="text-xs font-semibold" style={{ color: theme.primary }}>
                       NEW
                     </Text>
@@ -958,11 +898,10 @@ export default function JournalPage() {
             </View>
 
             {/* Cancel Button */}
-            <TouchableOpacity 
+            <TouchableOpacity
               className="mt-6 rounded-2xl p-4"
               style={{ backgroundColor: '#2C2D32' }}
-              onPress={() => setShowAddMealModal(false)}
-            >
+              onPress={() => setShowAddMealModal(false)}>
               <Text className="text-center text-lg font-semibold text-white">Cancel</Text>
             </TouchableOpacity>
           </View>
@@ -977,16 +916,16 @@ export default function JournalPage() {
           setExpandedMeal(false);
           setSearchVisible(null);
           setSearchQuery('');
-        }}
-      >
+        }}>
         <SafeAreaView className="flex-1 bg-[#1A1B1E]">
           {/* Header */}
           <View className="flex-row items-center justify-between border-b border-[#2C2D32] px-6 py-4">
-            <TouchableOpacity onPress={() => {
-              setExpandedMeal(false);
-              setSearchVisible(null);
-              setSearchQuery('');
-            }}>
+            <TouchableOpacity
+              onPress={() => {
+                setExpandedMeal(false);
+                setSearchVisible(null);
+                setSearchQuery('');
+              }}>
               <ArrowLeft size={24} color="white" />
             </TouchableOpacity>
             <Text className="text-xl font-bold text-white">Meal Details</Text>
@@ -1003,13 +942,11 @@ export default function JournalPage() {
                 style={{
                   borderBottomWidth: currentMealIndex === index ? 2 : 0,
                   borderBottomColor: currentMealIndex === index ? theme.primary : 'transparent',
-                }}
-              >
+                }}>
                 <View className="mb-1">{meal.icon}</View>
                 <Text
                   className="text-xs font-semibold"
-                  style={{ color: currentMealIndex === index ? theme.primary : '#666' }}
-                >
+                  style={{ color: currentMealIndex === index ? theme.primary : '#666' }}>
                   {meal.title}
                 </Text>
               </TouchableOpacity>
@@ -1028,15 +965,16 @@ export default function JournalPage() {
         visible={showStatsModal}
         transparent
         animationType="slide"
-        onRequestClose={() => setShowStatsModal(false)}
-      >
+        onRequestClose={() => setShowStatsModal(false)}>
         <View className="flex-1 bg-black/70">
-          <View className="flex-1 mt-20 rounded-t-[32px] bg-[#1A1B1E]">
-            <View className="p-6 border-b border-[#2C2D32]">
+          <View className="mt-20 flex-1 rounded-t-[32px] bg-[#1A1B1E]">
+            <View className="border-b border-[#2C2D32] p-6">
               <View className="flex-row items-center justify-between">
                 <Text className="text-2xl font-bold text-white">Nutrition Details</Text>
                 <TouchableOpacity onPress={() => setShowStatsModal(false)}>
-                  <Text className="text-lg" style={{ color: theme.primary }}>Done</Text>
+                  <Text className="text-lg" style={{ color: theme.primary }}>
+                    Done
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1044,20 +982,20 @@ export default function JournalPage() {
             <ScrollView className="flex-1 p-6">
               {/* Week View Chart */}
               <View className="mb-6">
-                <Text className="text-lg font-semibold text-white mb-4">Weekly Overview</Text>
-                <View className="flex-row items-end justify-between h-40 px-2">
+                <Text className="mb-4 text-lg font-semibold text-white">Weekly Overview</Text>
+                <View className="h-40 flex-row items-end justify-between px-2">
                   {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => {
                     const height = Math.random() * 100 + 20; // Mock data
                     return (
-                      <View key={day} className="items-center flex-1 mx-1">
-                        <View 
+                      <View key={day} className="mx-1 flex-1 items-center">
+                        <View
                           className="w-full rounded-t-lg"
-                          style={{ 
+                          style={{
                             height: `${height}%`,
-                            backgroundColor: day === 'Sun' ? theme.primary : `${theme.primary}40`
+                            backgroundColor: day === 'Sun' ? theme.primary : `${theme.primary}40`,
                           }}
                         />
-                        <Text className="text-xs text-gray-400 mt-2">{day}</Text>
+                        <Text className="mt-2 text-xs text-gray-400">{day}</Text>
                       </View>
                     );
                   })}
@@ -1066,19 +1004,21 @@ export default function JournalPage() {
 
               {/* Daily Breakdown */}
               <View className="mb-6">
-                <Text className="text-lg font-semibold text-white mb-4">
-                  {calendarDays[selectedDateIndex].fullDate.toLocaleDateString('en-US', { 
+                <Text className="mb-4 text-lg font-semibold text-white">
+                  {calendarDays[selectedDateIndex].fullDate.toLocaleDateString('en-US', {
                     weekday: 'long',
                     month: 'long',
-                    day: 'numeric'
+                    day: 'numeric',
                   })}
                 </Text>
 
                 {/* Calories Card */}
-                <View className="rounded-2xl bg-[#25262B] p-5 mb-4">
-                  <View className="flex-row items-center justify-between mb-4">
+                <View className="mb-4 rounded-2xl bg-[#25262B] p-5">
+                  <View className="mb-4 flex-row items-center justify-between">
                     <View className="flex-row items-center space-x-3">
-                      <View className="rounded-full p-2" style={{ backgroundColor: `${theme.primary}20` }}>
+                      <View
+                        className="rounded-full p-2"
+                        style={{ backgroundColor: `${theme.primary}20` }}>
                         <Flame size={24} color={theme.primary} />
                       </View>
                       <View>
@@ -1088,13 +1028,13 @@ export default function JournalPage() {
                     </View>
                     <TrendingUp size={24} color={theme.primary} />
                   </View>
-                  
-                  <View className="h-2 rounded-full bg-[#2C2D32] overflow-hidden">
-                    <View 
+
+                  <View className="h-2 overflow-hidden rounded-full bg-[#2C2D32]">
+                    <View
                       className="h-full rounded-full"
-                      style={{ 
+                      style={{
                         width: `${Math.min((dailyCalories / (onboarding?.daily_calories || 2850)) * 100, 100)}%`,
-                        backgroundColor: theme.primary
+                        backgroundColor: theme.primary,
                       }}
                     />
                   </View>
@@ -1103,13 +1043,12 @@ export default function JournalPage() {
                 {/* Meal Breakdown */}
                 <View className="space-y-3">
                   {meals.map((meal, index) => (
-                    <View 
-                      key={meal.id}
-                      className="rounded-2xl bg-[#25262B] p-4"
-                    >
+                    <View key={meal.id} className="rounded-2xl bg-[#25262B] p-4">
                       <View className="flex-row items-center justify-between">
                         <View className="flex-row items-center space-x-3">
-                          <View className="rounded-full p-2" style={{ backgroundColor: `${theme.primary}15` }}>
+                          <View
+                            className="rounded-full p-2"
+                            style={{ backgroundColor: `${theme.primary}15` }}>
                             {meal.icon}
                           </View>
                           <View>
@@ -1127,17 +1066,17 @@ export default function JournalPage() {
               </View>
 
               {/* Tips Section */}
-              <View className="rounded-2xl bg-[#25262B] p-5 mb-6">
-                <View className="flex-row items-center space-x-2 mb-3">
+              <View className="mb-6 rounded-2xl bg-[#25262B] p-5">
+                <View className="mb-3 flex-row items-center space-x-2">
                   <Calendar size={20} color={theme.primary} />
                   <Text className="text-base font-semibold text-white">Nutrition Tip</Text>
                 </View>
-                <Text className="text-sm text-gray-400 leading-6">
+                <Text className="text-sm leading-6 text-gray-400">
                   {dailyCalories < (onboarding?.daily_calories || 2850) * 0.8
                     ? "You're below your target! Try adding healthy snacks like nuts or fruits between meals."
                     : dailyCalories > (onboarding?.daily_calories || 2850)
-                    ? "You've exceeded your goal. Consider lighter meals tomorrow to balance it out."
-                    : "Great job! You're right on track with your nutrition goals. 🎉"}
+                      ? "You've exceeded your goal. Consider lighter meals tomorrow to balance it out."
+                      : "Great job! You're right on track with your nutrition goals. 🎉"}
                 </Text>
               </View>
             </ScrollView>
