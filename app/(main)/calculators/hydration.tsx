@@ -7,10 +7,12 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useHealthConnect, readHydrationData } from '../../../hooks/useHealthConnect';
 import { useTheme } from '../../../hooks/useTheme';
 import { useUserStore } from '../../../stores/userStore';
+import { useAuth } from '../../../hooks/useAuth';
 
 export default function HydrationTracker() {
   const router = useRouter();
   const theme = useTheme();
+  const { user } = useAuth();
   const { onboarding } = useUserStore();
   const [waterConsumed, setWaterConsumed] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,12 +48,24 @@ export default function HydrationTracker() {
   };
 
   useEffect(() => {
-    if (healthConnect.isAvailable && 
-        healthConnect.hasPermissions && 
-        !healthConnect.isChecking) {
-      fetchHydration();
-    }
-  }, [healthConnect.isAvailable, healthConnect.hasPermissions, healthConnect.isChecking]);
+    // Check marker whenever we have permissions (handles user switching)
+    const checkMarkerAndFetch = async () => {
+      if (healthConnect.isAvailable && 
+          healthConnect.hasPermissions && 
+          !healthConnect.isChecking &&
+          user?.email &&
+          healthConnect.handleHydrationPermissionGranted) {
+        
+        // Check marker every time we load (handles user switching scenario)
+        await healthConnect.handleHydrationPermissionGranted(user.email);
+        
+        // Then fetch data
+        fetchHydration();
+      }
+    };
+    
+    checkMarkerAndFetch();
+  }, [healthConnect.isAvailable, healthConnect.hasPermissions, healthConnect.isChecking, user?.email]);
 
   // Refresh when returning from add-hydration page
   useFocusEffect(
@@ -72,9 +86,10 @@ export default function HydrationTracker() {
 
   const handleRequestPermission = async () => {
     const granted = await healthConnect.requestHealthPermissions();
-    if (granted) {
-      // Reload data after permission granted
-      window.location.reload();
+    if (granted && user?.email && healthConnect.handleHydrationPermissionGranted) {
+      await healthConnect.handleHydrationPermissionGranted(user.email);
+      // Reload data after permission granted and marker handled
+      fetchHydration();
     }
   };
 

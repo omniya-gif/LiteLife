@@ -17,6 +17,7 @@ import { CircularProgress } from '../../../components/CircularProgress';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Platform } from 'react-native';
 import { useTheme } from '../../../hooks/useTheme';
+import { useAuth } from '../../../hooks/useAuth';
 import { 
   useHealthConnect, 
   readStepsData, 
@@ -60,6 +61,7 @@ const StatsItem = ({ icon, value, label, gradient, delay }: StatsItemProps) => {
 export default function StepsTrackerPage() {
   const router = useRouter();
   const theme = useTheme();
+  const { user } = useAuth();
   const [steps, setSteps] = useState(0);
   const [distance, setDistance] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -70,9 +72,10 @@ export default function StepsTrackerPage() {
   const [isLoadingData, setIsLoadingData] = useState(false);
   const progress = steps / goal;
 
-  // Health Connect setup
+  // Health Connect setup - need write permission to clear old data
   const healthConnect = useHealthConnect([
     { accessType: 'read', recordType: 'Steps' },
+    { accessType: 'write', recordType: 'Steps' },
     { accessType: 'read', recordType: 'Distance' },
     { accessType: 'read', recordType: 'FloorsClimbed' },
     { accessType: 'read', recordType: 'ActiveCaloriesBurned' },
@@ -146,15 +149,26 @@ export default function StepsTrackerPage() {
   }, [progress]);
 
   React.useEffect(() => {
-    // Only fetch data when we have confirmed permissions
-    if (Platform.OS === 'android' && 
-        healthConnect.isAvailable && 
-        healthConnect.isInitialized && 
-        healthConnect.hasPermissions &&
-        !healthConnect.isChecking) {
-      fetchHealthData();
-    }
-  }, [healthConnect.isAvailable, healthConnect.isInitialized, healthConnect.hasPermissions, healthConnect.isChecking]);
+    // Check marker whenever we have permissions (handles user switching)
+    const checkMarkerAndFetch = async () => {
+      if (Platform.OS === 'android' && 
+          healthConnect.isAvailable && 
+          healthConnect.isInitialized && 
+          healthConnect.hasPermissions &&
+          !healthConnect.isChecking &&
+          user?.email &&
+          healthConnect.handleStepsPermissionGranted) {
+        
+        // Check marker every time we load (handles user switching scenario)
+        await healthConnect.handleStepsPermissionGranted(user.email);
+        
+        // Then fetch data
+        fetchHealthData();
+      }
+    };
+    
+    checkMarkerAndFetch();
+  }, [healthConnect.isAvailable, healthConnect.isInitialized, healthConnect.hasPermissions, healthConnect.isChecking, user?.email]);
 
   const footprintStyle = useAnimatedStyle(() => ({
     transform: [{ scale: footprintScale.value }],
@@ -213,11 +227,14 @@ export default function StepsTrackerPage() {
             </View>
           </View>
           <TouchableOpacity
-            onPress={() => {
+            onPress={async () => {
               if (!healthConnect.isAvailable) {
                 healthConnect.installHealthConnect();
               } else {
-                healthConnect.requestHealthPermissions();
+                const granted = await healthConnect.requestHealthPermissions();
+                if (granted && user?.email) {
+                  await healthConnect.handleStepsPermissionGranted(user.email);
+                }
               }
             }}
             className="mt-3 rounded-xl py-2"

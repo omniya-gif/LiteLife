@@ -27,6 +27,7 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Notifications from 'expo-notifications';
 import { useTheme } from '../../../hooks/useTheme';
+import { useAuth } from '../../../hooks/useAuth';
 import {
   useHealthConnect,
   readSleepData,

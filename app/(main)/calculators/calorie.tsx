@@ -7,6 +7,7 @@ import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated'
 import { Platform } from 'react-native';
 import { useTheme } from '../../../hooks/useTheme';
 import { useUserStore } from '../../../lib/store/userStore';
+import { useAuth } from '../../../hooks/useAuth';
 import { 
   useHealthConnect, 
   readMacronutrientData
@@ -31,6 +32,7 @@ const MacroRow = ({ name, amount, percentage, color, index }) => (
 export default function CalorieTrackerPage() {
   const router = useRouter();
   const theme = useTheme();
+  const { user } = useAuth();
   const onboarding = useUserStore((state) => state.onboarding);
   const [protein, setProtein] = useState(0);
   const [fat, setFat] = useState(0);
@@ -50,9 +52,10 @@ export default function CalorieTrackerPage() {
     console.log('📊 CALORIE PAGE - dailyGoal being used:', dailyGoal);
   }, [onboarding, dailyGoal]);
 
-  // Health Connect setup
+  // Health Connect setup - include write permission for deletion
   const healthConnect = useHealthConnect([
     { accessType: 'read', recordType: 'Nutrition' },
+    { accessType: 'write', recordType: 'Nutrition' },
   ]);
 
   const fetchHealthData = async () => {
@@ -99,15 +102,26 @@ export default function CalorieTrackerPage() {
   };
 
   useEffect(() => {
-    // Only fetch data when we have confirmed permissions
-    if (Platform.OS === 'android' && 
-        healthConnect.isAvailable && 
-        healthConnect.isInitialized && 
-        healthConnect.hasPermissions &&
-        !healthConnect.isChecking) {
-      fetchHealthData();
-    }
-  }, [healthConnect.isAvailable, healthConnect.isInitialized, healthConnect.hasPermissions, healthConnect.isChecking]);
+    // Check marker whenever we have permissions (handles user switching)
+    const checkMarkerAndFetch = async () => {
+      if (Platform.OS === 'android' && 
+          healthConnect.isAvailable && 
+          healthConnect.isInitialized && 
+          healthConnect.hasPermissions &&
+          !healthConnect.isChecking &&
+          user?.email &&
+          healthConnect.handleNutritionPermissionGranted) {
+        
+        // Check marker every time we load (handles user switching scenario)
+        await healthConnect.handleNutritionPermissionGranted(user.email);
+        
+        // Then fetch data
+        fetchHealthData();
+      }
+    };
+    
+    checkMarkerAndFetch();
+  }, [healthConnect.isAvailable, healthConnect.isInitialized, healthConnect.hasPermissions, healthConnect.isChecking, user?.email]);
 
   const metrics = [
     { 
@@ -204,7 +218,12 @@ export default function CalorieTrackerPage() {
             Grant access to track your daily nutrition and calories
           </Text>
           <TouchableOpacity
-            onPress={healthConnect.requestHealthPermissions}
+            onPress={async () => {
+              const granted = await healthConnect.requestHealthPermissions();
+              if (granted && user?.email && healthConnect.handleNutritionPermissionGranted) {
+                await healthConnect.handleNutritionPermissionGranted(user.email);
+              }
+            }}
             className="mt-6 rounded-2xl px-8 py-4"
             style={{ backgroundColor: theme.primary }}
           >
