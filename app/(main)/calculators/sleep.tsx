@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   Switch,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Moon, Sun, Bed, AlertCircle, Plus, TrendingUp, Activity, Timer, Bell } from 'lucide-react-native';
 import { LineChart } from 'react-native-chart-kit';
@@ -81,8 +82,26 @@ export default function SleepTrackerPage() {
   const [currentSleep, setCurrentSleep] = useState<{ bedtime: string; wakeTime: string; duration: number } | null>(null);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [showAddSleep, setShowAddSleep] = useState(false);
-  const [bedtime, setBedtime] = useState('22:00');
-  const [wakeTime, setWakeTime] = useState('06:00');
+  
+  // Initialize with yesterday 10 PM for bedtime
+  const getDefaultBedtime = () => {
+    const date = new Date();
+    date.setDate(date.getDate() - 1);
+    date.setHours(22, 0, 0, 0);
+    return date;
+  };
+  
+  // Initialize with today 6 AM for wake time
+  const getDefaultWakeTime = () => {
+    const date = new Date();
+    date.setHours(6, 0, 0, 0);
+    return date;
+  };
+  
+  const [bedtime, setBedtime] = useState<Date>(getDefaultBedtime());
+  const [wakeTime, setWakeTime] = useState<Date>(getDefaultWakeTime());
+  const [showBedtimePicker, setShowBedtimePicker] = useState(false);
+  const [showWakeTimePicker, setShowWakeTimePicker] = useState(false);
   const [showReminderSettings, setShowReminderSettings] = useState(false);
   const [reminderEnabled, setReminderEnabled] = useState(false);
   const [bedtimeReminder, setBedtimeReminder] = useState('21:30');
@@ -164,38 +183,47 @@ export default function SleepTrackerPage() {
   // Handle adding new sleep
   const handleAddSleep = async () => {
     try {
-      const bedtimeParts = bedtime.split(':');
-      const wakeTimeParts = wakeTime.split(':');
+      console.log('\n========== ADDING SLEEP SESSION ==========');
+      console.log('📅 Bedtime (local):', bedtime.toString());
+      console.log('📅 Wake time (local):', wakeTime.toString());
+      console.log('⏰ Bedtime ISO (UTC):', bedtime.toISOString());
+      console.log('⏰ Wake time ISO (UTC):', wakeTime.toISOString());
       
-      // Create dates in LOCAL timezone (yesterday for bedtime to match typical sleep pattern)
-      const bedtimeDate = new Date();
-      bedtimeDate.setDate(bedtimeDate.getDate() - 1); // Yesterday
-      bedtimeDate.setHours(parseInt(bedtimeParts[0]), parseInt(bedtimeParts[1]), 0, 0);
-      
-      const wakeTimeDate = new Date();
-      wakeTimeDate.setHours(parseInt(wakeTimeParts[0]), parseInt(wakeTimeParts[1]), 0, 0);
-      
-      // If wake time is earlier than bedtime, it means next day
-      if (wakeTimeDate < bedtimeDate) {
-        wakeTimeDate.setDate(wakeTimeDate.getDate() + 1);
+      // Validate that wake time is after bedtime
+      if (wakeTime <= bedtime) {
+        console.log('❌ Wake time must be after bedtime');
+        Alert.alert('Invalid Time', 'Wake time must be after bedtime');
+        return;
       }
-
-      console.log('💤 Local bedtime:', bedtimeDate.toString());
-      console.log('💤 Local wake time:', wakeTimeDate.toString());
-      console.log('💤 UTC bedtime:', bedtimeDate.toISOString());
-      console.log('💤 UTC wake time:', wakeTimeDate.toISOString());
-
-      // Convert to ISO strings (JavaScript automatically converts to UTC)
-      await writeSleepData(bedtimeDate.toISOString(), wakeTimeDate.toISOString());
       
-      // Refresh data
+      // Calculate duration for display
+      const durationMs = wakeTime.getTime() - bedtime.getTime();
+      const durationHours = Math.floor(durationMs / (1000 * 60 * 60));
+      const durationMinutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+      console.log(`⏱️ Duration: ${durationHours}h ${durationMinutes}m (${Math.floor(durationMs / (1000 * 60))} total minutes)`);
+      
+      console.log('\n📝 Writing to Health Connect...');
+      const writeResult = await writeSleepData(bedtime.toISOString(), wakeTime.toISOString());
+      console.log('✅ Write result:', writeResult);
+      
+      console.log('\n🔄 Refreshing sleep data...');
       await fetchSleepData();
       
       setShowAddSleep(false);
-      Alert.alert('Success', 'Sleep data added successfully!');
+      Alert.alert(
+        'Sleep Added',
+        `Successfully logged ${durationHours}h ${durationMinutes}m of sleep.\n\nCheck Google Fit to verify the data.`,
+        [{ text: 'OK' }]
+      );
+      console.log('========== SLEEP SESSION ADDED ==========\n');
     } catch (error) {
-      console.error('Error adding sleep:', error);
-      Alert.alert('Error', 'Failed to add sleep data. Please try again.');
+      console.error('\n❌ ERROR ADDING SLEEP:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
+      Alert.alert(
+        'Error',
+        `Failed to add sleep data.\n\nError: ${error instanceof Error ? error.message : String(error)}`,
+        [{ text: 'OK' }]
+      );
     }
   };
 
@@ -576,29 +604,54 @@ export default function SleepTrackerPage() {
           className="mx-6 mt-4 rounded-2xl p-4"
           style={{ backgroundColor: theme.backgroundLight }}
         >
-          <Text className="mb-3 text-lg font-semibold text-white">Add Sleep Session</Text>
-          <View className="mb-3">
-            <Text className="mb-2 text-sm text-gray-400">Bedtime (HH:MM)</Text>
-            <TextInput
-              value={bedtime}
-              onChangeText={setBedtime}
-              placeholder="22:00"
-              placeholderTextColor="#666"
-              className="rounded-xl px-4 py-3 text-white"
+          <Text className="mb-4 text-lg font-semibold text-white">Add Sleep</Text>
+          
+          {/* Went to bed */}
+          <View className="mb-4">
+            <Text className="mb-2 text-sm text-gray-400">Went to bed</Text>
+            <TouchableOpacity
+              onPress={() => setShowBedtimePicker(true)}
+              className="flex-row items-center justify-between rounded-xl px-4 py-3"
               style={{ backgroundColor: theme.backgroundDark }}
-            />
+            >
+              <Text className="text-white">
+                {bedtime.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) === 
+                 new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                  ? 'Today'
+                  : bedtime.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) === 
+                    new Date(Date.now() - 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                  ? 'Yesterday'
+                  : bedtime.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </Text>
+              <Text className="text-white">
+                {bedtime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
+              </Text>
+            </TouchableOpacity>
           </View>
-          <View className="mb-3">
-            <Text className="mb-2 text-sm text-gray-400">Wake Time (HH:MM)</Text>
-            <TextInput
-              value={wakeTime}
-              onChangeText={setWakeTime}
-              placeholder="06:00"
-              placeholderTextColor="#666"
-              className="rounded-xl px-4 py-3 text-white"
+          
+          {/* Woke up */}
+          <View className="mb-4">
+            <Text className="mb-2 text-sm text-gray-400">Woke up</Text>
+            <TouchableOpacity
+              onPress={() => setShowWakeTimePicker(true)}
+              className="flex-row items-center justify-between rounded-xl px-4 py-3"
               style={{ backgroundColor: theme.backgroundDark }}
-            />
+            >
+              <Text className="text-white">
+                {wakeTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) === 
+                 new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                  ? 'Today'
+                  : wakeTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) === 
+                    new Date(Date.now() + 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                  ? 'Tomorrow'
+                  : wakeTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </Text>
+              <Text className="text-white">
+                {wakeTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
+              </Text>
+            </TouchableOpacity>
           </View>
+          
           <TouchableOpacity
             onPress={handleAddSleep}
             className="rounded-xl py-3"
@@ -607,6 +660,36 @@ export default function SleepTrackerPage() {
             <Text className="text-center font-semibold text-[#1A1B1E]">Add Sleep</Text>
           </TouchableOpacity>
         </Animated.View>
+      )}
+      
+      {/* Date/Time Pickers */}
+      {showBedtimePicker && (
+        <DateTimePicker
+          value={bedtime}
+          mode="datetime"
+          is24Hour={true}
+          display="default"
+          onChange={(event, selectedDate) => {
+            setShowBedtimePicker(false);
+            if (selectedDate) {
+              setBedtime(selectedDate);
+            }
+          }}
+        />
+      )}
+      {showWakeTimePicker && (
+        <DateTimePicker
+          value={wakeTime}
+          mode="datetime"
+          is24Hour={true}
+          display="default"
+          onChange={(event, selectedDate) => {
+            setShowWakeTimePicker(false);
+            if (selectedDate) {
+              setWakeTime(selectedDate);
+            }
+          }}
+        />
       )}
 
       <ScrollView className="flex-1">

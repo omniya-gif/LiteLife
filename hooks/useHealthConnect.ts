@@ -1420,19 +1420,53 @@ export const writeSleepData = async (startTime: string, endTime: string) => {
   try {
     const { insertRecords } = require('react-native-health-connect');
 
-    console.log('😴 Writing sleep to Health Connect:', startTime, 'to', endTime);
+    console.log('\n============ WRITING SLEEP TO HEALTH CONNECT ============');
+    console.log('📥 Input startTime:', startTime);
+    console.log('📥 Input endTime:', endTime);
+    
+    // Validate times
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    const durationMs = end.getTime() - start.getTime();
+    const durationHours = durationMs / (1000 * 60 * 60);
+    
+    console.log('⏰ Start Date:', start.toString());
+    console.log('⏰ End Date:', end.toString());
+    console.log('⏱️ Duration:', durationHours.toFixed(2), 'hours');
+    
+    if (durationMs <= 0) {
+      console.error('❌ Invalid duration: End time must be after start time');
+      throw new Error('End time must be after start time');
+    }
+    
+    if (durationHours > 24) {
+      console.warn('⚠️ WARNING: Sleep duration is more than 24 hours!');
+    }
 
     const sleepRecord = {
       recordType: 'SleepSession' as const,
       startTime,
       endTime,
     };
+    
+    console.log('📝 Sleep record to insert:', JSON.stringify(sleepRecord, null, 2));
+    console.log('🔄 Calling insertRecords...');
 
     const result = await insertRecords([sleepRecord]);
-    console.log('✅ Sleep written to Health Connect:', result);
+    
+    console.log('✅ insertRecords result:', JSON.stringify(result, null, 2));
+    console.log('✅ Sleep successfully written to Health Connect!');
+    console.log('👉 You should now see this in Google Fit app');
+    console.log('============ WRITE COMPLETE ============\n');
+    
     return true;
   } catch (error) {
-    console.error('❌ Error writing sleep data:', error);
+    console.error('\n❌ ========== ERROR WRITING SLEEP ==========');
+    console.error('Error type:', error?.constructor?.name);
+    console.error('Error message:', error instanceof Error ? error.message : String(error));
+    console.error('Full error:', JSON.stringify(error, null, 2));
+    console.error('Stack trace:', error instanceof Error ? error.stack : 'N/A');
+    console.error('============================================\n');
     throw error;
   }
 };
