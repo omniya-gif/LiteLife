@@ -323,7 +323,7 @@ export default function CalorieTrackerPage() {
               style={{ backgroundColor: theme.primary }}
             >
               <Text className="text-center text-lg font-semibold text-white">
-                Add Manual Activity
+              Navigate to meal planner
               </Text>
             </TouchableOpacity>
           </Animated.View>

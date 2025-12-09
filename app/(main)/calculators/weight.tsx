@@ -28,7 +28,7 @@ export default function WeightTrackerPage() {
   const [showAddWeight, setShowAddWeight] = useState(false);
   const [newWeight, setNewWeight] = useState('');
 
-  // Health Connect setup for Weight
+  // Health Connect setup for Weight (with write permission for marker-based auto-delete)
   const healthConnect = useHealthConnect([
     { accessType: 'read', recordType: 'Weight' },
     { accessType: 'write', recordType: 'Weight' },
@@ -40,6 +40,16 @@ export default function WeightTrackerPage() {
       fetchUserData(user.id);
     }
   }, [user?.id]);
+
+  // Handle permission request with marker check
+  const handleRequestPermission = async () => {
+    await healthConnect.requestHealthPermissions();
+    
+    // After permission granted, check marker for user switching detection
+    if (user?.email && healthConnect.handleWeightPermissionGranted) {
+      await healthConnect.handleWeightPermissionGranted(user.email);
+    }
+  };
 
   // Fetch weight data from Health Connect
   const fetchWeightData = async () => {
@@ -101,16 +111,28 @@ export default function WeightTrackerPage() {
     }
   };
 
-  // Fetch data on mount and when permissions change
+  // Check marker and fetch data on load (detect user switching)
   useEffect(() => {
-    if (Platform.OS === 'android' && 
-        healthConnect.isAvailable && 
-        healthConnect.isInitialized &&
-        healthConnect.hasPermissions &&
-        !healthConnect.isChecking) {
-      fetchWeightData();
-    }
-  }, [healthConnect.isAvailable, healthConnect.isInitialized, healthConnect.hasPermissions, healthConnect.isChecking]);
+    const checkMarkerAndFetch = async () => {
+      if (!user?.email) return;
+      
+      if (Platform.OS === 'android' && 
+          healthConnect.isAvailable && 
+          healthConnect.isInitialized &&
+          healthConnect.hasPermissions &&
+          !healthConnect.isChecking) {
+        
+        // Check marker on every load to detect user switching
+        if (healthConnect.handleWeightPermissionGranted) {
+          await healthConnect.handleWeightPermissionGranted(user.email);
+        }
+        
+        fetchWeightData();
+      }
+    };
+    
+    checkMarkerAndFetch();
+  }, [user?.email, healthConnect.isAvailable, healthConnect.isInitialized, healthConnect.hasPermissions, healthConnect.isChecking]);
 
   // Handle adding new weight
   const handleAddWeight = async () => {
@@ -251,7 +273,7 @@ export default function WeightTrackerPage() {
             Grant access to track your weight progress
           </Text>
           <TouchableOpacity
-            onPress={healthConnect.requestHealthPermissions}
+            onPress={handleRequestPermission}
             className="mt-6 rounded-2xl px-8 py-4"
             style={{ backgroundColor: theme.primary }}
           >

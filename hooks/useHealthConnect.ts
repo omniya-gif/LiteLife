@@ -1317,11 +1317,12 @@ export const getCurrentWeight = async () => {
 };
 
 // Helper function to write weight data to Health Connect
-export const writeWeightData = async (weightInKg: number, time?: string) => {
+export const writeWeightData = async (weightInKg: number, time?: string | Date) => {
   try {
     const { insertRecords } = require('react-native-health-connect');
 
-    const recordTime = time || new Date().toISOString();
+    // Convert time to ISO string if it's a Date object, otherwise use provided string or current time
+    const recordTime = time instanceof Date ? time.toISOString() : (time || new Date().toISOString());
 
     console.log('⚖️ Writing weight to Health Connect:', weightInKg, 'kg at', recordTime);
 
