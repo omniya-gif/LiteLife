@@ -10,6 +10,7 @@ import {
   getGrantedPermissions,
   readRecords,
   deleteRecordsByUuids,
+  deleteRecordsByTimeRange,
 } from 'react-native-health-connect';
 
 import { 
