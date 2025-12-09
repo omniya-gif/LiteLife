@@ -13,12 +13,12 @@ import {
   deleteRecordsByTimeRange,
 } from 'react-native-health-connect';
 
-import { 
-  getHealthConnectMarker, 
+import {
+  getHealthConnectMarker,
   setHealthConnectMarker,
   checkHealthConnectMarkerMatch,
   showHealthConnectMismatchAlert,
-  showExistingDataAlert
+  showExistingDataAlert,
 } from '../utils/healthConnectMarker';
 
 export interface HealthConnectPermission {
@@ -293,7 +293,9 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
 
       const stepsRecords = await readRecords('Steps', { timeRangeFilter });
       const hasData = stepsRecords.records && stepsRecords.records.length > 0;
-      console.log(`📊 Existing steps data check: ${hasData ? 'Found' : 'None'} (${stepsRecords.records?.length || 0} records)`);
+      console.log(
+        `📊 Existing steps data check: ${hasData ? 'Found' : 'None'} (${stepsRecords.records?.length || 0} records)`
+      );
       return hasData;
     } catch (error) {
       console.error('Error checking existing steps data:', error);
@@ -339,7 +341,7 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
   const handleStepsPermissionGranted = async (userEmail: string): Promise<void> => {
     try {
       console.log('🔍 Checking Health Connect marker for steps permission...');
-      
+
       // First check if marker exists and matches
       const markerMatch = await checkHealthConnectMarkerMatch(userEmail);
       const marker = await getHealthConnectMarker();
@@ -348,7 +350,7 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
         // No marker exists - check if there's existing data
         console.log('📝 No marker found, checking for existing data...');
         const hasExistingData = await checkExistingStepsData();
-        
+
         if (hasExistingData) {
           // Show alert for existing data - can't auto-delete data from other apps
           let shouldOpenSettings = false;
@@ -364,7 +366,7 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
               console.log('✅ User confirmed to use existing steps data');
             }
           );
-          
+
           if (shouldOpenSettings) {
             openHealthConnectDataManagement();
           }
@@ -387,7 +389,7 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
             console.log('✅ User confirmed to use previous user data');
           }
         );
-        
+
         if (shouldOpenSettings) {
           openHealthConnectDataManagement();
         }
@@ -408,7 +410,7 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
     try {
       const now = new Date();
       const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      
+
       const timeRangeFilter = {
         operator: 'between' as const,
         startTime: thirtyDaysAgo.toISOString(),
@@ -417,7 +419,7 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
 
       const nutritionRecords = await readRecords('Nutrition', { timeRangeFilter });
       const recordCount = nutritionRecords.records?.length || 0;
-      
+
       console.log(`📊 Found ${recordCount} nutrition records in last 30 days`);
       return recordCount;
     } catch (error) {
@@ -433,10 +435,10 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
   const clearNutritionData = async (): Promise<boolean> => {
     try {
       console.log('🗑️ Attempting to clear nutrition data...');
-      
+
       const now = new Date();
       const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      
+
       const timeRangeFilter = {
         operator: 'between' as const,
         startTime: thirtyDaysAgo.toISOString(),
@@ -450,13 +452,13 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error('❌ Error deleting nutrition data:', errorMessage);
-      
+
       // If error indicates we don't own the data, return false
       if (errorMessage.includes("doesn't own") || errorMessage.includes('not own')) {
         console.log('⚠️ Cannot delete nutrition data from other apps');
         return false;
       }
-      
+
       return false;
     }
   };
@@ -469,7 +471,7 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
   const handleNutritionPermissionGranted = async (userEmail: string): Promise<void> => {
     try {
       console.log('🔍 Checking Health Connect marker for nutrition permission...');
-      
+
       // First check if marker exists and matches
       const markerMatch = await checkHealthConnectMarkerMatch(userEmail);
       const marker = await getHealthConnectMarker();
@@ -478,12 +480,12 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
         // No marker exists - check if there's existing data
         console.log('📝 No marker found, checking for existing data...');
         const hasExistingData = await checkExistingNutritionData();
-        
+
         if (hasExistingData) {
           // Try to auto-delete first (nutrition is usually our own data)
           console.log('🗑️ Attempting to auto-delete nutrition data...');
           const deleted = await clearNutritionData();
-          
+
           if (deleted) {
             // Successfully deleted, set marker
             await setHealthConnectMarker(userEmail, false);
@@ -502,7 +504,7 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
                 console.log('✅ User confirmed to use existing nutrition data');
               }
             );
-            
+
             if (shouldOpenSettings) {
               openHealthConnectDataManagement();
             }
@@ -515,10 +517,10 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
       } else if (!markerMatch) {
         // Marker exists but doesn't match - different user
         console.log('⚠️ Marker mismatch detected!');
-        
+
         // Try to auto-delete the previous user's data
         const deleted = await clearNutritionData();
-        
+
         if (deleted) {
           // Successfully deleted, set new marker
           await setHealthConnectMarker(userEmail, false);
@@ -535,7 +537,7 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
               console.log('✅ User confirmed to use previous user nutrition data');
             }
           );
-          
+
           if (shouldOpenSettings) {
             openHealthConnectDataManagement();
           }
@@ -557,7 +559,7 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
     try {
       const now = new Date();
       const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      
+
       const timeRangeFilter = {
         operator: 'between' as const,
         startTime: thirtyDaysAgo.toISOString(),
@@ -566,7 +568,7 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
 
       const hydrationRecords = await readRecords('Hydration', { timeRangeFilter });
       const recordCount = hydrationRecords.records?.length || 0;
-      
+
       console.log(`💧 Found ${recordCount} hydration records in last 30 days`);
       return recordCount;
     } catch (error) {
@@ -582,10 +584,10 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
   const clearHydrationData = async (): Promise<boolean> => {
     try {
       console.log('🗑️ Attempting to clear hydration data...');
-      
+
       const now = new Date();
       const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      
+
       const timeRangeFilter = {
         operator: 'between' as const,
         startTime: thirtyDaysAgo.toISOString(),
@@ -599,13 +601,13 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error('❌ Error deleting hydration data:', errorMessage);
-      
+
       // If error indicates we don't own the data, return false
       if (errorMessage.includes("doesn't own") || errorMessage.includes('not own')) {
         console.log('⚠️ Cannot delete hydration data from other apps');
         return false;
       }
-      
+
       return false;
     }
   };
@@ -618,7 +620,7 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
   const handleHydrationPermissionGranted = async (userEmail: string): Promise<void> => {
     try {
       console.log('🔍 Checking Health Connect marker for hydration permission...');
-      
+
       // First check if marker exists and matches
       const markerMatch = await checkHealthConnectMarkerMatch(userEmail);
       const marker = await getHealthConnectMarker();
@@ -627,12 +629,12 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
         // No marker exists - check if there's existing data
         console.log('📝 No marker found, checking for existing data...');
         const hasExistingData = await checkExistingHydrationData();
-        
+
         if (hasExistingData) {
           // Try to auto-delete first (hydration is usually our own data)
           console.log('🗑️ Attempting to auto-delete hydration data...');
           const deleted = await clearHydrationData();
-          
+
           if (deleted) {
             // Successfully deleted, set marker
             await setHealthConnectMarker(userEmail, false);
@@ -651,7 +653,7 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
                 console.log('✅ User confirmed to use existing hydration data');
               }
             );
-            
+
             if (shouldOpenSettings) {
               openHealthConnectDataManagement();
             }
@@ -664,10 +666,10 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
       } else if (!markerMatch) {
         // Marker exists but doesn't match - different user
         console.log('⚠️ Marker mismatch detected!');
-        
+
         // Try to auto-delete the previous user's data
         const deleted = await clearHydrationData();
-        
+
         if (deleted) {
           // Successfully deleted, set new marker
           await setHealthConnectMarker(userEmail, false);
@@ -684,7 +686,7 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
               console.log('✅ User confirmed to use previous user hydration data');
             }
           );
-          
+
           if (shouldOpenSettings) {
             openHealthConnectDataManagement();
           }
@@ -703,19 +705,19 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
    * Tries auto-delete first, falls back to settings if needed
    */
   const handleManualDataPermissionGranted = async (
-    userEmail: string, 
+    userEmail: string,
     dataType: 'SleepSession' | 'Weight',
     displayName: string
   ): Promise<void> => {
     try {
       console.log(`🔍 Checking Health Connect marker for ${displayName} permission...`);
-      
+
       const markerMatch = await checkHealthConnectMarkerMatch(userEmail);
       const marker = await getHealthConnectMarker();
 
       if (!marker) {
         console.log('📝 No marker found, checking for existing data...');
-        
+
         // Check for existing data
         const now = new Date();
         const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -727,10 +729,10 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
 
         const records = await readRecords(dataType, { timeRangeFilter });
         const recordCount = records.records?.length || 0;
-        
+
         if (recordCount > 0) {
           console.log(`📊 Found ${recordCount} ${displayName} records`);
-          
+
           // Try auto-delete
           try {
             await deleteRecordsByTimeRange(dataType, timeRangeFilter);
@@ -742,10 +744,14 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
             await showExistingDataAlert(
               userEmail,
               displayName.toLowerCase(),
-              async () => { shouldOpenSettings = true; },
-              async () => { console.log(`✅ User confirmed to use existing ${displayName} data`); }
+              async () => {
+                shouldOpenSettings = true;
+              },
+              async () => {
+                console.log(`✅ User confirmed to use existing ${displayName} data`);
+              }
             );
-            
+
             if (shouldOpenSettings) {
               openHealthConnectDataManagement();
             }
@@ -756,7 +762,7 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
         }
       } else if (!markerMatch) {
         console.log('⚠️ Marker mismatch detected!');
-        
+
         // Try auto-delete previous user's data
         const now = new Date();
         const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -775,10 +781,14 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
           let shouldOpenSettings = false;
           await showHealthConnectMismatchAlert(
             userEmail,
-            async () => { shouldOpenSettings = true; },
-            async () => { console.log(`✅ User confirmed to use previous user ${displayName} data`); }
+            async () => {
+              shouldOpenSettings = true;
+            },
+            async () => {
+              console.log(`✅ User confirmed to use previous user ${displayName} data`);
+            }
           );
-          
+
           if (shouldOpenSettings) {
             openHealthConnectDataManagement();
           }
@@ -792,10 +802,10 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
   };
 
   // Specific handlers for each data type
-  const handleSleepPermissionGranted = (userEmail: string) => 
+  const handleSleepPermissionGranted = (userEmail: string) =>
     handleManualDataPermissionGranted(userEmail, 'SleepSession', 'sleep');
-  
-  const handleWeightPermissionGranted = (userEmail: string) => 
+
+  const handleWeightPermissionGranted = (userEmail: string) =>
     handleManualDataPermissionGranted(userEmail, 'Weight', 'weight');
 
   return {
@@ -1026,7 +1036,7 @@ export const readMacronutrientData = async (startTime: string, endTime: string) 
     }
 
     const nutritionRecords = await readRecords('Nutrition', { timeRangeFilter });
-    
+
     const macros = (nutritionRecords.records as NutritionRecord[]).reduce(
       (totals, record) => {
         return {
@@ -1082,7 +1092,7 @@ export const readCaloriesByMealType = async (startTime: string, endTime: string)
     }
 
     const nutritionRecords = await readRecords('Nutrition', { timeRangeFilter });
-    
+
     const mealCalories = {
       breakfast: 0,
       lunch: 0,
@@ -1094,7 +1104,7 @@ export const readCaloriesByMealType = async (startTime: string, endTime: string)
       const calories = record.energy?.inKilocalories || 0;
       // mealType is a number: 1=breakfast, 2=lunch, 3=dinner, 4=snack, 0=unknown
       const mealTypeNum = typeof record.mealType === 'number' ? record.mealType : 0;
-      
+
       if (mealTypeNum === 1) {
         mealCalories.breakfast += calories;
       } else if (mealTypeNum === 2) {
@@ -1157,7 +1167,7 @@ export const readMealsByType = async (startTime: string, endTime: string, mealTy
     }
 
     const nutritionRecords = await readRecords('Nutrition', { timeRangeFilter });
-    
+
     const meals = (nutritionRecords.records as NutritionRecord[])
       .filter((record) => {
         const recordMealType = typeof record.mealType === 'number' ? record.mealType : 0;
@@ -1169,7 +1179,7 @@ export const readMealsByType = async (startTime: string, endTime: string, mealTy
         const idMatch = fullName.match(/#(\d+)$/);
         const recipeId = idMatch ? parseInt(idMatch[1], 10) : undefined;
         const cleanName = idMatch ? fullName.replace(/#\d+$/, '').trim() : fullName;
-        
+
         return {
           name: cleanName,
           recipeId,

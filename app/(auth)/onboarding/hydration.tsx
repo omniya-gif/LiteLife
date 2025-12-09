@@ -199,16 +199,6 @@ export default function HydrationPage() {
               Activity: {formData.expertise} • {formData.gender}
             </Text>
           </View>
-
-          {/* Info Card */}
-          <View className="mt-6 w-full rounded-2xl bg-[#25262B] p-4">
-            <Text className="text-center text-sm text-gray-400">
-              💧 Recommended: 30-35ml per kg body weight
-            </Text>
-            <Text className="mt-1 text-center text-sm text-gray-400">
-              Adjusted for your activity level
-            </Text>
-          </View>
         </Animated.View>
       )}
 

@@ -13,7 +13,10 @@ export interface HealthConnectMarker {
 /**
  * Set the Health Connect user marker with email
  */
-export const setHealthConnectMarker = async (email: string, dataConfirmed: boolean = false): Promise<void> => {
+export const setHealthConnectMarker = async (
+  email: string,
+  dataConfirmed: boolean = false
+): Promise<void> => {
   try {
     const marker: HealthConnectMarker = {
       email,
@@ -76,7 +79,7 @@ export const showHealthConnectMismatchAlert = async (
   onUseExisting: () => Promise<void>
 ): Promise<void> => {
   const marker = await getHealthConnectMarker();
-  
+
   return new Promise((resolve) => {
     Alert.alert(
       '⚠️ Different User Detected',

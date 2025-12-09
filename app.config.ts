@@ -34,9 +34,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     permissions: [
       'android.permission.health.READ_STEPS',
       'android.permission.health.READ_FLOORS_CLIMBED',
-        'android.permission.health.WRITE_FLOORS_CLIMBED',
-        'android.permission.health.WRITE_NOTES',
-        'android.permission.health.READ_DISTANCE',
+      'android.permission.health.WRITE_FLOORS_CLIMBED',
+      'android.permission.health.WRITE_NOTES',
+      'android.permission.health.READ_DISTANCE',
       'android.permission.health.WRITE_DISTANCE',
       'android.permission.health.READ_HEART_RATE',
       'android.permission.health.WRITE_HEART_RATE',
@@ -70,7 +70,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   extra: {
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://zvbgtmlxzhiuxmimcqpd.supabase.co',
-    supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
+    supabaseAnonKey:
+      process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp2Ymd0bWx4emhpdXhtaW1jcXBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEwNDgxMDUsImV4cCI6MjA3NjYyNDEwNX0.w4FTwYvZqGLDXuI3po1AjPErMHJfRvwN0V1Eu1Le1Pw',
     EXPO_PUBLIC_RAPID_API_KEY: process.env.EXPO_PUBLIC_RAPID_API_KEY,
     EXPO_PUBLIC_RAPID_API_HOST: process.env.EXPO_PUBLIC_RAPID_API_HOST,

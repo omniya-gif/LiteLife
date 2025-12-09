@@ -225,7 +225,8 @@ export default function JournalPage() {
             Dinner: 'chicken',
             Snack: 'smoothie',
           };
-          const defaultQuery = defaultSearches[selectedMealType as keyof typeof defaultSearches] || 'healthy';
+          const defaultQuery =
+            defaultSearches[selectedMealType as keyof typeof defaultSearches] || 'healthy';
           const searchOptions: any = {};
           if (selectedMealType.toLowerCase() === 'breakfast') {
             searchOptions.type = 'breakfast';
@@ -341,7 +342,11 @@ export default function JournalPage() {
           );
         };
 
-        const snackMeals = await readMealsByType(startOfDay.toISOString(), endOfDay.toISOString(), 4); // 4 = snack
+        const snackMeals = await readMealsByType(
+          startOfDay.toISOString(),
+          endOfDay.toISOString(),
+          4
+        ); // 4 = snack
 
         const [breakfastWithImages, lunchWithImages, dinnerWithImages, snackWithImages] =
           await Promise.all([
@@ -631,7 +636,7 @@ export default function JournalPage() {
               autoPlay
               loop
               style={{
-                width: meal.id === 'breakfast' ? 120 :120,
+                width: meal.id === 'breakfast' ? 120 : 120,
                 height: meal.id === 'breakfast' ? 120 : 120,
               }}
             />
@@ -762,28 +767,37 @@ export default function JournalPage() {
     const isSwipingLeft = translateX.value < -20;
     const isSwipingRight = translateX.value > 20;
     const isActive = isSwipingLeft || isSwipingRight;
-    
+
     const progress = isSwipingLeft
       ? interpolate(translateX.value, [-width / 2, -20, 0], [1, 0.3, 0], Extrapolate.CLAMP)
       : interpolate(translateX.value, [0, 20, width / 2], [0, 0.3, 1], Extrapolate.CLAMP);
 
     // Show indicator if there are multiple meals to navigate
     const hasMultipleMeals = meals.length > 1;
-    
+
     // Pulse animation for idle state (0.3 to 0.5 opacity)
     const pulseOpacity = interpolate(pulseAnimation.value, [0, 1], [0.3, 0.5], Extrapolate.CLAMP);
-    
+
     // Pulse scale (0.95 to 1.05 for subtle breathing effect)
     const pulseScale = interpolate(pulseAnimation.value, [0, 1], [0.95, 1.05], Extrapolate.CLAMP);
 
     // Horizontal swipe motion - oscillates left/right
-    const swipeMotion = interpolate(pulseAnimation.value, [0, 0.5, 1], [0, -8, 0], Extrapolate.CLAMP);
+    const swipeMotion = interpolate(
+      pulseAnimation.value,
+      [0, 0.5, 1],
+      [0, -8, 0],
+      Extrapolate.CLAMP
+    );
 
     const finalOpacity = isActive ? progress : hasMultipleMeals ? pulseOpacity : 0;
     const finalScale = isActive ? 1 + progress * 0.2 : hasMultipleMeals ? pulseScale : 0.8;
-    const finalTranslateX = isActive 
-      ? (isSwipingLeft ? -progress * 20 : progress * 20)
-      : hasMultipleMeals ? swipeMotion : 0;
+    const finalTranslateX = isActive
+      ? isSwipingLeft
+        ? -progress * 20
+        : progress * 20
+      : hasMultipleMeals
+        ? swipeMotion
+        : 0;
 
     return {
       opacity: withSpring(finalOpacity, { damping: 15 }),
@@ -798,12 +812,12 @@ export default function JournalPage() {
   const getArrowDirection = () => {
     const hasNextMeal = currentMealIndex < meals.length - 1;
     const hasPreviousMeal = currentMealIndex > 0;
-    
+
     // If swiping, show arrow in swipe direction
     if (Math.abs(translateX.value) > 20) {
       return translateX.value < 0 ? 'right' : 'left';
     }
-    
+
     // When idle, show right if can go next, otherwise left
     return hasNextMeal ? 'right' : hasPreviousMeal ? 'left' : 'right';
   };
@@ -973,49 +987,51 @@ export default function JournalPage() {
           <GestureDetector gesture={panGesture}>
             <Animated.View className="relative pt-6" style={{ minHeight: 400 }}>
               {/* Single Right-Side Indicator - Arrow direction changes based on swipe */}
-              {meals.length > 1 && meals[currentMealIndex]?.items && meals[currentMealIndex].items.length > 0 && (
-                <Animated.View
-                  style={[
-                    singleIndicatorStyle,
-                    {
-                      position: 'absolute',
-                      right: 20,
-                      top: 180,
-                      zIndex: 10,
-                      width: 60,
-                      height: 60,
-                      borderRadius: 30,
-                      backgroundColor: theme.primary,
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      shadowColor: theme.primary,
-                      shadowOffset: { width: 0, height: 4 },
-                      shadowOpacity: 0.5,
-                      shadowRadius: 12,
-                      elevation: 8,
-                    },
-                  ]}>
-                  <TouchableOpacity
-                    activeOpacity={0.8}
-                    onPress={() => {
-                      setShowSwipeReminder(true);
-                      setTimeout(() => setShowSwipeReminder(false), 2500);
-                    }}
-                    style={{
-                      width: 60,
-                      height: 60,
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                    }}>
-                    {/* Arrow direction based on navigation state */}
-                    {currentMealIndex < meals.length - 1 ? (
-                      <ChevronRight size={32} color="white" strokeWidth={3} />
-                    ) : (
-                      <ChevronLeft size={32} color="white" strokeWidth={3} />
-                    )}
-                  </TouchableOpacity>
-                </Animated.View>
-              )}
+              {meals.length > 1 &&
+                meals[currentMealIndex]?.items &&
+                meals[currentMealIndex].items.length > 0 && (
+                  <Animated.View
+                    style={[
+                      singleIndicatorStyle,
+                      {
+                        position: 'absolute',
+                        right: 20,
+                        top: 180,
+                        zIndex: 10,
+                        width: 60,
+                        height: 60,
+                        borderRadius: 30,
+                        backgroundColor: theme.primary,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        shadowColor: theme.primary,
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.5,
+                        shadowRadius: 12,
+                        elevation: 8,
+                      },
+                    ]}>
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      onPress={() => {
+                        setShowSwipeReminder(true);
+                        setTimeout(() => setShowSwipeReminder(false), 2500);
+                      }}
+                      style={{
+                        width: 60,
+                        height: 60,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                      }}>
+                      {/* Arrow direction based on navigation state */}
+                      {currentMealIndex < meals.length - 1 ? (
+                        <ChevronRight size={32} color="white" strokeWidth={3} />
+                      ) : (
+                        <ChevronLeft size={32} color="white" strokeWidth={3} />
+                      )}
+                    </TouchableOpacity>
+                  </Animated.View>
+                )}
 
               {/* Meal Content with Animation */}
               <Animated.View style={animatedStyle}>
@@ -1284,8 +1300,7 @@ export default function JournalPage() {
                     paddingHorizontal: 16,
                     paddingVertical: 8,
                     borderRadius: 20,
-                    backgroundColor:
-                      selectedCuisine === cuisine.id ? theme.primary : '#2C2D32',
+                    backgroundColor: selectedCuisine === cuisine.id ? theme.primary : '#2C2D32',
                     borderWidth: 1,
                     borderColor: selectedCuisine === cuisine.id ? theme.primary : 'transparent',
                   }}>
@@ -1341,9 +1356,7 @@ export default function JournalPage() {
                       {recipe.readyInMinutes && (
                         <>
                           <Text className="text-gray-600">•</Text>
-                          <Text className="text-xs text-gray-500">
-                            {recipe.readyInMinutes} min
-                          </Text>
+                          <Text className="text-xs text-gray-500">{recipe.readyInMinutes} min</Text>
                         </>
                       )}
                     </View>
