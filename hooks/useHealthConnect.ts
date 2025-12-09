@@ -1403,10 +1403,29 @@ export const getCurrentSleep = async () => {
       return null;
     }
 
-    // Sort by wake time descending and get the most recent
-    const sortedSleep = sleepSessions.sort(
-      (a, b) => new Date(b.wakeTime).getTime() - new Date(a.wakeTime).getTime()
+    // Filter out invalid sleep sessions (duration > 24 hours or negative)
+    const validSessions = sleepSessions.filter((session) => {
+      const hours = session.duration / 60;
+      return hours > 0 && hours <= 24;
+    });
+
+    console.log('✅ Valid sleep sessions (filtered):', validSessions.length, 'out of', sleepSessions.length);
+
+    if (validSessions.length === 0) {
+      console.log('⚠️ No valid sleep sessions found');
+      return null;
+    }
+
+    // Sort by BEDTIME (not wake time) descending to get the most recent sleep session
+    const sortedSleep = validSessions.sort(
+      (a, b) => new Date(b.bedtime).getTime() - new Date(a.bedtime).getTime()
     );
+
+    console.log('📊 Most recent valid sleep:', {
+      bedtime: sortedSleep[0].bedtime,
+      wakeTime: sortedSleep[0].wakeTime,
+      duration: `${Math.floor(sortedSleep[0].duration / 60)}h ${sortedSleep[0].duration % 60}m`,
+    });
 
     return sortedSleep[0];
   } catch (error) {

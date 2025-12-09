@@ -12,7 +12,7 @@ import {
   ActivityIndicator,
   Switch,
 } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Moon, Sun, Bed, AlertCircle, Plus, TrendingUp, Activity, Timer, Bell } from 'lucide-react-native';
 import { LineChart } from 'react-native-chart-kit';
@@ -100,14 +100,113 @@ export default function SleepTrackerPage() {
   
   const [bedtime, setBedtime] = useState<Date>(getDefaultBedtime());
   const [wakeTime, setWakeTime] = useState<Date>(getDefaultWakeTime());
-  const [showBedtimePicker, setShowBedtimePicker] = useState(false);
-  const [showWakeTimePicker, setShowWakeTimePicker] = useState(false);
+
+  // Function to show bedtime picker (Android-specific)
+  const showBedtimePickerAndroid = () => {
+    DateTimePickerAndroid.open({
+      value: bedtime,
+      mode: 'date',
+      is24Hour: true,
+      onChange: (event, selectedDate) => {
+        if (event.type === 'set' && selectedDate) {
+          // After date is selected, show time picker
+          DateTimePickerAndroid.open({
+            value: bedtime,
+            mode: 'time',
+            is24Hour: true,
+            onChange: (timeEvent, selectedTime) => {
+              if (timeEvent.type === 'set' && selectedTime) {
+                // Combine date and time
+                const newBedtime = new Date(selectedDate);
+                newBedtime.setHours(selectedTime.getHours(), selectedTime.getMinutes(), 0, 0);
+                setBedtime(newBedtime);
+              }
+            },
+          });
+        }
+      },
+    });
+  };
+
+  // Function to show wake time picker (Android-specific)
+  const showWakeTimePickerAndroid = () => {
+    DateTimePickerAndroid.open({
+      value: wakeTime,
+      mode: 'date',
+      is24Hour: true,
+      onChange: (event, selectedDate) => {
+        if (event.type === 'set' && selectedDate) {
+          // After date is selected, show time picker
+          DateTimePickerAndroid.open({
+            value: wakeTime,
+            mode: 'time',
+            is24Hour: true,
+            onChange: (timeEvent, selectedTime) => {
+              if (timeEvent.type === 'set' && selectedTime) {
+                // Combine date and time
+                const newWakeTime = new Date(selectedDate);
+                newWakeTime.setHours(selectedTime.getHours(), selectedTime.getMinutes(), 0, 0);
+                setWakeTime(newWakeTime);
+              }
+            },
+          });
+        }
+      },
+    });
+  };
   const [showReminderSettings, setShowReminderSettings] = useState(false);
   const [reminderEnabled, setReminderEnabled] = useState(false);
   const [bedtimeReminder, setBedtimeReminder] = useState('21:30');
   const [wakeTimeReminder, setWakeTimeReminder] = useState('06:00');
   
   const starScale = useSharedValue(1);
+
+  // Function to delete all sleep data (for testing/cleanup)
+  const clearAllSleepData = async () => {
+    try {
+      Alert.alert(
+        'Clear Sleep Data',
+        'This will delete ALL sleep records from Health Connect. This action cannot be undone. Continue?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Clear All',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                const { deleteRecordsByTimeRange } = require('react-native-health-connect');
+                
+                console.log('🗑️ Clearing all sleep data...');
+                
+                // Delete sleep data from last year to now
+                const now = new Date();
+                const oneYearAgo = new Date();
+                oneYearAgo.setFullYear(now.getFullYear() - 1);
+                
+                await deleteRecordsByTimeRange(
+                  'SleepSession',
+                  oneYearAgo.toISOString(),
+                  now.toISOString()
+                );
+                
+                console.log('✅ All sleep data cleared');
+                
+                // Refresh the display
+                await fetchSleepData();
+                
+                Alert.alert('Success', 'All sleep data has been cleared from Health Connect');
+              } catch (error) {
+                console.error('❌ Error clearing sleep data:', error);
+                Alert.alert('Error', 'Failed to clear sleep data: ' + (error instanceof Error ? error.message : String(error)));
+              }
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      console.error('Error in clearAllSleepData:', error);
+    }
+  };
 
   // Health Connect setup for Sleep
   const healthConnect = useHealthConnect([
@@ -145,15 +244,35 @@ export default function SleepTrackerPage() {
       const oneMonthAgo = new Date();
       oneMonthAgo.setMonth(now.getMonth() - 1);
 
+      console.log('🔄 Fetching fresh sleep data from Health Connect...');
+
       // Fetch sleep history
       const sleeps = await readSleepData(oneMonthAgo.toISOString(), now.toISOString());
+      console.log(`📊 Total sleep records fetched: ${sleeps.length}`);
+      
+      // Log each record for debugging
+      sleeps.forEach((sleep, index) => {
+        const hours = Math.floor(sleep.duration / 60);
+        const mins = sleep.duration % 60;
+        const isValid = hours > 0 && hours <= 24;
+        console.log(`  ${index + 1}. ${isValid ? '✅' : '❌'} ${hours}h ${mins}m (${new Date(sleep.bedtime).toLocaleString()} → ${new Date(sleep.wakeTime).toLocaleString()})`);
+      });
+      
       setSleepHistory(sleeps);
 
-      // Get current sleep (most recent)
+      // Get current sleep (most recent valid one)
       const current = await getCurrentSleep();
       setCurrentSleep(current);
       
-      console.log('😴 Sleep data loaded:', { current, historyCount: sleeps.length });
+      if (current) {
+        console.log('✅ Current sleep set:', {
+          bedtime: new Date(current.bedtime).toLocaleString(),
+          wakeTime: new Date(current.wakeTime).toLocaleString(),
+          duration: `${Math.floor(current.duration / 60)}h ${current.duration % 60}m`
+        });
+      } else {
+        console.log('⚠️ No valid current sleep found');
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       if (!errorMessage.includes('lacks the following permissions')) {
@@ -225,6 +344,17 @@ export default function SleepTrackerPage() {
         [{ text: 'OK' }]
       );
     }
+  };
+
+  // Handle refresh button
+  const handleRefresh = async () => {
+    console.log('🔄 Manual refresh triggered');
+    await fetchSleepData();
+    Alert.alert(
+      'Refreshed',
+      'Sleep data reloaded from Health Connect.\n\nNote: Google Fit may take 1-2 minutes to sync new data.',
+      [{ text: 'OK' }]
+    );
   };
 
   // Schedule sleep reminders
@@ -378,8 +508,15 @@ export default function SleepTrackerPage() {
 
   // Calculate average sleep from history
   const getAverageSleep = () => {
-    if (sleepHistory.length === 0) return '0h 0m';
-    const avgMinutes = sleepHistory.reduce((sum, s) => sum + s.duration, 0) / sleepHistory.length;
+    // Filter out invalid sleep sessions
+    const validSleep = sleepHistory.filter((item) => {
+      const hours = item.duration / 60;
+      return hours > 0 && hours <= 24;
+    });
+
+    if (validSleep.length === 0) return '0h 0m';
+    
+    const avgMinutes = validSleep.reduce((sum, s) => sum + s.duration, 0) / validSleep.length;
     const hours = Math.floor(avgMinutes / 60);
     const minutes = Math.round(avgMinutes % 60);
     return `${hours}h ${minutes}m`;
@@ -400,14 +537,20 @@ export default function SleepTrackerPage() {
 
   // Prepare chart data from sleep history
   const prepareChartData = () => {
-    if (sleepHistory.length === 0) {
+    // Filter out invalid sleep sessions (duration > 24 hours)
+    const validSleep = sleepHistory.filter((item) => {
+      const hours = item.duration / 60;
+      return hours > 0 && hours <= 24;
+    });
+
+    if (validSleep.length === 0) {
       return {
         labels: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
         datasets: [{ data: [0], color: () => theme.primary, strokeWidth: 2 }]
       };
     }
 
-    const last7Days = sleepHistory.slice(-7);
+    const last7Days = validSleep.slice(-7);
     const labels = last7Days.map(item => {
       const date = new Date(item.bedtime);
       return date.toLocaleDateString('en-US', { weekday: 'short' });
@@ -532,6 +675,12 @@ export default function SleepTrackerPage() {
         </TouchableOpacity>
         <Text className="text-xl font-bold text-white">Sleep Tracker</Text>
         <View className="flex-row items-center space-x-2">
+          <TouchableOpacity onPress={handleRefresh} disabled={isLoadingData}>
+            <Activity 
+              size={24} 
+              color={isLoadingData ? theme.primary : 'white'} 
+            />
+          </TouchableOpacity>
           <TouchableOpacity onPress={() => setShowReminderSettings(!showReminderSettings)}>
             <Bell size={24} color={reminderEnabled ? theme.primary : 'white'} />
           </TouchableOpacity>
@@ -540,6 +689,20 @@ export default function SleepTrackerPage() {
           </TouchableOpacity>
         </View>
       </Animated.View>
+
+      {/* Debug: Clear button and info */}
+      <View className="mx-6 mt-2">
+        <TouchableOpacity
+          onPress={clearAllSleepData}
+          className="rounded-xl px-4 py-2"
+          style={{ backgroundColor: '#ff4444' }}
+        >
+          <Text className="text-center text-xs text-white">🗑️ Clear All Sleep Data (Debug)</Text>
+        </TouchableOpacity>
+        <Text className="mt-1 text-center text-xs text-gray-500">
+          {sleepHistory.length} total records • {sleepHistory.filter(s => s.duration / 60 <= 24).length} valid
+        </Text>
+      </View>
 
       {/* Sleep Reminder Settings */}
       {showReminderSettings && (
@@ -610,7 +773,7 @@ export default function SleepTrackerPage() {
           <View className="mb-4">
             <Text className="mb-2 text-sm text-gray-400">Went to bed</Text>
             <TouchableOpacity
-              onPress={() => setShowBedtimePicker(true)}
+              onPress={showBedtimePickerAndroid}
               className="flex-row items-center justify-between rounded-xl px-4 py-3"
               style={{ backgroundColor: theme.backgroundDark }}
             >
@@ -624,7 +787,7 @@ export default function SleepTrackerPage() {
                   : bedtime.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </Text>
               <Text className="text-white">
-                {bedtime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                {bedtime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
               </Text>
             </TouchableOpacity>
           </View>
@@ -633,7 +796,7 @@ export default function SleepTrackerPage() {
           <View className="mb-4">
             <Text className="mb-2 text-sm text-gray-400">Woke up</Text>
             <TouchableOpacity
-              onPress={() => setShowWakeTimePicker(true)}
+              onPress={showWakeTimePickerAndroid}
               className="flex-row items-center justify-between rounded-xl px-4 py-3"
               style={{ backgroundColor: theme.backgroundDark }}
             >
@@ -647,7 +810,7 @@ export default function SleepTrackerPage() {
                   : wakeTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </Text>
               <Text className="text-white">
-                {wakeTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                {wakeTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
               </Text>
             </TouchableOpacity>
           </View>
@@ -660,36 +823,6 @@ export default function SleepTrackerPage() {
             <Text className="text-center font-semibold text-[#1A1B1E]">Add Sleep</Text>
           </TouchableOpacity>
         </Animated.View>
-      )}
-      
-      {/* Date/Time Pickers */}
-      {showBedtimePicker && (
-        <DateTimePicker
-          value={bedtime}
-          mode="datetime"
-          is24Hour={true}
-          display="default"
-          onChange={(event, selectedDate) => {
-            setShowBedtimePicker(false);
-            if (selectedDate) {
-              setBedtime(selectedDate);
-            }
-          }}
-        />
-      )}
-      {showWakeTimePicker && (
-        <DateTimePicker
-          value={wakeTime}
-          mode="datetime"
-          is24Hour={true}
-          display="default"
-          onChange={(event, selectedDate) => {
-            setShowWakeTimePicker(false);
-            if (selectedDate) {
-              setWakeTime(selectedDate);
-            }
-          }}
-        />
       )}
 
       <ScrollView className="flex-1">
