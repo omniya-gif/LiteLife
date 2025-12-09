@@ -7,6 +7,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   owner: 'hass12',
   scheme: 'litelife',
   plugins: [
+    './androidManifestPlugin.js',
     'expo-health-connect',
     [
       'expo-image-picker',
