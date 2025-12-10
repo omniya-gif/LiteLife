@@ -154,16 +154,6 @@ export default function BMICalculator() {
             </View>
           </View>
         </Animated.View>
-
-        <Animated.View entering={FadeInUp.delay(500)} className="p-6">
-          <TouchableOpacity
-            className="w-full rounded-xl py-4"
-            style={{ backgroundColor: theme.primary }}
-            onPress={() => {
-            }}>
-            <Text className="text-center text-lg font-semibold text-white">Save to History</Text>
-          </TouchableOpacity>
-        </Animated.View>
       </View>
     </SafeAreaView>
   );
