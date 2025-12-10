@@ -69,30 +69,48 @@ export default function WeightTrackerPage() {
       // Fetch weight history (filtered by current user)
       const weights = await readWeightData(sixMonthsAgo.toISOString(), now.toISOString(), user?.email);
       
-      // If no user data exists and we have onboarding current_weight, add it as initial entry
-      if (weights.length === 0 && onboarding?.current_weight && onboarding?.updated_at) {
-        console.log('⚖️ No existing weight data for user. Adding initial weight from onboarding:', onboarding.current_weight);
-        try {
-          // Use the onboarding update time as the initial weight entry timestamp
-          const onboardingDate = new Date(onboarding.updated_at);
-          await writeWeightData(onboarding.current_weight, user?.email, onboardingDate);
-          
-          // Re-fetch to get the newly added weight
-          const updatedWeights = await readWeightData(sixMonthsAgo.toISOString(), now.toISOString(), user?.email);
-          setWeightHistory(updatedWeights);
-          
-          const current = await getCurrentWeight();
+      // Check if we need to sync onboarding weight with Health Connect
+      if (onboarding?.current_weight && onboarding?.updated_at) {
+        const onboardingDate = new Date(onboarding.updated_at);
+        
+        // Filter out any weights that are OLDER than the onboarding date
+        // This removes outdated baseline weights from previous onboarding sessions
+        const recentWeights = weights.filter(w => new Date(w.date) >= onboardingDate);
+        
+        // Check if onboarding weight already exists
+        const hasOnboardingWeight = recentWeights.some(w => 
+          Math.abs(w.weight - onboarding.current_weight) < 0.1 && 
+          Math.abs(new Date(w.date).getTime() - onboardingDate.getTime()) < 5000
+        );
+        
+        if (!hasOnboardingWeight) {
+          console.log('⚖️ Adding onboarding weight to Health Connect:', onboarding.current_weight);
+          try {
+            await writeWeightData(onboarding.current_weight, user?.email, onboardingDate);
+            
+            // Re-fetch and filter again
+            const allWeights = await readWeightData(sixMonthsAgo.toISOString(), now.toISOString(), user?.email);
+            const filteredWeights = allWeights.filter(w => new Date(w.date) >= onboardingDate);
+            
+            setWeightHistory(filteredWeights);
+            const current = await getCurrentWeight(user?.email);
+            setCurrentWeight(current);
+            console.log('⚖️ Onboarding weight added successfully:', current);
+          } catch (writeError) {
+            console.error('⚖️ Error adding onboarding weight:', writeError);
+            setCurrentWeight(onboarding.current_weight);
+          }
+        } else {
+          // Use filtered weight data (only from onboarding date forward)
+          setWeightHistory(recentWeights);
+          const current = await getCurrentWeight(user?.email);
           setCurrentWeight(current);
-          console.log('⚖️ Initial weight added successfully:', current);
-        } catch (writeError) {
-          console.error('⚖️ Error adding initial weight:', writeError);
-          // If write fails, still show the onboarding weight
-          setCurrentWeight(onboarding.current_weight);
+          console.log('⚖️ Weight data loaded for user:', { current, historyCount: recentWeights.length });
         }
       } else {
-        // User's weight data exists
+        // No onboarding data, just use Health Connect data
         setWeightHistory(weights);
-        const current = await getCurrentWeight();
+        const current = await getCurrentWeight(user?.email);
         setCurrentWeight(current);
         console.log('⚖️ Weight data loaded for user:', { current, historyCount: weights.length });
       }

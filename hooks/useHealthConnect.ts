@@ -1204,13 +1204,13 @@ export const readWeightData = async (startTime: string, endTime: string, userEma
 };
 
 // Helper function to get the most recent weight
-export const getCurrentWeight = async () => {
+export const getCurrentWeight = async (userEmail?: string) => {
   try {
     const now = new Date();
     const oneYearAgo = new Date();
     oneYearAgo.setFullYear(now.getFullYear() - 1);
 
-    const weights = await readWeightData(oneYearAgo.toISOString(), now.toISOString());
+    const weights = await readWeightData(oneYearAgo.toISOString(), now.toISOString(), userEmail);
 
     if (weights.length === 0) {
       return null;
