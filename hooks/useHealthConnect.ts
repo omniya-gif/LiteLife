@@ -470,7 +470,7 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
   const handleNutritionPermissionGranted = async (userEmail: string): Promise<void> => {
     try {
       console.log('🔍 Setting Health Connect marker for nutrition...');
-      
+
       // Simply set the marker for the current user
       // Each user's nutrition data persists on device, filtered by clientRecordId during reads
       await setHealthConnectMarker(userEmail, false);
@@ -640,7 +640,7 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
   ): Promise<void> => {
     try {
       console.log(`🔍 Setting Health Connect marker for ${displayName}...`);
-      
+
       // Simply set the marker for the current user
       // Each user's data persists on device, filtered by clientRecordId during reads
       await setHealthConnectMarker(userEmail, false);
@@ -857,9 +857,20 @@ export const readNutritionData = async (startTime: string, endTime: string) => {
 };
 
 // Helper function to read macronutrient data (calories, protein, fat, carbs, sugar)
-export const readMacronutrientData = async (startTime: string, endTime: string, userEmail?: string) => {
+export const readMacronutrientData = async (
+  startTime: string,
+  endTime: string,
+  userEmail?: string
+) => {
   try {
-    console.log('🥗 Reading macronutrient data from', startTime, 'to', endTime, 'for user:', userEmail);
+    console.log(
+      '🥗 Reading macronutrient data from',
+      startTime,
+      'to',
+      endTime,
+      'for user:',
+      userEmail
+    );
     const timeRangeFilter = {
       operator: 'between' as const,
       startTime,
@@ -898,7 +909,9 @@ export const readMacronutrientData = async (startTime: string, endTime: string, 
         // Match records that were created with this user's email in clientRecordId
         return clientRecordId.includes(userEmail) || !clientRecordId; // Include old records without clientRecordId for backward compatibility
       });
-      console.log(`🥗 Filtered to ${filteredRecords.length} nutrition records for user ${userEmail}`);
+      console.log(
+        `🥗 Filtered to ${filteredRecords.length} nutrition records for user ${userEmail}`
+      );
     }
 
     const macros = filteredRecords.reduce(
@@ -935,9 +948,20 @@ export const readMacronutrientData = async (startTime: string, endTime: string, 
 };
 
 // Helper function to read calories by meal type
-export const readCaloriesByMealType = async (startTime: string, endTime: string, userEmail?: string) => {
+export const readCaloriesByMealType = async (
+  startTime: string,
+  endTime: string,
+  userEmail?: string
+) => {
   try {
-    console.log('🍽️ Reading calories by meal type from', startTime, 'to', endTime, 'for user:', userEmail);
+    console.log(
+      '🍽️ Reading calories by meal type from',
+      startTime,
+      'to',
+      endTime,
+      'for user:',
+      userEmail
+    );
     const timeRangeFilter = {
       operator: 'between' as const,
       startTime,
@@ -957,9 +981,9 @@ export const readCaloriesByMealType = async (startTime: string, endTime: string,
     }
 
     const nutritionRecords = await readRecords('Nutrition', { timeRangeFilter });
-    
+
     console.log('🍽️ Raw nutrition records count:', nutritionRecords.records?.length || 0);
-    
+
     // DEBUG: Log first record's metadata to see structure
     if (nutritionRecords.records && nutritionRecords.records.length > 0) {
       const firstRecord = nutritionRecords.records[0] as any;
@@ -975,26 +999,28 @@ export const readCaloriesByMealType = async (startTime: string, endTime: string,
         const clientRecordId = record.metadata?.clientRecordId || '';
         const isUserRecord = clientRecordId.includes(userEmail);
         const isLegacyRecord = !clientRecordId; // Old records without user tagging
-        
+
         // Log each record for debugging
         console.log(`📝 Record: ${record.name || 'unnamed'}`);
         console.log(`   clientRecordId: ${clientRecordId || 'NONE (legacy)'}`);
         console.log(`   isUserRecord: ${isUserRecord}, isLegacyRecord: ${isLegacyRecord}`);
-        
+
         if (clientRecordId && !isUserRecord) {
           console.log(`   🚫 FILTERED OUT - belongs to different user`);
           return false;
         }
-        
+
         if (isLegacyRecord) {
           console.log(`   ⚠️ INCLUDED - legacy record without user tag`);
         } else {
           console.log(`   ✅ INCLUDED - matches current user`);
         }
-        
+
         return isUserRecord || isLegacyRecord;
       });
-      console.log(`🍽️ Filtered nutrition records: ${beforeFilterCount} total → ${filteredRecords.length} for user ${userEmail}`);
+      console.log(
+        `🍽️ Filtered nutrition records: ${beforeFilterCount} total → ${filteredRecords.length} for user ${userEmail}`
+      );
     }
 
     const mealCalories = {
@@ -1040,9 +1066,21 @@ export const readCaloriesByMealType = async (startTime: string, endTime: string,
 };
 
 // Helper function to read actual meals from Health Connect by meal type
-export const readMealsByType = async (startTime: string, endTime: string, mealType: number, userEmail?: string) => {
+export const readMealsByType = async (
+  startTime: string,
+  endTime: string,
+  mealType: number,
+  userEmail?: string
+) => {
   try {
-    console.log(`🍽️ Reading ${mealType} meals from`, startTime, 'to', endTime, 'for user:', userEmail);
+    console.log(
+      `🍽️ Reading ${mealType} meals from`,
+      startTime,
+      'to',
+      endTime,
+      'for user:',
+      userEmail
+    );
     const timeRangeFilter = {
       operator: 'between' as const,
       startTime,
@@ -1080,14 +1118,14 @@ export const readMealsByType = async (startTime: string, endTime: string, mealTy
       .filter((record) => {
         const recordMealType = typeof record.mealType === 'number' ? record.mealType : 0;
         const mealTypeMatch = recordMealType === mealType;
-        
+
         if (!mealTypeMatch) return false;
-        
+
         if (userEmail) {
           const clientRecordId = record.metadata?.clientRecordId || '';
           return clientRecordId.includes(userEmail) || !clientRecordId;
         }
-        
+
         return true;
       })
       .map((record) => {
@@ -1248,14 +1286,25 @@ export const getCurrentWeight = async () => {
 };
 
 // Helper function to write weight data to Health Connect
-export const writeWeightData = async (weightInKg: number, userEmail?: string, time?: string | Date) => {
+export const writeWeightData = async (
+  weightInKg: number,
+  userEmail?: string,
+  time?: string | Date
+) => {
   try {
     const { insertRecords } = require('react-native-health-connect');
 
     // Convert time to ISO string if it's a Date object, otherwise use provided string or current time
-    const recordTime = time instanceof Date ? time.toISOString() : (time || new Date().toISOString());
+    const recordTime = time instanceof Date ? time.toISOString() : time || new Date().toISOString();
 
-    console.log('⚖️ Writing weight to Health Connect:', weightInKg, 'kg at', recordTime, 'for user:', userEmail);
+    console.log(
+      '⚖️ Writing weight to Health Connect:',
+      weightInKg,
+      'kg at',
+      recordTime,
+      'for user:',
+      userEmail
+    );
 
     const weightRecord = {
       recordType: 'Weight' as const,
@@ -1264,9 +1313,11 @@ export const writeWeightData = async (weightInKg: number, userEmail?: string, ti
         unit: 'kilograms' as const,
       },
       time: recordTime,
-      metadata: userEmail ? {
-        clientRecordId: `weight_${userEmail}_${recordTime}`,
-      } : undefined,
+      metadata: userEmail
+        ? {
+            clientRecordId: `weight_${userEmail}_${recordTime}`,
+          }
+        : undefined,
     };
 
     const result = await insertRecords([weightRecord]);
@@ -1344,7 +1395,12 @@ export const getCurrentSleep = async () => {
       return hours > 0 && hours <= 24;
     });
 
-    console.log('✅ Valid sleep sessions (filtered):', validSessions.length, 'out of', sleepSessions.length);
+    console.log(
+      '✅ Valid sleep sessions (filtered):',
+      validSessions.length,
+      'out of',
+      sleepSessions.length
+    );
 
     if (validSessions.length === 0) {
       console.log('⚠️ No valid sleep sessions found');
@@ -1377,22 +1433,22 @@ export const writeSleepData = async (startTime: string, endTime: string) => {
     console.log('\n============ WRITING SLEEP TO HEALTH CONNECT ============');
     console.log('📥 Input startTime:', startTime);
     console.log('📥 Input endTime:', endTime);
-    
+
     // Validate times
     const start = new Date(startTime);
     const end = new Date(endTime);
     const durationMs = end.getTime() - start.getTime();
     const durationHours = durationMs / (1000 * 60 * 60);
-    
+
     console.log('⏰ Start Date:', start.toString());
     console.log('⏰ End Date:', end.toString());
     console.log('⏱️ Duration:', durationHours.toFixed(2), 'hours');
-    
+
     if (durationMs <= 0) {
       console.error('❌ Invalid duration: End time must be after start time');
       throw new Error('End time must be after start time');
     }
-    
+
     if (durationHours > 24) {
       console.warn('⚠️ WARNING: Sleep duration is more than 24 hours!');
     }
@@ -1402,17 +1458,17 @@ export const writeSleepData = async (startTime: string, endTime: string) => {
       startTime,
       endTime,
     };
-    
+
     console.log('📝 Sleep record to insert:', JSON.stringify(sleepRecord, null, 2));
     console.log('🔄 Calling insertRecords...');
 
     const result = await insertRecords([sleepRecord]);
-    
+
     console.log('✅ insertRecords result:', JSON.stringify(result, null, 2));
     console.log('✅ Sleep successfully written to Health Connect!');
     console.log('👉 You should now see this in Google Fit app');
     console.log('============ WRITE COMPLETE ============\n');
-    
+
     return true;
   } catch (error) {
     console.error('\n❌ ========== ERROR WRITING SLEEP ==========');

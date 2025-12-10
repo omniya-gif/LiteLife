@@ -50,6 +50,7 @@ import Animated, {
   SlideOutDown,
 } from 'react-native-reanimated';
 
+import { useAuth } from '../../../hooks/useAuth';
 import {
   useHealthConnect,
   readNutritionData,
@@ -58,7 +59,6 @@ import {
   readMealsByType,
 } from '../../../hooks/useHealthConnect';
 import { useHealthConnectWrite } from '../../../hooks/useHealthConnectWrite';
-import { useAuth } from '../../../hooks/useAuth';
 import { useTheme } from '../../../hooks/useTheme';
 import { searchRecipes, Recipe } from '../../../services/recipeService';
 import { useUserStore } from '../../../stores/userStore';
@@ -92,7 +92,8 @@ export default function JournalPage() {
   const [selectedDateIndex, setSelectedDateIndex] = useState(3); // Middle day (today)
   const [currentMealIndex, setCurrentMealIndex] = useState(0);
   const [dailyCalories, setDailyCalories] = useState<number>(0);
-  const [isLoadingCalories, setIsLoadingCalories] = useState(false);
+  const [isLoadingCalories, setIsLoadingCalories] = useState(true);
+  const [showLoadingSpinner, setShowLoadingSpinner] = useState(true);
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [showAddMealModal, setShowAddMealModal] = useState(false);
   const [showRecipeSearchModal, setShowRecipeSearchModal] = useState(false);
@@ -311,6 +312,8 @@ export default function JournalPage() {
 
       console.log('📔 Journal - Fetching data for user:', user.email);
       setIsLoadingCalories(true);
+      setShowLoadingSpinner(true);
+      
       try {
         const selectedDay = calendarDays[selectedDateIndex];
         const startOfDay = new Date(selectedDay.fullDate);
@@ -416,6 +419,7 @@ export default function JournalPage() {
         console.error('Error fetching daily calories:', error);
       } finally {
         setIsLoadingCalories(false);
+        setShowLoadingSpinner(false);
       }
     };
 
@@ -643,7 +647,7 @@ export default function JournalPage() {
         )}
 
         {/* Show meals from Health Connect or empty state */}
-        {!isSearching && meal.items.length === 0 && (
+        {!isSearching && !isLoadingCalories && meal.items.length === 0 && (
           <View className="items-center justify-center rounded-2xl bg-[#25262B] py-1">
             <LottieView
               source={getLottieSource()}
@@ -954,7 +958,7 @@ export default function JournalPage() {
 
             {/* Calories Display */}
             <View className="mt-2">
-              {isLoadingCalories ? (
+              {showLoadingSpinner ? (
                 <View className="py-4">
                   <ActivityIndicator size="small" color={theme.primary} />
                 </View>
