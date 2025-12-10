@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { HEALTH_SERVICE_ICONS } from '../../../assets/icons/health';
 import { LoadingScreen } from '../../../components/LoadingScreen';
 import { useAuth } from '../../../hooks/useAuth';
-import { useHealthConnect } from '../../../hooks/useHealthConnect';
+import { useHealthConnect, getCurrentWeight } from '../../../hooks/useHealthConnect';
 import { useTheme } from '../../../hooks/useTheme';
 import { useUserStore } from '../../../lib/store/userStore';
 
@@ -25,6 +25,7 @@ export default function ProfilePage() {
   const { profile, onboarding, fetchUserData, isLoading } = useUserStore();
   const theme = useTheme();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [healthConnectWeight, setHealthConnectWeight] = useState<number | null>(null);
 
   // Health Connect setup
   const healthConnect = useHealthConnect([
@@ -40,6 +41,22 @@ export default function ProfilePage() {
       fetchUserData(user.id);
     }
   }, [user?.id]);
+
+  // Fetch current weight from Health Connect
+  useEffect(() => {
+    const fetchWeight = async () => {
+      if (Platform.OS === 'android' && healthConnect.hasPermissions && user?.email) {
+        try {
+          const weight = await getCurrentWeight(user.email);
+          setHealthConnectWeight(weight);
+        } catch (error) {
+          console.error('Error fetching weight from Health Connect:', error);
+        }
+      }
+    };
+    
+    fetchWeight();
+  }, [healthConnect.hasPermissions, user?.email]);
 
   // Don't render profile data if it doesn't match current user
   const isProfileValid = profile?.id === user?.id;
@@ -239,7 +256,7 @@ export default function ProfilePage() {
                 </Text>
                 <View className="mt-2 flex-row items-baseline">
                   <Text className="text-2xl font-bold text-white">
-                    {displayOnboarding?.current_weight || '--'}
+                    {healthConnectWeight ?? displayOnboarding?.current_weight ?? '--'}
                   </Text>
                   <Text className="ml-1 text-gray-400">kg</Text>
                 </View>
