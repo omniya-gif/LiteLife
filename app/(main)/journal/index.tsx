@@ -94,6 +94,7 @@ export default function JournalPage() {
   const [dailyCalories, setDailyCalories] = useState<number>(0);
   const [isLoadingCalories, setIsLoadingCalories] = useState(true);
   const [showLoadingSpinner, setShowLoadingSpinner] = useState(true);
+  const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [showAddMealModal, setShowAddMealModal] = useState(false);
   const [showRecipeSearchModal, setShowRecipeSearchModal] = useState(false);
@@ -129,6 +130,30 @@ export default function JournalPage() {
 
   const { writeMealToHealthConnect, isWriting } = useHealthConnectWrite();
   const { user } = useAuth();
+
+  // Fun loading messages that rotate
+  const loadingMessages = [
+    'Loading... 🍽️',
+    'Hang in there... 🥗',
+    'Fetching your delicious data... 🍕',
+    'Almost there... 🍔',
+    'Cooking up something good... 👨‍🍳',
+    'Just a sec... 🥘',
+  ];
+
+  // Rotate loading messages while loading
+  useEffect(() => {
+    if (!showLoadingSpinner) {
+      setLoadingMessageIndex(0);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setLoadingMessageIndex((prev) => (prev + 1) % loadingMessages.length);
+    }, 1500); // Change message every 1.5 seconds
+
+    return () => clearInterval(interval);
+  }, [showLoadingSpinner]);
 
   // Initialize empty meals - they will be populated from Health Connect
   useEffect(() => {
@@ -297,24 +322,26 @@ export default function JournalPage() {
     setSearchVisible(null);
     setSearchQuery('');
     Alert.alert('Success', `Added "${recipe.title}" to ${mealType} and Health Connect ✅`);
+    
+    // Refetch nutrition data to update the summary
+    fetchDailyCalories();
   };
 
   // Fetch nutrition data for selected date
-  useEffect(() => {
-    const fetchDailyCalories = async () => {
-      if (!healthConnect.hasPermissions) return;
+  const fetchDailyCalories = async () => {
+    if (!healthConnect.hasPermissions) return;
 
-      // Guard against undefined user email
-      if (!user?.email) {
-        console.log('📔 Journal - User email not available, skipping data fetch');
-        return;
-      }
+    // Guard against undefined user email
+    if (!user?.email) {
+      console.log('📔 Journal - User email not available, skipping data fetch');
+      return;
+    }
 
-      console.log('📔 Journal - Fetching data for user:', user.email);
-      setIsLoadingCalories(true);
-      setShowLoadingSpinner(true);
-      
-      try {
+    console.log('📔 Journal - Fetching data for user:', user.email);
+    setIsLoadingCalories(true);
+    setShowLoadingSpinner(true);
+    
+    try {
         const selectedDay = calendarDays[selectedDateIndex];
         const startOfDay = new Date(selectedDay.fullDate);
         startOfDay.setHours(0, 0, 0, 0);
@@ -421,8 +448,10 @@ export default function JournalPage() {
         setIsLoadingCalories(false);
         setShowLoadingSpinner(false);
       }
-    };
+  };
 
+  // Trigger fetch when dependencies change
+  useEffect(() => {
     fetchDailyCalories();
   }, [selectedDateIndex, calendarDays, healthConnect.hasPermissions]);
 
@@ -959,8 +988,18 @@ export default function JournalPage() {
             {/* Calories Display */}
             <View className="mt-2">
               {showLoadingSpinner ? (
-                <View className="py-4">
-                  <ActivityIndicator size="small" color={theme.primary} />
+                <View className="items-center py-4">
+                  <LottieView
+                    source={require('../../../assets/lottie_animations/food.json')}
+                    autoPlay
+                    loop
+                    style={{ width: 100, height: 100 }}
+                  />
+                  <Text 
+                    className="mt-3 text-lg font-bold"
+                    style={{ color: theme.primary }}>
+                    {loadingMessages[loadingMessageIndex]}
+                  </Text>
                 </View>
               ) : (
                 <>
@@ -1005,9 +1044,7 @@ export default function JournalPage() {
           <GestureDetector gesture={panGesture}>
             <Animated.View className="relative pt-6" style={{ minHeight: 400 }}>
               {/* Single Right-Side Indicator - Arrow direction changes based on swipe */}
-              {meals.length > 1 &&
-                meals[currentMealIndex]?.items &&
-                meals[currentMealIndex].items.length > 0 && (
+              {meals.length > 1 && !showLoadingSpinner && (
                   <Animated.View
                     style={[
                       singleIndicatorStyle,
