@@ -1,40 +1,42 @@
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Clock, ChevronRight, Flame, Trophy, Target, Zap } from 'lucide-react-native';
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Image, Platform } from 'react-native';
 import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Header } from '../../../components/home/Header';
 import { BottomNavigation } from '../home/components/BottomNavigation';
+import { useAuth } from '../../../hooks/useAuth';
+import { useHealthConnect, readExerciseSessions } from '../../../hooks/useHealthConnect';
 import { useTheme } from '../../../hooks/useTheme';
 
-const getStats = (theme: any) => [
+const getStats = (workoutCount: number, totalMinutes: number, theme: any) => [
   {
     id: 'completed',
     title: 'Finished',
-    value: '12',
+    value: workoutCount.toString(),
     subtitle: 'Workouts',
     icon: Trophy,
   },
   {
     id: 'inProgress',
     title: 'In Progress',
-    value: '2',
+    value: '0',
     subtitle: 'Active',
     icon: Target,
   },
   {
     id: 'timeSpent',
     title: 'Time Spent',
-    value: '62',
+    value: totalMinutes.toString(),
     subtitle: 'Minutes',
     icon: Clock,
   },
   {
     id: 'caloriesBurned',
     title: 'Calories',
-    value: '847',
+    value: Math.round(totalMinutes * 5).toString(), // Rough estimate: 5 cal/min
     subtitle: 'Burned',
     icon: Flame,
   },
@@ -82,7 +84,47 @@ const workoutTypes = [
 export default function WorkoutsPage() {
   const router = useRouter();
   const theme = useTheme();
-  const stats = getStats(theme);
+  const { user } = useAuth();
+  const [workoutData, setWorkoutData] = useState({ count: 0, totalMinutes: 0 });
+
+  // Health Connect setup for Exercise sessions
+  const healthConnect = useHealthConnect([
+    { accessType: 'read', recordType: 'ExerciseSession' },
+  ]);
+
+  // Fetch workout data from Health Connect
+  const fetchWorkoutData = useCallback(async () => {
+    if (Platform.OS !== 'android' || !healthConnect.hasPermissions || !user?.email) {
+      return;
+    }
+
+    try {
+      const now = new Date();
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(now.getDate() - 30);
+
+      console.log('💪 Fetching workout data for last 30 days...');
+      const data = await readExerciseSessions(
+        thirtyDaysAgo.toISOString(),
+        now.toISOString(),
+        user.email
+      );
+
+      setWorkoutData(data);
+      console.log('💪 Workout data loaded:', data);
+    } catch (error) {
+      console.error('Error fetching workout data:', error);
+    }
+  }, [healthConnect.hasPermissions, user?.email]);
+
+  // Refetch data when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchWorkoutData();
+    }, [fetchWorkoutData])
+  );
+
+  const stats = getStats(workoutData.count, workoutData.totalMinutes, theme);
 
   return (
     <SafeAreaView className="flex-1 bg-[#1A1B1E]">

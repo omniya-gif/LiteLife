@@ -11,13 +11,17 @@ import {
   Modal,
   Pressable,
   useWindowDimensions,
+  Alert,
+  Platform,
 } from 'react-native';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import YoutubePlayer from 'react-native-youtube-iframe';
 
+import { useAuth } from '../../../../hooks/useAuth';
 import { useExerciseDetail } from '../../../../hooks/useExerciseDetail';
 import { useExerciseVideos } from '../../../../hooks/useExerciseVideos';
+import { useHealthConnect, writeExerciseSession } from '../../../../hooks/useHealthConnect';
 import { useTheme } from '../../../../hooks/useTheme';
 
 interface VideoPreview {
@@ -30,10 +34,20 @@ interface VideoPreview {
 export default function ExerciseDetailPage() {
   const router = useRouter();
   const theme = useTheme();
+  const { user } = useAuth();
   const { width } = useWindowDimensions();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [selectedVideo, setSelectedVideo] = useState<VideoPreview | null>(null);
   const [playing, setPlaying] = useState(false);
+  const [isLoggingWorkout, setIsLoggingWorkout] = useState(false);
+  const [showDurationModal, setShowDurationModal] = useState(false);
+  const [selectedDuration, setSelectedDuration] = useState(30);
+
+  // Health Connect setup for Exercise sessions
+  const healthConnect = useHealthConnect([
+    { accessType: 'read', recordType: 'ExerciseSession' },
+    { accessType: 'write', recordType: 'ExerciseSession' },
+  ]);
   
   const {
     exercise,
@@ -200,15 +214,85 @@ export default function ExerciseDetailPage() {
             </View>
           )}
 
+          {/* Duration Selection */}
+          <View className="mt-6">
+            <Text className="mb-3 text-base text-gray-400">Duration</Text>
+            <View className="flex-row flex-wrap gap-2">
+              {[15, 30, 45, 60].map((duration) => (
+                <TouchableOpacity
+                  key={duration}
+                  onPress={() => setSelectedDuration(duration)}
+                  className="rounded-xl px-6 py-3"
+                  style={{
+                    backgroundColor: selectedDuration === duration ? theme.primary : '#25262B',
+                  }}>
+                  <Text
+                    className="font-semibold"
+                    style={{ color: selectedDuration === duration ? 'white' : '#9CA3AF' }}>
+                    {duration} min
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
           {/* Log Workout Button */}
           <TouchableOpacity
-            onPress={() => {
-              // TODO: Phase 4 - Implement workout logging
-              console.log('Log workout for:', exercise.id);
+            onPress={async () => {
+              if (Platform.OS !== 'android') {
+                Alert.alert('Not Available', 'Workout logging is only available on Android devices.');
+                return;
+              }
+
+              if (!healthConnect.hasPermissions) {
+                Alert.alert(
+                  'Permission Required',
+                  'Health Connect permissions are needed to log workouts.',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                      text: 'Grant Permission',
+                      onPress: () => healthConnect.requestHealthPermissions(),
+                    },
+                  ]
+                );
+                return;
+              }
+
+              setIsLoggingWorkout(true);
+              try {
+                console.log('💪 Logging workout:', exercise.name);
+                await writeExerciseSession(
+                  exercise.name,
+                  selectedDuration,
+                  user?.email,
+                  exercise.bodyPart
+                );
+
+                Alert.alert(
+                  'Workout Logged! 🎉',
+                  `${exercise.name} (${selectedDuration} min) has been added to your workout history.`,
+                  [{ text: 'Great!', onPress: () => router.back() }]
+                );
+              } catch (error) {
+                console.error('Error logging workout:', error);
+                Alert.alert(
+                  'Error',
+                  'Failed to log workout. Please try again.',
+                  [{ text: 'OK' }]
+                );
+              } finally {
+                setIsLoggingWorkout(false);
+              }
             }}
+            disabled={isLoggingWorkout}
             className="mt-6 rounded-2xl py-4"
-            style={{ backgroundColor: theme.primary }}>
-            <Text className="text-center text-lg font-bold text-white">Log Workout</Text>
+            style={{ backgroundColor: isLoggingWorkout ? '#6B7280' : theme.primary }}>
+            {isLoggingWorkout ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text className="text-center text-lg font-bold text-white">Log Workout</Text>
+            )}
           </TouchableOpacity>
 
           {/* Similar by Target */}

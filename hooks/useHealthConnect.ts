@@ -1423,3 +1423,128 @@ export const writeSleepData = async (startTime: string, endTime: string) => {
     throw error;
   }
 };
+
+// Helper function to write exercise session data
+export const writeExerciseSession = async (
+  title: string,
+  durationMinutes: number,
+  userEmail?: string,
+  exerciseType?: string
+) => {
+  try {
+    const { insertRecords } = require('react-native-health-connect');
+
+    const now = new Date();
+    const startTime = new Date(now.getTime() - durationMinutes * 60 * 1000).toISOString();
+    const endTime = now.toISOString();
+
+    console.log('💪 Writing exercise session to Health Connect:');
+    console.log('  Title:', title);
+    console.log('  Duration:', durationMinutes, 'minutes');
+    console.log('  Start:', startTime);
+    console.log('  End:', endTime);
+    console.log('  User:', userEmail);
+
+    // Map exercise types to Health Connect exercise types
+    // Default to "strength_training" for calisthenics/dumbbells
+    const exerciseTypeMap: Record<string, number> = {
+      'cardio': 8, // RUNNING
+      'back': 79, // STRENGTH_TRAINING
+      'chest': 79,
+      'upper arms': 79,
+      'lower arms': 79,
+      'shoulders': 79,
+      'upper legs': 79,
+      'lower legs': 79,
+      'waist': 79,
+      'neck': 79,
+    };
+
+    const exerciseTypeValue = exerciseType ? (exerciseTypeMap[exerciseType.toLowerCase()] || 79) : 79;
+
+    const exerciseRecord = {
+      recordType: 'ExerciseSession' as const,
+      startTime,
+      endTime,
+      exerciseType: exerciseTypeValue,
+      title: title || 'Workout',
+      ...(userEmail && {
+        metadata: {
+          clientRecordId: `exercise_${userEmail}_${endTime}`,
+        },
+      }),
+    };
+
+    const result = await insertRecords([exerciseRecord]);
+    console.log('✅ Exercise session written to Health Connect:', result);
+    return true;
+  } catch (error) {
+    console.error('❌ Error writing exercise session:', error);
+    throw error;
+  }
+};
+
+// Helper function to read exercise sessions
+export const readExerciseSessions = async (startTime: string, endTime: string, userEmail?: string) => {
+  try {
+    console.log('💪 Reading exercise sessions from', startTime, 'to', endTime, 'for user:', userEmail);
+    const timeRangeFilter = {
+      operator: 'between' as const,
+      startTime,
+      endTime,
+    };
+
+    interface ExerciseRecord {
+      startTime: string;
+      endTime: string;
+      exerciseType?: number;
+      title?: string;
+      metadata?: {
+        clientRecordId?: string;
+      };
+    }
+
+    const exerciseRecords = await readRecords('ExerciseSession', { timeRangeFilter });
+    console.log('💪 Exercise records fetched:', exerciseRecords.records?.length || 0);
+
+    // Filter records by user if userEmail provided
+    let filteredRecords = exerciseRecords.records as ExerciseRecord[];
+    if (userEmail) {
+      filteredRecords = filteredRecords.filter((record) => {
+        const clientRecordId = record.metadata?.clientRecordId || '';
+        return clientRecordId.includes(userEmail) || !clientRecordId;
+      });
+      console.log(`💪 Filtered to ${filteredRecords.length} records for user ${userEmail}`);
+    }
+
+    // Calculate total duration and count
+    const totalMinutes = filteredRecords.reduce((sum, record) => {
+      const start = new Date(record.startTime).getTime();
+      const end = new Date(record.endTime).getTime();
+      const durationMs = end - start;
+      return sum + Math.round(durationMs / (1000 * 60));
+    }, 0);
+
+    console.log('💪 Total exercise sessions:', filteredRecords.length);
+    console.log('💪 Total duration:', totalMinutes, 'minutes');
+
+    return {
+      count: filteredRecords.length,
+      totalMinutes,
+      sessions: filteredRecords.map(record => ({
+        title: record.title || 'Workout',
+        startTime: record.startTime,
+        endTime: record.endTime,
+        durationMinutes: Math.round((new Date(record.endTime).getTime() - new Date(record.startTime).getTime()) / (1000 * 60)),
+      })),
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('lacks the following permissions')) {
+      console.log('⚠️ No permission to read exercise data, returning empty result');
+      return { count: 0, totalMinutes: 0, sessions: [] };
+    }
+    console.error('❌ Error reading exercise sessions:', error);
+    return { count: 0, totalMinutes: 0, sessions: [] };
+  }
+};
