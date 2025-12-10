@@ -4,11 +4,13 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, SafeAreaView, TextInput } from 'react-native';
 import { insertRecords } from 'react-native-health-connect';
 
+import { useAuth } from '../../../hooks/useAuth';
 import { useTheme } from '../../../hooks/useTheme';
 
 export default function AddHydration() {
   const router = useRouter();
   const theme = useTheme();
+  const { user } = useAuth();
   const params = useLocalSearchParams();
   const prefilledAmount = params.amount ? parseInt(params.amount as string) : 0;
 
@@ -34,6 +36,11 @@ export default function AddHydration() {
           value: waterAmount,
           unit: 'milliliters' as const,
         },
+        ...(user?.email && {
+          metadata: {
+            clientRecordId: `hydration_${user.email}_${time.toISOString()}`,
+          },
+        }),
       };
 
       console.log('💧 Writing hydration to Health Connect:', hydrationRecord);

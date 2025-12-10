@@ -5,6 +5,7 @@ import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'rea
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useAuth } from '../../../hooks/useAuth';
 import { useHealthConnect, readHydrationData } from '../../../hooks/useHealthConnect';
 import { useTheme } from '../../../hooks/useTheme';
 import { useUserStore } from '../../../stores/userStore';
@@ -21,6 +22,7 @@ interface DayData {
 export default function HydrationHistory() {
   const router = useRouter();
   const theme = useTheme();
+  const { user } = useAuth();
   const { onboarding } = useUserStore();
   const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -88,12 +90,18 @@ export default function HydrationHistory() {
       return;
     }
 
+    if (!user?.email) {
+      console.log('⚠️ Cannot fetch hydration history - user email not available yet');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
       const { start, end } = getDateRange();
 
       if (viewMode === 'day') {
-        const amount = await readHydrationData(start.toISOString(), end.toISOString());
+        const amount = await readHydrationData(start.toISOString(), end.toISOString(), user.email);
         setHydrationData([
           {
             date: start,
@@ -115,7 +123,7 @@ export default function HydrationHistory() {
           const dayEnd = new Date(dayStart);
           dayEnd.setHours(23, 59, 59, 999);
 
-          const amount = await readHydrationData(dayStart.toISOString(), dayEnd.toISOString());
+          const amount = await readHydrationData(dayStart.toISOString(), dayEnd.toISOString(), user.email);
           total += amount;
 
           days.push({
@@ -139,7 +147,7 @@ export default function HydrationHistory() {
           const dayStart = new Date(year, month, i, 0, 0, 0, 0);
           const dayEnd = new Date(year, month, i, 23, 59, 59, 999);
 
-          const amount = await readHydrationData(dayStart.toISOString(), dayEnd.toISOString());
+          const amount = await readHydrationData(dayStart.toISOString(), dayEnd.toISOString(), user.email);
           total += amount;
 
           days.push({

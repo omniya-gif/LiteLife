@@ -198,10 +198,11 @@ export const MetricsOverview = () => {
       console.log('🏠 Home - Fetched steps from Health Connect:', totalSteps);
       setSteps(totalSteps);
 
-      // Fetch hydration
+      // Fetch hydration (user-scoped)
       const hydration = await readHydrationData(
         startOfDay.toISOString(),
-        endOfDay.toISOString()
+        endOfDay.toISOString(),
+        user.email
       );
       console.log('🏠 Home - Fetched hydration from Health Connect:', hydration);
       setWater(hydration / 1000); // Convert ml to liters

@@ -548,84 +548,13 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
    */
   const handleHydrationPermissionGranted = async (userEmail: string): Promise<void> => {
     try {
-      console.log('🔍 Checking Health Connect marker for hydration permission...');
-
-      // First check if marker exists and matches
-      const markerMatch = await checkHealthConnectMarkerMatch(userEmail);
-      const marker = await getHealthConnectMarker();
-
-      if (!marker) {
-        // No marker exists - check if there's existing data
-        console.log('📝 No marker found, checking for existing data...');
-        const hasExistingData = await checkExistingHydrationData();
-
-        if (hasExistingData) {
-          // Try to auto-delete first (hydration is usually our own data)
-          console.log('🗑️ Attempting to auto-delete hydration data...');
-          const deleted = await clearHydrationData();
-
-          if (deleted) {
-            // Successfully deleted, set marker
-            await setHealthConnectMarker(userEmail, false);
-            console.log('✅ Hydration data deleted, marker set');
-          } else {
-            // Couldn't delete (might be from other apps)
-            // Show alert to let user decide
-            let shouldOpenSettings = false;
-            await showExistingDataAlert(
-              userEmail,
-              'hydration',
-              async () => {
-                shouldOpenSettings = true;
-              },
-              async () => {
-                console.log('✅ User confirmed to use existing hydration data');
-              }
-            );
-
-            if (shouldOpenSettings) {
-              openHealthConnectDataManagement();
-            }
-          }
-        } else {
-          // No existing data, just set the marker
-          await setHealthConnectMarker(userEmail, false);
-          console.log('✅ No existing hydration data, marker set for new user');
-        }
-      } else if (!markerMatch) {
-        // Marker exists but doesn't match - different user
-        console.log('⚠️ Marker mismatch detected!');
-
-        // Try to auto-delete the previous user's data
-        const deleted = await clearHydrationData();
-
-        if (deleted) {
-          // Successfully deleted, set new marker
-          await setHealthConnectMarker(userEmail, false);
-          console.log('✅ Previous user hydration data deleted, new marker set');
-        } else {
-          // Couldn't delete, show alert
-          let shouldOpenSettings = false;
-          await showHealthConnectMismatchAlert(
-            userEmail,
-            async () => {
-              shouldOpenSettings = true;
-            },
-            async () => {
-              console.log('✅ User confirmed to use previous user hydration data');
-            }
-          );
-
-          if (shouldOpenSettings) {
-            openHealthConnectDataManagement();
-          }
-        }
-      } else {
-        // Marker matches - same user
-        console.log('✅ Marker matches current user, no action needed');
-      }
+      console.log('💧 Hydration permission granted for user:', userEmail);
+      
+      // Just set the marker - no auto-delete, we'll filter by user
+      await setHealthConnectMarker(userEmail, false);
+      console.log('✅ Hydration marker set for user:', userEmail);
     } catch (error) {
-      console.error('❌ Error handling hydration permission marker:', error);
+      console.error('❌ Error in handleHydrationPermissionGranted:', error);
     }
   };
 
@@ -1161,9 +1090,9 @@ export const readMealsByType = async (
 };
 
 // Helper function to read hydration data
-export const readHydrationData = async (startTime: string, endTime: string) => {
+export const readHydrationData = async (startTime: string, endTime: string, userEmail?: string) => {
   try {
-    console.log('💧 Reading hydration data from', startTime, 'to', endTime);
+    console.log('💧 Reading hydration data from', startTime, 'to', endTime, 'for user:', userEmail);
     const timeRangeFilter = {
       operator: 'between' as const,
       startTime,
@@ -1175,16 +1104,30 @@ export const readHydrationData = async (startTime: string, endTime: string) => {
         inLiters: number;
         inMilliliters: number;
       };
+      metadata?: {
+        clientRecordId?: string;
+      };
     }
 
     const hydrationRecords = await readRecords('Hydration', { timeRangeFilter });
-    console.log('💧 Hydration records fetched:', hydrationRecords);
-    console.log('💧 Number of hydration records:', hydrationRecords.records?.length || 0);
+    console.log('💧 Hydration records fetched:', hydrationRecords.records?.length || 0);
 
-    const totalWater = (hydrationRecords.records as HydrationRecord[]).reduce(
+    // Filter records by user if userEmail provided
+    let filteredRecords = hydrationRecords.records as HydrationRecord[];
+    if (userEmail) {
+      const beforeFilterCount = filteredRecords.length;
+      filteredRecords = filteredRecords.filter((record) => {
+        const clientRecordId = record.metadata?.clientRecordId || '';
+        const isUserRecord = clientRecordId.includes(userEmail);
+        const isLegacyRecord = !clientRecordId; // Allow records without clientRecordId
+        return isUserRecord || isLegacyRecord;
+      });
+      console.log(`💧 Filtered from ${beforeFilterCount} to ${filteredRecords.length} records for user ${userEmail}`);
+    }
+
+    const totalWater = filteredRecords.reduce(
       (sum: number, record) => {
         const ml = record.volume?.inMilliliters || 0;
-        console.log('💧 Water from this record:', ml, 'ml');
         return sum + ml;
       },
       0
