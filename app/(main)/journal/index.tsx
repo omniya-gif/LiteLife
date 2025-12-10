@@ -62,6 +62,7 @@ import { useHealthConnectWrite } from '../../../hooks/useHealthConnectWrite';
 import { useTheme } from '../../../hooks/useTheme';
 import { searchRecipes, Recipe } from '../../../services/recipeService';
 import { useUserStore } from '../../../stores/userStore';
+import { LoadingAnimation } from '../../../components/LoadingAnimation';
 
 const { width } = Dimensions.get('window');
 
@@ -94,7 +95,6 @@ export default function JournalPage() {
   const [dailyCalories, setDailyCalories] = useState<number>(0);
   const [isLoadingCalories, setIsLoadingCalories] = useState(true);
   const [showLoadingSpinner, setShowLoadingSpinner] = useState(true);
-  const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [showAddMealModal, setShowAddMealModal] = useState(false);
   const [showRecipeSearchModal, setShowRecipeSearchModal] = useState(false);
@@ -106,6 +106,7 @@ export default function JournalPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Recipe[]>([]);
   const [searching, setSearching] = useState(false);
+  const [addingRecipeId, setAddingRecipeId] = useState<number | null>(null);
   const [expandedMeal, setExpandedMeal] = useState(false);
   const [macronutrients, setMacronutrients] = useState({ protein: 0, fat: 0, carbs: 0 });
   const [mealTypeCalories, setMealTypeCalories] = useState({
@@ -130,30 +131,6 @@ export default function JournalPage() {
 
   const { writeMealToHealthConnect, isWriting } = useHealthConnectWrite();
   const { user } = useAuth();
-
-  // Fun loading messages that rotate
-  const loadingMessages = [
-    'Loading... 🍽️',
-    'Hang in there... 🥗',
-    'Fetching your delicious data... 🍕',
-    'Almost there... 🍔',
-    'Cooking up something good... 👨‍🍳',
-    'Just a sec... 🥘',
-  ];
-
-  // Rotate loading messages while loading
-  useEffect(() => {
-    if (!showLoadingSpinner) {
-      setLoadingMessageIndex(0);
-      return;
-    }
-
-    const interval = setInterval(() => {
-      setLoadingMessageIndex((prev) => (prev + 1) % loadingMessages.length);
-    }, 1500); // Change message every 1.5 seconds
-
-    return () => clearInterval(interval);
-  }, [showLoadingSpinner]);
 
   // Initialize empty meals - they will be populated from Health Connect
   useEffect(() => {
@@ -273,6 +250,8 @@ export default function JournalPage() {
   }, [showRecipeSearchModal, selectedMealType]);
 
   const handleAddRecipeToMeal = async (recipe: Recipe, mealType: string) => {
+    setAddingRecipeId(recipe.id);
+    
     // Write to Health Connect first
     const success = await writeMealToHealthConnect({
       name: recipe.title,
@@ -288,6 +267,7 @@ export default function JournalPage() {
     });
 
     if (!success) {
+      setAddingRecipeId(null);
       Alert.alert('Error', 'Failed to add meal to Health Connect');
       return;
     }
@@ -321,6 +301,7 @@ export default function JournalPage() {
     // Close search
     setSearchVisible(null);
     setSearchQuery('');
+    setAddingRecipeId(null);
     Alert.alert('Success', `Added "${recipe.title}" to ${mealType} and Health Connect ✅`);
     
     // Refetch nutrition data to update the summary
@@ -621,10 +602,14 @@ export default function JournalPage() {
             {searchQuery.length > 0 && (
               <ScrollView className="mt-3 max-h-96">
                 {searching ? (
-                  <View className="items-center py-8">
-                    <ActivityIndicator size="large" color={theme.primary} />
-                    <Text className="mt-2 text-gray-400">Searching recipes...</Text>
-                  </View>
+                  <LoadingAnimation 
+                    messages={[
+                      'Searching recipes... 🔍',
+                      'Finding delicious meals... 🍽️',
+                      'Looking for tasty options... 😋',
+                    ]}
+                    size={80}
+                  />
                 ) : searchResults.length > 0 ? (
                   searchResults.map((recipe) => (
                     <TouchableOpacity
@@ -988,19 +973,7 @@ export default function JournalPage() {
             {/* Calories Display */}
             <View className="mt-2">
               {showLoadingSpinner ? (
-                <View className="items-center py-4">
-                  <LottieView
-                    source={require('../../../assets/lottie_animations/food.json')}
-                    autoPlay
-                    loop
-                    style={{ width: 100, height: 100 }}
-                  />
-                  <Text 
-                    className="mt-3 text-lg font-bold"
-                    style={{ color: theme.primary }}>
-                    {loadingMessages[loadingMessageIndex]}
-                  </Text>
-                </View>
+                <LoadingAnimation />
               ) : (
                 <>
                   <View className="flex-row items-end">
@@ -1375,12 +1348,22 @@ export default function JournalPage() {
           {/* Search Results */}
           <ScrollView className="flex-1 px-6 pt-4">
             {searching ? (
-              <View className="items-center py-12">
-                <ActivityIndicator size="large" color={theme.primary} />
-                <Text className="mt-3 text-gray-400">
-                  {searchQuery ? 'Searching recipes...' : 'Loading popular recipes...'}
-                </Text>
-              </View>
+              <LoadingAnimation 
+                messages={
+                  searchQuery 
+                    ? [
+                        'Searching recipes... 🔍',
+                        'Finding your perfect meal... 🍽️',
+                        'Almost there... 👨‍🍳',
+                      ]
+                    : [
+                        'Loading popular recipes... 🌟',
+                        'Fetching tasty options... 🍕',
+                        'Just a moment... 🥗',
+                      ]
+                }
+                size={100}
+              />
             ) : searchResults.length > 0 ? (
               searchResults.map((recipe) => (
                 <TouchableOpacity
@@ -1419,9 +1402,13 @@ export default function JournalPage() {
                   <View
                     className="ml-2 rounded-xl px-3 py-2"
                     style={{ backgroundColor: `${theme.primary}20` }}>
-                    <Text className="text-sm font-semibold" style={{ color: theme.primary }}>
-                      + Add
-                    </Text>
+                    {addingRecipeId === recipe.id ? (
+                      <ActivityIndicator size="small" color={theme.primary} />
+                    ) : (
+                      <Text className="text-sm font-semibold" style={{ color: theme.primary }}>
+                        + Add
+                      </Text>
+                    )}
                   </View>
                 </TouchableOpacity>
               ))
