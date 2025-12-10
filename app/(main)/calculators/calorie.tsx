@@ -1,6 +1,6 @@
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { ArrowLeft, AlertCircle } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, SafeAreaView, Alert, Platform } from 'react-native';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
 
@@ -131,6 +131,20 @@ export default function CalorieTrackerPage() {
     healthConnect.isChecking,
     user?.email,
   ]);
+
+  // Refetch data when user navigates back to this screen (e.g., after adding meals)
+  useFocusEffect(
+    useCallback(() => {
+      if (
+        Platform.OS === 'android' &&
+        healthConnect.hasPermissions &&
+        user?.email
+      ) {
+        console.log('🔄 Calorie page focused - refetching nutrition data');
+        fetchHealthData();
+      }
+    }, [healthConnect.hasPermissions, user?.email])
+  );
 
   const metrics = [
     {
