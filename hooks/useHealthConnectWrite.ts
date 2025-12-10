@@ -12,6 +12,7 @@ interface MealData {
   mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snack';
   timestamp?: string; // ISO string, defaults to now
   recipeId?: number; // Spoonacular recipe ID for image fetching
+  userEmail?: string; // User email for filtering records by user
 }
 
 export const useHealthConnectWrite = () => {
@@ -77,6 +78,13 @@ export const useHealthConnectWrite = () => {
           : mealData.name;
       }
 
+      // Add metadata with user email for filtering
+      if (mealData.userEmail) {
+        nutritionRecord.metadata = {
+          clientRecordId: `nutrition_${mealData.userEmail}_${startTime}`,
+        };
+      }
+
       console.log('📝 Writing meal to Health Connect:', nutritionRecord);
 
       // Insert the record into Health Connect
@@ -130,7 +138,16 @@ export const useHealthConnectWrite = () => {
         if (meal.fat) {
           record.totalFat = { value: meal.fat, unit: 'grams' };
         }
-        // Note: mealType and name are not supported by Health Connect Nutrition records
+        if (meal.sugar) {
+          record.sugar = { value: meal.sugar, unit: 'grams' };
+        }
+
+        // Add metadata with user email for filtering
+        if (meal.userEmail) {
+          record.metadata = {
+            clientRecordId: `nutrition_${meal.userEmail}_${startTime}`,
+          };
+        }
 
         return record;
       });

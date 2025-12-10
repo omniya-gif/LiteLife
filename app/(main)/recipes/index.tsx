@@ -20,6 +20,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Header } from '../../../components/home/Header';
 import { useHealthConnect } from '../../../hooks/useHealthConnect';
 import { useHealthConnectWrite } from '../../../hooks/useHealthConnectWrite';
+import { useAuth } from '../../../hooks/useAuth';
 import { useRecipeFavorites } from '../../../hooks/useRecipeFavorites';
 import { useTheme } from '../../../hooks/useTheme';
 import { searchRecipes, getFeaturedRecipes, Recipe } from '../../../services/recipeService';
@@ -81,6 +82,7 @@ export default function RecipesPage() {
   ];
   const healthConnect = useHealthConnect(nutritionPermissions);
   const { writeMealToHealthConnect, isWriting } = useHealthConnectWrite();
+  const { user } = useAuth();
 
   // Favorites with Supabase
   const {
@@ -262,6 +264,7 @@ export default function RecipesPage() {
         mealType: selectedMealType as 'breakfast' | 'lunch' | 'dinner' | 'snack',
         timestamp: new Date().toISOString(),
         recipeId: recipe.id,
+        userEmail: user?.email, // For user-scoped filtering
       });
 
       setShowMealTypeModal(false);

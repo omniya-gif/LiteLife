@@ -465,89 +465,18 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
 
   /**
    * Handle Health Connect marker check for nutrition permission
-   * Call this after granting permissions
-   * Unlike steps, nutrition is mostly manually logged by us, so try auto-delete first
+   * Just sets the marker - data filtering happens in read operations via clientRecordId
    */
   const handleNutritionPermissionGranted = async (userEmail: string): Promise<void> => {
     try {
-      console.log('🔍 Checking Health Connect marker for nutrition permission...');
-
-      // First check if marker exists and matches
-      const markerMatch = await checkHealthConnectMarkerMatch(userEmail);
-      const marker = await getHealthConnectMarker();
-
-      if (!marker) {
-        // No marker exists - check if there's existing data
-        console.log('📝 No marker found, checking for existing data...');
-        const hasExistingData = await checkExistingNutritionData();
-
-        if (hasExistingData) {
-          // Try to auto-delete first (nutrition is usually our own data)
-          console.log('🗑️ Attempting to auto-delete nutrition data...');
-          const deleted = await clearNutritionData();
-
-          if (deleted) {
-            // Successfully deleted, set marker
-            await setHealthConnectMarker(userEmail, false);
-            console.log('✅ Nutrition data deleted, marker set');
-          } else {
-            // Couldn't delete (might be from other apps like Google Fit manual entries)
-            // Show alert to let user decide
-            let shouldOpenSettings = false;
-            await showExistingDataAlert(
-              userEmail,
-              'nutrition',
-              async () => {
-                shouldOpenSettings = true;
-              },
-              async () => {
-                console.log('✅ User confirmed to use existing nutrition data');
-              }
-            );
-
-            if (shouldOpenSettings) {
-              openHealthConnectDataManagement();
-            }
-          }
-        } else {
-          // No existing data, just set the marker
-          await setHealthConnectMarker(userEmail, false);
-          console.log('✅ No existing nutrition data, marker set for new user');
-        }
-      } else if (!markerMatch) {
-        // Marker exists but doesn't match - different user
-        console.log('⚠️ Marker mismatch detected!');
-
-        // Try to auto-delete the previous user's data
-        const deleted = await clearNutritionData();
-
-        if (deleted) {
-          // Successfully deleted, set new marker
-          await setHealthConnectMarker(userEmail, false);
-          console.log('✅ Previous user nutrition data deleted, new marker set');
-        } else {
-          // Couldn't delete, show alert
-          let shouldOpenSettings = false;
-          await showHealthConnectMismatchAlert(
-            userEmail,
-            async () => {
-              shouldOpenSettings = true;
-            },
-            async () => {
-              console.log('✅ User confirmed to use previous user nutrition data');
-            }
-          );
-
-          if (shouldOpenSettings) {
-            openHealthConnectDataManagement();
-          }
-        }
-      } else {
-        // Marker matches - same user
-        console.log('✅ Marker matches current user, no action needed');
-      }
+      console.log('🔍 Setting Health Connect marker for nutrition...');
+      
+      // Simply set the marker for the current user
+      // Each user's nutrition data persists on device, filtered by clientRecordId during reads
+      await setHealthConnectMarker(userEmail, false);
+      console.log('✅ Nutrition marker set for user:', userEmail);
     } catch (error) {
-      console.error('❌ Error handling nutrition permission marker:', error);
+      console.error('❌ Error setting nutrition marker:', error);
     }
   };
 
@@ -702,7 +631,7 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
 
   /**
    * Generic handler for manually-logged data types (sleep, weight)
-   * Tries auto-delete first, falls back to settings if needed
+   * Just sets the marker - data filtering happens in read operations via clientRecordId
    */
   const handleManualDataPermissionGranted = async (
     userEmail: string,
@@ -710,94 +639,14 @@ export const useHealthConnect = (requiredPermissions: HealthConnectPermission[])
     displayName: string
   ): Promise<void> => {
     try {
-      console.log(`🔍 Checking Health Connect marker for ${displayName} permission...`);
-
-      const markerMatch = await checkHealthConnectMarkerMatch(userEmail);
-      const marker = await getHealthConnectMarker();
-
-      if (!marker) {
-        console.log('📝 No marker found, checking for existing data...');
-
-        // Check for existing data
-        const now = new Date();
-        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        const timeRangeFilter = {
-          operator: 'between' as const,
-          startTime: thirtyDaysAgo.toISOString(),
-          endTime: now.toISOString(),
-        };
-
-        const records = await readRecords(dataType, { timeRangeFilter });
-        const recordCount = records.records?.length || 0;
-
-        if (recordCount > 0) {
-          console.log(`📊 Found ${recordCount} ${displayName} records`);
-
-          // Try auto-delete
-          try {
-            await deleteRecordsByTimeRange(dataType, timeRangeFilter);
-            await setHealthConnectMarker(userEmail, false);
-            console.log(`✅ ${displayName} data deleted, marker set`);
-          } catch (deleteError) {
-            // Couldn't delete, show alert
-            let shouldOpenSettings = false;
-            await showExistingDataAlert(
-              userEmail,
-              displayName.toLowerCase(),
-              async () => {
-                shouldOpenSettings = true;
-              },
-              async () => {
-                console.log(`✅ User confirmed to use existing ${displayName} data`);
-              }
-            );
-
-            if (shouldOpenSettings) {
-              openHealthConnectDataManagement();
-            }
-          }
-        } else {
-          await setHealthConnectMarker(userEmail, false);
-          console.log(`✅ No existing ${displayName} data, marker set`);
-        }
-      } else if (!markerMatch) {
-        console.log('⚠️ Marker mismatch detected!');
-
-        // Try auto-delete previous user's data
-        const now = new Date();
-        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        const timeRangeFilter = {
-          operator: 'between' as const,
-          startTime: thirtyDaysAgo.toISOString(),
-          endTime: now.toISOString(),
-        };
-
-        try {
-          await deleteRecordsByTimeRange(dataType, timeRangeFilter);
-          await setHealthConnectMarker(userEmail, false);
-          console.log(`✅ Previous user ${displayName} data deleted, new marker set`);
-        } catch (deleteError) {
-          // Couldn't delete, show alert
-          let shouldOpenSettings = false;
-          await showHealthConnectMismatchAlert(
-            userEmail,
-            async () => {
-              shouldOpenSettings = true;
-            },
-            async () => {
-              console.log(`✅ User confirmed to use previous user ${displayName} data`);
-            }
-          );
-
-          if (shouldOpenSettings) {
-            openHealthConnectDataManagement();
-          }
-        }
-      } else {
-        console.log('✅ Marker matches current user, no action needed');
-      }
+      console.log(`🔍 Setting Health Connect marker for ${displayName}...`);
+      
+      // Simply set the marker for the current user
+      // Each user's data persists on device, filtered by clientRecordId during reads
+      await setHealthConnectMarker(userEmail, false);
+      console.log(`✅ ${displayName} marker set for user:`, userEmail);
     } catch (error) {
-      console.error(`❌ Error handling ${displayName} permission marker:`, error);
+      console.error(`❌ Error setting ${displayName} marker:`, error);
     }
   };
 
@@ -1007,10 +856,10 @@ export const readNutritionData = async (startTime: string, endTime: string) => {
   }
 };
 
-// Helper function to read detailed macronutrient data (protein, fat, carbs)
-export const readMacronutrientData = async (startTime: string, endTime: string) => {
+// Helper function to read macronutrient data (calories, protein, fat, carbs, sugar)
+export const readMacronutrientData = async (startTime: string, endTime: string, userEmail?: string) => {
   try {
-    console.log('🥗 Reading macronutrient data from', startTime, 'to', endTime);
+    console.log('🥗 Reading macronutrient data from', startTime, 'to', endTime, 'for user:', userEmail);
     const timeRangeFilter = {
       operator: 'between' as const,
       startTime,
@@ -1021,23 +870,38 @@ export const readMacronutrientData = async (startTime: string, endTime: string) 
       energy: {
         inKilocalories: number;
       };
-      protein: {
+      protein?: {
         inGrams: number;
       };
-      totalFat: {
+      totalFat?: {
         inGrams: number;
       };
-      totalCarbohydrate: {
+      totalCarbohydrate?: {
         inGrams: number;
       };
-      sugar: {
+      sugar?: {
         inGrams: number;
+      };
+      metadata?: {
+        clientRecordId?: string;
       };
     }
 
     const nutritionRecords = await readRecords('Nutrition', { timeRangeFilter });
+    console.log('🥗 Nutrition records fetched:', nutritionRecords);
 
-    const macros = (nutritionRecords.records as NutritionRecord[]).reduce(
+    // Filter records to only include current user's data if userEmail provided
+    let filteredRecords = nutritionRecords.records as NutritionRecord[];
+    if (userEmail) {
+      filteredRecords = filteredRecords.filter((record) => {
+        const clientRecordId = record.metadata?.clientRecordId || '';
+        // Match records that were created with this user's email in clientRecordId
+        return clientRecordId.includes(userEmail) || !clientRecordId; // Include old records without clientRecordId for backward compatibility
+      });
+      console.log(`🥗 Filtered to ${filteredRecords.length} nutrition records for user ${userEmail}`);
+    }
+
+    const macros = filteredRecords.reduce(
       (totals, record) => {
         return {
           calories: totals.calories + (record.energy?.inKilocalories || 0),
@@ -1071,9 +935,9 @@ export const readMacronutrientData = async (startTime: string, endTime: string) 
 };
 
 // Helper function to read calories by meal type
-export const readCaloriesByMealType = async (startTime: string, endTime: string) => {
+export const readCaloriesByMealType = async (startTime: string, endTime: string, userEmail?: string) => {
   try {
-    console.log('🍽️ Reading calories by meal type from', startTime, 'to', endTime);
+    console.log('🍽️ Reading calories by meal type from', startTime, 'to', endTime, 'for user:', userEmail);
     const timeRangeFilter = {
       operator: 'between' as const,
       startTime,
@@ -1088,10 +952,50 @@ export const readCaloriesByMealType = async (startTime: string, endTime: string)
       name?: string;
       metadata?: {
         recordingMethod?: number;
+        clientRecordId?: string;
       };
     }
 
     const nutritionRecords = await readRecords('Nutrition', { timeRangeFilter });
+    
+    console.log('🍽️ Raw nutrition records count:', nutritionRecords.records?.length || 0);
+    
+    // DEBUG: Log first record's metadata to see structure
+    if (nutritionRecords.records && nutritionRecords.records.length > 0) {
+      const firstRecord = nutritionRecords.records[0] as any;
+      console.log('🔍 Sample record metadata:', JSON.stringify(firstRecord.metadata, null, 2));
+      console.log('🔍 Sample record name:', firstRecord.name);
+    }
+
+    // Filter records to only include current user's data if userEmail provided
+    let filteredRecords = nutritionRecords.records as NutritionRecord[];
+    if (userEmail) {
+      const beforeFilterCount = filteredRecords.length;
+      filteredRecords = filteredRecords.filter((record) => {
+        const clientRecordId = record.metadata?.clientRecordId || '';
+        const isUserRecord = clientRecordId.includes(userEmail);
+        const isLegacyRecord = !clientRecordId; // Old records without user tagging
+        
+        // Log each record for debugging
+        console.log(`📝 Record: ${record.name || 'unnamed'}`);
+        console.log(`   clientRecordId: ${clientRecordId || 'NONE (legacy)'}`);
+        console.log(`   isUserRecord: ${isUserRecord}, isLegacyRecord: ${isLegacyRecord}`);
+        
+        if (clientRecordId && !isUserRecord) {
+          console.log(`   🚫 FILTERED OUT - belongs to different user`);
+          return false;
+        }
+        
+        if (isLegacyRecord) {
+          console.log(`   ⚠️ INCLUDED - legacy record without user tag`);
+        } else {
+          console.log(`   ✅ INCLUDED - matches current user`);
+        }
+        
+        return isUserRecord || isLegacyRecord;
+      });
+      console.log(`🍽️ Filtered nutrition records: ${beforeFilterCount} total → ${filteredRecords.length} for user ${userEmail}`);
+    }
 
     const mealCalories = {
       breakfast: 0,
@@ -1100,7 +1004,7 @@ export const readCaloriesByMealType = async (startTime: string, endTime: string)
       snack: 0,
     };
 
-    (nutritionRecords.records as NutritionRecord[]).forEach((record) => {
+    filteredRecords.forEach((record) => {
       const calories = record.energy?.inKilocalories || 0;
       // mealType is a number: 1=breakfast, 2=lunch, 3=dinner, 4=snack, 0=unknown
       const mealTypeNum = typeof record.mealType === 'number' ? record.mealType : 0;
@@ -1136,9 +1040,9 @@ export const readCaloriesByMealType = async (startTime: string, endTime: string)
 };
 
 // Helper function to read actual meals from Health Connect by meal type
-export const readMealsByType = async (startTime: string, endTime: string, mealType: number) => {
+export const readMealsByType = async (startTime: string, endTime: string, mealType: number, userEmail?: string) => {
   try {
-    console.log(`🍽️ Reading ${mealType} meals from`, startTime, 'to', endTime);
+    console.log(`🍽️ Reading ${mealType} meals from`, startTime, 'to', endTime, 'for user:', userEmail);
     const timeRangeFilter = {
       operator: 'between' as const,
       startTime,
@@ -1164,14 +1068,27 @@ export const readMealsByType = async (startTime: string, endTime: string, mealTy
       mealType?: number;
       name?: string;
       startTime: string;
+      metadata?: {
+        clientRecordId?: string;
+      };
     }
 
     const nutritionRecords = await readRecords('Nutrition', { timeRangeFilter });
 
+    // Filter by meal type AND user email
     const meals = (nutritionRecords.records as NutritionRecord[])
       .filter((record) => {
         const recordMealType = typeof record.mealType === 'number' ? record.mealType : 0;
-        return recordMealType === mealType;
+        const mealTypeMatch = recordMealType === mealType;
+        
+        if (!mealTypeMatch) return false;
+        
+        if (userEmail) {
+          const clientRecordId = record.metadata?.clientRecordId || '';
+          return clientRecordId.includes(userEmail) || !clientRecordId;
+        }
+        
+        return true;
       })
       .map((record) => {
         const fullName = record.name || 'Meal';
@@ -1249,9 +1166,9 @@ export const readHydrationData = async (startTime: string, endTime: string) => {
 };
 
 // Helper function to read weight data
-export const readWeightData = async (startTime: string, endTime: string) => {
+export const readWeightData = async (startTime: string, endTime: string, userEmail?: string) => {
   try {
-    console.log('⚖️ Reading weight data from', startTime, 'to', endTime);
+    console.log('⚖️ Reading weight data from', startTime, 'to', endTime, 'for user:', userEmail);
     const timeRangeFilter = {
       operator: 'between' as const,
       startTime,
@@ -1265,14 +1182,28 @@ export const readWeightData = async (startTime: string, endTime: string) => {
         inGrams: number;
       };
       time: string;
+      metadata?: {
+        clientRecordId?: string;
+      };
     }
 
     const weightRecords = await readRecords('Weight', { timeRangeFilter });
     console.log('⚖️ Weight records fetched:', weightRecords);
     console.log('⚖️ Number of weight records:', weightRecords.records?.length || 0);
 
+    // Filter records to only include current user's data if userEmail provided
+    let filteredRecords = weightRecords.records as WeightRecord[];
+    if (userEmail) {
+      filteredRecords = filteredRecords.filter((record) => {
+        const clientRecordId = record.metadata?.clientRecordId || '';
+        // Match records that were created with this user's email in clientRecordId
+        return clientRecordId.includes(userEmail) || !clientRecordId; // Include old records without clientRecordId for backward compatibility
+      });
+      console.log(`⚖️ Filtered to ${filteredRecords.length} records for user ${userEmail}`);
+    }
+
     // Return all weight records with timestamps for history
-    const weights = (weightRecords.records as WeightRecord[]).map((record) => ({
+    const weights = filteredRecords.map((record) => ({
       weight: record.weight?.inKilograms || 0,
       date: record.time,
     }));
@@ -1317,14 +1248,14 @@ export const getCurrentWeight = async () => {
 };
 
 // Helper function to write weight data to Health Connect
-export const writeWeightData = async (weightInKg: number, time?: string | Date) => {
+export const writeWeightData = async (weightInKg: number, userEmail?: string, time?: string | Date) => {
   try {
     const { insertRecords } = require('react-native-health-connect');
 
     // Convert time to ISO string if it's a Date object, otherwise use provided string or current time
     const recordTime = time instanceof Date ? time.toISOString() : (time || new Date().toISOString());
 
-    console.log('⚖️ Writing weight to Health Connect:', weightInKg, 'kg at', recordTime);
+    console.log('⚖️ Writing weight to Health Connect:', weightInKg, 'kg at', recordTime, 'for user:', userEmail);
 
     const weightRecord = {
       recordType: 'Weight' as const,
@@ -1333,6 +1264,9 @@ export const writeWeightData = async (weightInKg: number, time?: string | Date) 
         unit: 'kilograms' as const,
       },
       time: recordTime,
+      metadata: userEmail ? {
+        clientRecordId: `weight_${userEmail}_${recordTime}`,
+      } : undefined,
     };
 
     const result = await insertRecords([weightRecord]);

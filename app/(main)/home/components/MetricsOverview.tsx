@@ -168,15 +168,24 @@ export const MetricsOverview = () => {
       return;
     }
 
+    // Guard against undefined user email
+    if (!user?.email) {
+      console.log('🏠 Home - User email not available, skipping data fetch');
+      return;
+    }
+
+    console.log('🏠 Home - Fetching data for user:', user.email);
+
     try {
       const today = new Date();
       const startOfDay = new Date(today.setHours(0, 0, 0, 0));
       const endOfDay = new Date(today.setHours(23, 59, 59, 999));
 
-      // Fetch calories from macronutrient data
+      // Fetch calories from macronutrient data (user-scoped)
       const macros = await readMacronutrientData(
         startOfDay.toISOString(),
-        endOfDay.toISOString()
+        endOfDay.toISOString(),
+        user.email
       );
       console.log('🏠 Home - Fetched calories from Health Connect:', macros.calories);
       setCalories(macros.calories);

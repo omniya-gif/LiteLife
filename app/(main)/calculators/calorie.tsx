@@ -66,16 +66,24 @@ export default function CalorieTrackerPage() {
       return;
     }
 
+    if (!user?.email) {
+      console.log('⚠️ Cannot fetch health data - user email not available yet');
+      return;
+    }
+
     try {
       setIsLoadingData(true);
       const now = new Date();
       const startOfDay = new Date(now.setHours(0, 0, 0, 0));
       const endOfDay = new Date(now.setHours(23, 59, 59, 999));
 
-      // Fetch macronutrient data (includes calories, protein, fat, carbs)
+      console.log('🍽️ Fetching nutrition for user:', user.email);
+
+      // Fetch macronutrient data (includes calories, protein, fat, carbs) filtered by user
       const macros = await readMacronutrientData(
         startOfDay.toISOString(), 
-        endOfDay.toISOString()
+        endOfDay.toISOString(),
+        user.email // Filter to only show current user's nutrition data
       );
 
       setProtein(macros.protein);

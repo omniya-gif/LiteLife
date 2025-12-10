@@ -66,19 +66,19 @@ export default function WeightTrackerPage() {
       const sixMonthsAgo = new Date();
       sixMonthsAgo.setMonth(now.getMonth() - 6);
 
-      // Fetch weight history
-      const weights = await readWeightData(sixMonthsAgo.toISOString(), now.toISOString());
+      // Fetch weight history (filtered by current user)
+      const weights = await readWeightData(sixMonthsAgo.toISOString(), now.toISOString(), user?.email);
       
-      // If no Google Fit data exists and we have onboarding current_weight, add it as initial entry
+      // If no user data exists and we have onboarding current_weight, add it as initial entry
       if (weights.length === 0 && onboarding?.current_weight && onboarding?.updated_at) {
-        console.log('⚖️ No Google Fit data found. Adding initial weight from onboarding:', onboarding.current_weight);
+        console.log('⚖️ No existing weight data for user. Adding initial weight from onboarding:', onboarding.current_weight);
         try {
           // Use the onboarding update time as the initial weight entry timestamp
           const onboardingDate = new Date(onboarding.updated_at);
-          await writeWeightData(onboarding.current_weight, onboardingDate);
+          await writeWeightData(onboarding.current_weight, user?.email, onboardingDate);
           
           // Re-fetch to get the newly added weight
-          const updatedWeights = await readWeightData(sixMonthsAgo.toISOString(), now.toISOString());
+          const updatedWeights = await readWeightData(sixMonthsAgo.toISOString(), now.toISOString(), user?.email);
           setWeightHistory(updatedWeights);
           
           const current = await getCurrentWeight();
@@ -90,11 +90,11 @@ export default function WeightTrackerPage() {
           setCurrentWeight(onboarding.current_weight);
         }
       } else {
-        // Google Fit data exists, use it
+        // User's weight data exists
         setWeightHistory(weights);
         const current = await getCurrentWeight();
         setCurrentWeight(current);
-        console.log('⚖️ Weight data loaded from Google Fit:', { current, historyCount: weights.length });
+        console.log('⚖️ Weight data loaded for user:', { current, historyCount: weights.length });
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -144,8 +144,8 @@ export default function WeightTrackerPage() {
     }
 
     try {
-      // Write to Health Connect
-      await writeWeightData(weight);
+      // Write to Health Connect with user email for filtering
+      await writeWeightData(weight, user?.email);
       
       // Refresh data
       await fetchWeightData();

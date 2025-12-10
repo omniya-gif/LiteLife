@@ -58,6 +58,7 @@ import {
   readMealsByType,
 } from '../../../hooks/useHealthConnect';
 import { useHealthConnectWrite } from '../../../hooks/useHealthConnectWrite';
+import { useAuth } from '../../../hooks/useAuth';
 import { useTheme } from '../../../hooks/useTheme';
 import { searchRecipes, Recipe } from '../../../services/recipeService';
 import { useUserStore } from '../../../stores/userStore';
@@ -126,6 +127,7 @@ export default function JournalPage() {
   ]);
 
   const { writeMealToHealthConnect, isWriting } = useHealthConnectWrite();
+  const { user } = useAuth();
 
   // Initialize empty meals - they will be populated from Health Connect
   useEffect(() => {
@@ -256,6 +258,7 @@ export default function JournalPage() {
       mealType: mealType.toLowerCase() as 'breakfast' | 'lunch' | 'dinner' | 'snack',
       timestamp: new Date().toISOString(),
       recipeId: recipe.id,
+      userEmail: user?.email, // For user-scoped filtering
     });
 
     if (!success) {
@@ -300,6 +303,13 @@ export default function JournalPage() {
     const fetchDailyCalories = async () => {
       if (!healthConnect.hasPermissions) return;
 
+      // Guard against undefined user email
+      if (!user?.email) {
+        console.log('📔 Journal - User email not available, skipping data fetch');
+        return;
+      }
+
+      console.log('📔 Journal - Fetching data for user:', user.email);
       setIsLoadingCalories(true);
       try {
         const selectedDay = calendarDays[selectedDateIndex];
@@ -309,23 +319,25 @@ export default function JournalPage() {
         const endOfDay = new Date(selectedDay.fullDate);
         endOfDay.setHours(23, 59, 59, 999);
 
-        // Fetch both calories and macronutrients
+        // Fetch both calories and macronutrients (user-scoped)
         const macros = await readMacronutrientData(
           startOfDay.toISOString(),
-          endOfDay.toISOString()
+          endOfDay.toISOString(),
+          user.email
         );
 
-        // Fetch calories by meal type
+        // Fetch calories by meal type (user-scoped)
         const mealCalories = await readCaloriesByMealType(
           startOfDay.toISOString(),
-          endOfDay.toISOString()
+          endOfDay.toISOString(),
+          user.email
         );
 
-        // Fetch actual meals from Health Connect for each meal type
+        // Fetch actual meals from Health Connect for each meal type (user-scoped)
         const [breakfastMeals, lunchMeals, dinnerMeals] = await Promise.all([
-          readMealsByType(startOfDay.toISOString(), endOfDay.toISOString(), 1), // breakfast
-          readMealsByType(startOfDay.toISOString(), endOfDay.toISOString(), 2), // lunch
-          readMealsByType(startOfDay.toISOString(), endOfDay.toISOString(), 3), // dinner
+          readMealsByType(startOfDay.toISOString(), endOfDay.toISOString(), 1, user.email), // breakfast
+          readMealsByType(startOfDay.toISOString(), endOfDay.toISOString(), 2, user.email), // lunch
+          readMealsByType(startOfDay.toISOString(), endOfDay.toISOString(), 3, user.email), // dinner
         ]);
 
         // Fetch images for meals with recipe IDs
@@ -345,7 +357,8 @@ export default function JournalPage() {
         const snackMeals = await readMealsByType(
           startOfDay.toISOString(),
           endOfDay.toISOString(),
-          4
+          4,
+          user.email
         ); // 4 = snack
 
         const [breakfastWithImages, lunchWithImages, dinnerWithImages, snackWithImages] =
@@ -466,6 +479,7 @@ export default function JournalPage() {
       mealType: mealType.toLowerCase(),
       timestamp: new Date().toISOString(),
       recipeId: mealItem.id,
+      userEmail: user?.email, // For user-scoped filtering
     });
     if (success) {
       Alert.alert('✅ Success', 'Meal saved to Health Connect and will appear in Google Fit!');

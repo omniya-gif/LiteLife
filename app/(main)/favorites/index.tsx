@@ -19,6 +19,7 @@ import { useTheme } from '../../../hooks/useTheme';
 import { Recipe } from '../../../services/recipeService';
 import { useHealthConnect } from '../../../hooks/useHealthConnect';
 import { useHealthConnectWrite } from '../../../hooks/useHealthConnectWrite';
+import { useAuth } from '../../../hooks/useAuth';
 
 const categories = [
   { id: 'all', title: 'All', icon: '🍽️' },
@@ -53,6 +54,7 @@ export default function FavoritesPage() {
   ];
   const healthConnect = useHealthConnect(nutritionPermissions);
   const { writeMealToHealthConnect } = useHealthConnectWrite();
+  const { user } = useAuth();
 
   // Filter favorites by category
   const filteredFavorites = useMemo(() => {
@@ -161,6 +163,7 @@ export default function FavoritesPage() {
         mealType: selectedMealType as 'breakfast' | 'lunch' | 'dinner' | 'snack',
         timestamp: new Date().toISOString(),
         recipeId: recipe.id,
+        userEmail: user?.email, // For user-scoped filtering
       });
 
       setShowMealTypeModal(false);
