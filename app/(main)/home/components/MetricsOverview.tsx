@@ -210,16 +210,16 @@ export const MetricsOverview = () => {
     }
   };
 
-  // Fetch on mount and when permissions change
+  // Fetch on mount and when permissions change or user changes
   useEffect(() => {
     fetchTodayMetrics();
-  }, [healthConnect.isAvailable, healthConnect.isInitialized]);
+  }, [healthConnect.isAvailable, healthConnect.isInitialized, user?.email]);
 
   // Refetch when screen comes into focus (e.g., returning from calorie tracker)
   useFocusEffect(
     React.useCallback(() => {
       fetchTodayMetrics();
-    }, [healthConnect.isAvailable, healthConnect.isInitialized])
+    }, [healthConnect.isAvailable, healthConnect.isInitialized, user?.email])
   );
 
   const calorieGoal = onboarding?.daily_calories || 2000;
