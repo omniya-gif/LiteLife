@@ -3,15 +3,15 @@ import { View, Text, TouchableOpacity, SafeAreaView, TextInput, KeyboardAvoiding
 import { useRouter } from 'expo-router';
 import { ArrowLeft, User } from 'lucide-react-native';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
-import { useOnboardingStore } from '../../../stores/onboardingStore';
+import { useValue } from '@legendapp/state/react';
+import { onboarding$ } from '../../../stores/onboarding';
 
 // Hard-coded green color for pages BEFORE gender selection (Steps 1-4)
 const PRIMARY_COLOR = '#4ADE80';
 
 export default function UsernamePage() {
   const router = useRouter();
-  const updateFormData = useOnboardingStore(state => state.updateFormData);
-  const formData = useOnboardingStore(state => state.formData);
+  const formData = useValue(onboarding$.formData);
   
   const [username, setUsername] = useState(formData.username || '');
   const [error, setError] = useState('');
@@ -36,7 +36,7 @@ export default function UsernamePage() {
 
   const handleNext = () => {
     if (validateUsername(username) && username.length >= 3) {
-      updateFormData({ username });
+      onboarding$.updateFormData({ username });
       router.push('/onboarding/age');
     }
   };

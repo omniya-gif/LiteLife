@@ -15,7 +15,7 @@ import { MetricsOverview } from './components/MetricsOverview';
 import { Header } from '../../../components/home/Header';
 import { useAuth } from '../../../hooks/useAuth';
 import { useTheme } from '../../../hooks/useTheme';
-import { useUserStore } from '../../../lib/store/userStore';
+import { user$ } from '../../../lib/store/user';
 
 export default function HomePage() {
   const headerScale = useSharedValue(0.8);
@@ -32,7 +32,7 @@ export default function HomePage() {
   const pathname = usePathname();
   const router = useRouter();
   const { user } = useAuth();
-  const { fetchUserData } = useUserStore();
+  const fetchUserData = user$.fetchUserData;
   const theme = useTheme();
 
   useEffect(() => {
@@ -57,7 +57,7 @@ export default function HomePage() {
 
   // Fetch user data only if not already cached
   useEffect(() => {
-    const { profile } = useUserStore.getState();
+    const profile = user$.profile.peek();
 
     // Only fetch if we don't have profile data or it doesn't match current user
     if (user?.id && (!profile || profile.id !== user.id)) {

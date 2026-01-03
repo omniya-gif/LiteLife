@@ -4,14 +4,15 @@ import { useRouter } from 'expo-router';
 import { ArrowLeft, Calculator, Flame } from 'lucide-react-native';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { Slider } from '@miblanchard/react-native-slider';
+import { useValue } from '@legendapp/state/react';
 import { useTheme } from '../../../hooks/useTheme';
-import { useOnboardingStore } from '../../../stores/onboardingStore';
+import { onboarding$ } from '../../../stores/onboarding';
 import { calculateDailyCalories } from '../../../utils/calorieCalculator';
 
 export default function CaloriesPage() {
   const router = useRouter();
   const theme = useTheme();
-  const { formData, updateFormData } = useOnboardingStore();
+  const formData = useValue(onboarding$.formData);
   const [calories, setCalories] = useState(formData.daily_calories || 2000);
   const [mode, setMode] = useState<'manual' | 'auto'>('manual');
   const [autoCalories, setAutoCalories] = useState<number | null>(null);
@@ -49,7 +50,7 @@ export default function CaloriesPage() {
     console.log('🔥 Current formData before update:', JSON.stringify(formData, null, 2));
     
     if (finalCalories) {
-      updateFormData({ daily_calories: finalCalories });
+      onboarding$.updateFormData({ daily_calories: finalCalories });
       console.log('💾 Saving daily_calories to onboarding store:', finalCalories);
     } else {
       console.error('❌ ERROR: finalCalories is null/undefined!');

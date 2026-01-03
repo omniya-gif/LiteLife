@@ -3,17 +3,18 @@ import { ArrowLeft, Droplets, Plus, TrendingUp } from 'lucide-react-native';
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, SafeAreaView, ActivityIndicator } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useValue } from '@legendapp/state/react';
 
 import { useHealthConnect, readHydrationData } from '../../../hooks/useHealthConnect';
 import { useTheme } from '../../../hooks/useTheme';
-import { useUserStore } from '../../../stores/userStore';
+import { user$ } from '../../../lib/store/user';
 import { useAuth } from '../../../hooks/useAuth';
 
 export default function HydrationTracker() {
   const router = useRouter();
   const theme = useTheme();
   const { user } = useAuth();
-  const { onboarding } = useUserStore();
+  const onboarding = useValue(user$.onboarding);
   const [waterConsumed, setWaterConsumed] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 

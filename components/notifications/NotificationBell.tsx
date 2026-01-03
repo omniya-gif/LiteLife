@@ -2,13 +2,16 @@ import React from 'react';
 import { TouchableOpacity, View, Text } from 'react-native';
 import { Bell } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { useNotifications } from '../../hooks/useNotifications';
 import * as Notifications from 'expo-notifications';
+import { useValue } from '@legendapp/state/react';
+
+import { useNotifications } from '../../hooks/useNotifications';
 import { useTheme } from '../../hooks/useTheme';
 
 export function NotificationBell() {
   const router = useRouter();
   const { unreadCount } = useNotifications();
+  const unreadCountValue = useValue(unreadCount);
   const theme = useTheme();
 
   // Test notification function
@@ -31,10 +34,10 @@ export function NotificationBell() {
       className="h-12 w-12 items-center justify-center rounded-full bg-[#25262B]"
     >
       <Bell size={24} color={theme.primary} />
-      {unreadCount > 0 && (
+      {unreadCountValue > 0 && (
         <View className="absolute -right-1 -top-1 h-5 w-5 items-center justify-center rounded-full" style={{ backgroundColor: theme.primary }}>
           <Text className="text-xs font-bold text-[#1A1B1E]">
-            {unreadCount > 99 ? '99+' : unreadCount}
+            {unreadCountValue > 99 ? '99+' : unreadCountValue}
           </Text>
         </View>
       )}

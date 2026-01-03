@@ -4,12 +4,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Activity, Droplets, Scale, Scale3D, Flame, Moon } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import { useValue } from '@legendapp/state/react';
 
 import { Header } from '../../../components/home/Header';
 import { BottomNavigation } from '../home/components/BottomNavigation';
 import { useTheme } from '../../../hooks/useTheme';
 import { useAuth } from '../../../hooks/useAuth';
-import { useUserStore } from '../../../lib/store/userStore';
+import { user$ } from '../../../lib/store/user';
 
 const CalculatorCard = ({ title, description, icon, color, onPress, index }) => (
   <Animated.View 
@@ -38,7 +39,8 @@ export default function HealthPage() {
   const router = useRouter();
   const theme = useTheme();
   const { user } = useAuth();
-  const { profile, fetchUserData } = useUserStore();
+  const profile = useValue(user$.profile);
+  const fetchUserData = user$.fetchUserData;
 
   // Ensure profile is loaded
   useEffect(() => {

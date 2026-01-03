@@ -8,9 +8,9 @@ import React from 'react';
 import { View, TouchableOpacity, Image, Alert, Text } from 'react-native';
 import { useQueryClient } from 'react-query';
 
-import { useUserStore } from '../../lib/store/userStore';
+import { user$ } from '../../lib/store/user';
 import { supabase } from '../../lib/supabase';
-import { useOnboardingStore } from '../../stores/onboardingStore';
+import { onboarding$ } from '../../stores/onboarding';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -29,8 +29,7 @@ interface SocialLoginProps {
 export const SocialLogin = ({ isSignUp = false }: SocialLoginProps) => {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const setOnboardingCompleted = useOnboardingStore((state) => state.setCompleted);
-  const { fetchUserData } = useUserStore();
+  const fetchUserData = user$.fetchUserData;
 
   const createSessionFromUrl = async (url: string) => {
     try {
@@ -98,7 +97,7 @@ export const SocialLogin = ({ isSignUp = false }: SocialLoginProps) => {
           .select()
           .single();
 
-        setOnboardingCompleted(false);
+        onboarding$.setCompleted(false);
         console.log('[SocialLogin] Redirecting new user to: /onboarding/expertise');
         router.replace('/onboarding/expertise');
       } else {
@@ -107,7 +106,7 @@ export const SocialLogin = ({ isSignUp = false }: SocialLoginProps) => {
         const isCompleted = await checkOnboardingStatus(data.session.user.id);
         console.log('[SocialLogin] Onboarding completed:', isCompleted);
 
-        setOnboardingCompleted(isCompleted);
+        onboarding$.setCompleted(isCompleted);
 
         // ✅ IMMEDIATELY fetch user data and cache it before navigation
         console.log('[SocialLogin] 📥 Fetching user profile data immediately...');

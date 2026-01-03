@@ -3,18 +3,21 @@ import { ArrowLeft, MessageSquare, Lightbulb, Book } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useValue } from '@legendapp/state/react';
 
 import ChefTypingIndicator from '../../../components/chat/ChefTypingIndicator';
 import MessageBubble from '../../../components/chat/MessageBubble';
 import MessageInput from '../../../components/chat/MessageInput';
 import { getChatResponse } from '../../../lib/openaiApi';
-import { useChatStore } from '../../../stores/chatStore';
+import { chat$ } from '../../../stores/chat';
 
 export default function ChatPageFallback() {
   const router = useRouter();
   const scrollViewRef = React.useRef<ScrollView>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { messages, addMessage, clearChat } = useChatStore();
+  const messages = useValue(chat$.messages);
+  const addMessage = chat$.addMessage;
+  const clearChat = chat$.clearChat;
 
   const scrollToBottom = () => {
     setTimeout(() => {

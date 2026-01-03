@@ -3,7 +3,8 @@ import { View, Text, TouchableOpacity, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
-import { useOnboardingStore } from '../../../stores/onboardingStore';
+import { useValue } from '@legendapp/state/react';
+import { onboarding$ } from '../../../stores/onboarding';
 import { useTheme } from '../../../hooks/useTheme';
 import { Interest } from '../../../types/onboarding';
 
@@ -18,7 +19,7 @@ const interests: { id: Interest; icon: string; label: string }[] = [
 export default function InterestsPage() {
   const router = useRouter();
   const theme = useTheme();
-  const { formData, updateFormData } = useOnboardingStore();
+  const formData = useValue(onboarding$.formData);
   const selectedInterests = formData.interests || [];
   const [showError, setShowError] = useState(false);
 
@@ -26,7 +27,7 @@ export default function InterestsPage() {
     const newInterests = selectedInterests.includes(interest)
       ? selectedInterests.filter(i => i !== interest)
       : [...selectedInterests, interest];
-    updateFormData({ interests: newInterests });
+    onboarding$.updateFormData({ interests: newInterests });
     setShowError(false);
   };
 

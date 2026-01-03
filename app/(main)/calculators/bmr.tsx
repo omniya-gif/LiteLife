@@ -4,12 +4,13 @@ import { ArrowLeft } from 'lucide-react-native';
 import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, TouchableOpacity, SafeAreaView } from 'react-native';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { useUserStore } from '../../../lib/store/userStore';
+import { useValue } from '@legendapp/state/react';
+import { user$ } from '../../../lib/store/user';
 import { useTheme } from '../../../hooks/useTheme';
 
 export default function BMRCalculator() {
   const router = useRouter();
-  const { onboarding } = useUserStore();
+  const onboarding = useValue(user$.onboarding);
   const theme = useTheme();
   
   const [age, setAge] = useState(onboarding?.age || 25);

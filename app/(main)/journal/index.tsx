@@ -61,8 +61,9 @@ import {
 import { useHealthConnectWrite } from '../../../hooks/useHealthConnectWrite';
 import { useTheme } from '../../../hooks/useTheme';
 import { searchRecipes, Recipe } from '../../../services/recipeService';
-import { useUserStore } from '../../../stores/userStore';
 import { LoadingAnimation } from '../../../components/LoadingAnimation';
+import { onboarding$ } from '../../../stores/onboarding';
+import { observer, useObservable } from '@legendapp/state/react';
 
 const { width } = Dimensions.get('window');
 
@@ -84,10 +85,10 @@ const generateCalendarDays = (baseDate: Date) => {
   return days;
 };
 
-export default function JournalPage() {
+export default observer(function JournalPage() {
   const router = useRouter();
   const theme = useTheme();
-  const { onboarding } = useUserStore();
+  const onboardingData = useObservable(onboarding$.formData);
   const [baseDate, setBaseDate] = useState(new Date());
   const [calendarDays, setCalendarDays] = useState(generateCalendarDays(new Date()));
   const [selectedDateIndex, setSelectedDateIndex] = useState(3); // Middle day (today)
@@ -981,7 +982,7 @@ export default function JournalPage() {
                       {dailyCalories}
                     </Text>
                     <Text className="mb-1 ml-2 text-xl font-semibold text-gray-400">
-                      / {onboarding?.daily_calories || 2850}
+                      / {onboardingData.daily_calories.get() || 2850}
                     </Text>
                     <Text className="mb-1 ml-1 text-lg text-gray-500">Cal</Text>
                   </View>
@@ -991,7 +992,7 @@ export default function JournalPage() {
                     <View
                       className="h-full rounded-full"
                       style={{
-                        width: `${Math.min((dailyCalories / (onboarding?.daily_calories || 2850)) * 100, 100)}%`,
+                        width: `${Math.min((dailyCalories / (onboardingData.daily_calories.get() || 2850)) * 100, 100)}%`,
                         backgroundColor: theme.primary,
                       }}
                     />
@@ -999,8 +1000,8 @@ export default function JournalPage() {
 
                   {/* Status Text */}
                   <Text className="mt-3 text-sm text-gray-400">
-                    {dailyCalories < (onboarding?.daily_calories || 2850)
-                      ? `${(onboarding?.daily_calories || 2850) - dailyCalories} calories remaining to reach your goal`
+                    {dailyCalories < (onboardingData.daily_calories.get() || 2850)
+                      ? `${(onboardingData.daily_calories.get() || 2850) - dailyCalories} calories remaining to reach your goal`
                       : '🎉 Daily calorie goal achieved!'}
                   </Text>
                 </>
@@ -1624,7 +1625,7 @@ export default function JournalPage() {
                     <View
                       className="h-full rounded-full"
                       style={{
-                        width: `${Math.min((dailyCalories / (onboarding?.daily_calories || 2850)) * 100, 100)}%`,
+                        width: `${Math.min((dailyCalories / (onboardingData.daily_calories.get() || 2850)) * 100, 100)}%`,
                         backgroundColor: theme.primary,
                       }}
                     />
@@ -1663,9 +1664,9 @@ export default function JournalPage() {
                   <Text className="text-base font-semibold text-white">Nutrition Tip</Text>
                 </View>
                 <Text className="text-sm leading-6 text-gray-400">
-                  {dailyCalories < (onboarding?.daily_calories || 2850) * 0.8
+                  {dailyCalories < (onboardingData.daily_calories.get() || 2850) * 0.8
                     ? "You're below your target! Try adding healthy snacks like nuts or fruits between meals."
-                    : dailyCalories > (onboarding?.daily_calories || 2850)
+                    : dailyCalories > (onboardingData.daily_calories.get() || 2850)
                       ? "You've exceeded your goal. Consider lighter meals tomorrow to balance it out."
                       : "Great job! You're right on track with your nutrition goals. 🎉"}
                 </Text>
@@ -1676,4 +1677,4 @@ export default function JournalPage() {
       </Modal>
     </SafeAreaView>
   );
-}
+});

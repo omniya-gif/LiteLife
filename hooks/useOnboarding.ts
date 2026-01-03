@@ -1,14 +1,15 @@
 import { useQuery } from 'react-query';
-import { supabase } from '../lib/supabase';
+
 import { useAuth } from './useAuth';
+import { supabase } from '../lib/supabase';
+import { onboarding$ } from '../stores/onboarding';
+import { theme$ } from '../stores/theme';
 import { UserOnboarding } from '../types/onboarding';
-import { useOnboardingStore } from '../stores/onboardingStore';
-import { useThemeStore } from '../stores/themeStore';
 
 export function useOnboarding() {
   const { user } = useAuth();
-  const setCompleted = useOnboardingStore(state => state.setCompleted);
-  const initializeFromProfile = useThemeStore(state => state.initializeFromProfile);
+  const setCompleted = onboarding$.setCompleted;
+  const initializeFromProfile = theme$.initializeFromProfile;
 
   return useQuery<UserOnboarding | null>(
     ['onboarding', user?.id],
@@ -42,6 +43,7 @@ export function useOnboarding() {
           initializeFromProfile(data.gender as 'male' | 'female');
         }
       }
+      console.log('[useOnboarding] Onboarding data fetched, completed:', data.completed);
       return data;
     },
     {
@@ -52,7 +54,7 @@ export function useOnboarding() {
       onError: (error) => {
         console.error('[useOnboarding] Query error:', error);
         setCompleted(false);
-      }
+      },
     }
   );
 }

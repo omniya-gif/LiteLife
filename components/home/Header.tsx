@@ -4,11 +4,12 @@ import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useQuery } from 'react-query';
+import { useValue } from '@legendapp/state/react';
 
 import { NotificationBell } from '../../components/notifications/NotificationBell';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../hooks/useTheme';
-import { useUserStore } from '../../lib/store/userStore';
+import { user$ } from '../../lib/store/user';
 import { supabase } from '../../lib/supabase';
 import { CoinsDisplay } from '../coins/CoinsDisplay';
 
@@ -19,7 +20,7 @@ interface HeaderProps {
 export const Header = ({ userName }: HeaderProps) => {
   const router = useRouter();
   const { user } = useAuth();
-  const { profile } = useUserStore();
+  const profile = useValue(user$.profile);
   const theme = useTheme();
 
   // Badge count query

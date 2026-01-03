@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
-import { useThemeStore } from '../stores/themeStore';
+import { useValue } from '@legendapp/state/react';
+import { theme$ } from '../stores/theme';
 
 export const useTheme = () => {
-  const gender = useThemeStore((state) => state.gender);
+  const gender = useValue(theme$.gender);
   
   const theme = useMemo(() => {
     const isFemale = gender === 'female';

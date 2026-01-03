@@ -4,9 +4,9 @@ import { useMutation, useQueryClient } from 'react-query';
 import { useAuth } from './useAuth';
 import { useHealthCoins } from './useHealthCoins';
 import { supabase } from '../lib/supabase';
-import { useUserStore } from '../lib/store/userStore';
-import { useOnboardingStore } from '../stores/onboardingStore';
-import { useThemeStore } from '../stores/themeStore';
+import { user$ } from '../lib/store/user';
+import { onboarding$ } from '../stores/onboarding';
+import { theme$ } from '../stores/theme';
 import { OnboardingFormData } from '../types/onboarding';
 import { calculateDailyCalories } from '../utils/calorieCalculator';
 
@@ -14,9 +14,9 @@ export function useOnboardingSubmit() {
   const { user } = useAuth();
   const { earnCoins } = useHealthCoins();
   const queryClient = useQueryClient();
-  const setCompleted = useOnboardingStore((state) => state.setCompleted);
-  const resetFormData = useOnboardingStore((state) => state.resetFormData);
-  const { fetchUserData } = useUserStore();
+  const setCompleted = onboarding$.setCompleted;
+  const resetFormData = onboarding$.resetFormData;
+  const fetchUserData = user$.fetchUserData;
   return useMutation(
     async (formData: OnboardingFormData) => {
       // Get the current session directly from Supabase to ensure we have the latest auth state
@@ -104,9 +104,8 @@ export function useOnboardingSubmit() {
 
       // 🎨 Sync theme with gender immediately
       if (formData.gender) {
-        const { setGender } = useThemeStore.getState();
         console.log('🎨 Syncing theme after onboarding completion, gender:', formData.gender);
-        setGender(formData.gender as 'male' | 'female');
+        theme$.setGender(formData.gender as 'male' | 'female');
       }
 
       // ✅ IMMEDIATELY fetch and cache user data after onboarding

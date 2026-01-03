@@ -3,8 +3,9 @@ import { View, Text, TouchableOpacity, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
-import { useOnboardingStore } from '../../../stores/onboardingStore';
-import { useThemeStore } from '../../../stores/themeStore';
+import { useValue } from '@legendapp/state/react';
+import { onboarding$ } from '../../../stores/onboarding';
+import { theme$ } from '../../../stores/theme';
 import { useTheme } from '../../../hooks/useTheme';
 import { Gender } from '../../../types/onboarding';
 
@@ -15,9 +16,8 @@ const genders: { id: Gender; label: string; icon: string }[] = [
 
 export default function GenderPage() {
   const router = useRouter();
-  const updateFormData = useOnboardingStore(state => state.updateFormData);
-  const formData = useOnboardingStore(state => state.formData);
-  const setGender = useThemeStore(state => state.setGender);
+  const formData = useValue(onboarding$.formData);
+  const setGender = theme$.setGender;
   const theme = useTheme();
   const selectedGender = formData.gender || 'male';
 
@@ -26,16 +26,16 @@ export default function GenderPage() {
 
   const handleGenderSelect = (gender: Gender) => {
     console.log('🎨 Gender selected in onboarding:', gender);
-    updateFormData({ gender });
-    console.log('🎨 Updated formData with gender, current store:', useOnboardingStore.getState().formData);
+    onboarding$.updateFormData({ gender });
+    console.log('🎨 Updated formData with gender, current store:', onboarding$.formData.peek());
     setGender(gender); // Update theme immediately
   };
 
   const handleNext = () => {
     // Save the selected gender before navigation
-    updateFormData({ gender: selectedGender });
+    onboarding$.updateFormData({ gender: selectedGender });
     
-    const currentStore = useOnboardingStore.getState().formData;
+    const currentStore = onboarding$.formData.peek();
     console.log('🚹 GENDER PAGE - Before navigation, formData in store:', JSON.stringify(currentStore, null, 2));
     console.log('🚹 GENDER PAGE - Gender being saved:', selectedGender);
     console.log('🚹 GENDER PAGE - Gender in store:', currentStore.gender);

@@ -4,7 +4,8 @@ import { useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { Slider } from '@miblanchard/react-native-slider';
-import { useUserStore } from '../../../lib/store/userStore';
+import { useValue } from '@legendapp/state/react';
+import { user$ } from '../../../lib/store/user';
 import { useTheme } from '../../../hooks/useTheme';
 
 const BMICategory = ({ bmi, theme }) => {
@@ -37,7 +38,7 @@ const BMICategory = ({ bmi, theme }) => {
 
 export default function BMICalculator() {
   const router = useRouter();
-  const { onboarding } = useUserStore();
+  const onboarding = useValue(user$.onboarding);
   const theme = useTheme();
   
   const [height, setHeight] = useState(onboarding?.height || 170);

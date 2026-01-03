@@ -5,13 +5,14 @@ import { View, Text, TouchableOpacity, SafeAreaView } from 'react-native';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { useQueryClient } from 'react-query';
 
+import { useValue } from '@legendapp/state/react';
 import { useOnboardingSubmit } from '../../../hooks/useOnboardingSubmit';
-import { useOnboardingStore } from '../../../stores/onboardingStore';
+import { onboarding$ } from '../../../stores/onboarding';
 import { useTheme } from '../../../hooks/useTheme';
 
 export default function NotificationsPage() {
   const router = useRouter();
-  const { formData, updateFormData } = useOnboardingStore();
+  const formData = useValue(onboarding$.formData);
   const onboardingSubmit = useOnboardingSubmit();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const theme = useTheme();
@@ -45,7 +46,7 @@ export default function NotificationsPage() {
       console.log('📤 daily_calories in payload:', updatedData.daily_calories);
 
       // Update local state
-      updateFormData({ notifications_enabled: notificationsEnabled });
+      onboarding$.updateFormData({ notifications_enabled: notificationsEnabled });
 
       // Submit onboarding data
       await onboardingSubmit.mutateAsync(updatedData as any);
@@ -56,7 +57,7 @@ export default function NotificationsPage() {
       console.error('Error saving onboarding data:', error);
       setIsSubmitting(false);
       // Revert the form data if submission failed
-      updateFormData({ notifications_enabled: formData.notifications_enabled });
+      onboarding$.updateFormData({ notifications_enabled: formData.notifications_enabled });
     }
   };
 

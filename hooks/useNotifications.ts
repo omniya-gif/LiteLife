@@ -1,11 +1,12 @@
 import { useEffect } from 'react';
+
 import { supabase } from '../lib/supabase';
-import { useNotificationStore } from '../stores/notificationStore';
+import { notification$ } from '../stores/notification';
 import { useAuth } from './useAuth';
 
 export function useNotifications() {
   const { user } = useAuth();
-  const { setNotifications } = useNotificationStore();
+  const setNotifications = notification$.setNotifications;
 
   useEffect(() => {
     if (!user) return;
@@ -46,7 +47,12 @@ export function useNotifications() {
     return () => {
       channel.unsubscribe();
     };
-  }, [user]);
+  }, [user, setNotifications]);
 
-  return useNotificationStore();
+  return {
+    notifications: notification$.notifications,
+    unreadCount: notification$.unreadCount,
+    markAsRead: notification$.markAsRead,
+    markAllAsRead: notification$.markAllAsRead,
+  };
 }

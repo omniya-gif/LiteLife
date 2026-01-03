@@ -3,15 +3,15 @@ import { View, Text, TouchableOpacity, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Target, Activity } from 'lucide-react-native';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
-import { useOnboardingStore } from '../../../stores/onboardingStore';
+import { useValue } from '@legendapp/state/react';
+import { onboarding$ } from '../../../stores/onboarding';
 import { useTheme } from '../../../hooks/useTheme';
 import { Goal } from '../../../types/onboarding';
 
 export default function GoalSelection() {
   const router = useRouter();
   const theme = useTheme();
-  const updateFormData = useOnboardingStore(state => state.updateFormData);
-  const formData = useOnboardingStore(state => state.formData);
+  const formData = useValue(onboarding$.formData);
   const selectedGoal = formData.goal || 'improve_health';
 
   const goals: { id: Goal; label: string; icon: React.ReactNode; description: string }[] = [
@@ -42,7 +42,7 @@ export default function GoalSelection() {
   ];
 
   const handleNext = () => {
-    updateFormData({ goal: selectedGoal });
+    onboarding$.updateFormData({ goal: selectedGoal });
     router.push('/onboarding/interests');
   };
 
@@ -84,7 +84,7 @@ export default function GoalSelection() {
               entering={FadeInDown.delay(400 + index * 100)}
             >
               <TouchableOpacity
-                onPress={() => updateFormData({ goal: goal.id })}
+                onPress={() => onboarding$.updateFormData({ goal: goal.id })}
                 className={`p-6 rounded-2xl border-2 ${
                   selectedGoal === goal.id
                     ? 'bg-[#4ADE80]/10'

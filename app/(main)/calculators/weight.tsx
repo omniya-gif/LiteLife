@@ -4,8 +4,9 @@ import { useRouter } from 'expo-router';
 import { ArrowLeft, MoreVertical, Camera, Plus, AlertCircle } from 'lucide-react-native';
 import { LineChart } from 'react-native-chart-kit';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
+import { useValue } from '@legendapp/state/react';
 import { useTheme } from '../../../hooks/useTheme';
-import { useUserStore } from '../../../lib/store/userStore';
+import { user$ } from '../../../lib/store/user';
 import { useAuth } from '../../../hooks/useAuth';
 import {
   useHealthConnect,
@@ -20,7 +21,8 @@ export default function WeightTrackerPage() {
   const router = useRouter();
   const theme = useTheme();
   const { user } = useAuth();
-  const { onboarding, fetchUserData } = useUserStore();
+  const onboarding = useValue(user$.onboarding);
+  const fetchUserData = user$.fetchUserData;
   
   const [currentWeight, setCurrentWeight] = useState<number | null>(null);
   const [weightHistory, setWeightHistory] = useState<Array<{ weight: number; date: string }>>([]);

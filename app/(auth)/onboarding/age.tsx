@@ -4,19 +4,19 @@ import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { Slider } from '@miblanchard/react-native-slider';
 import { ArrowLeft } from 'lucide-react-native';
-import { useOnboardingStore } from '../../../stores/onboardingStore';
+import { useValue } from '@legendapp/state/react';
+import { onboarding$ } from '../../../stores/onboarding';
 
 // Hard-coded green color for pages BEFORE gender selection
 const PRIMARY_COLOR = '#4ADE80';
 
 export default function AgeSelection() {
   const router = useRouter();
-  const updateFormData = useOnboardingStore(state => state.updateFormData);
-  const formData = useOnboardingStore(state => state.formData);
+  const formData = useValue(onboarding$.formData);
   const [age, setAge] = useState(formData.age || 25);
 
   const handleNext = () => {
-    updateFormData({ age });
+    onboarding$.updateFormData({ age });
     router.push('/onboarding/height');
   };
 

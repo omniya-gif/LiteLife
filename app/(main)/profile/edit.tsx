@@ -13,8 +13,9 @@ import {
 import { useRouter } from 'expo-router';
 import { ArrowLeft, User, Ruler, Weight, Target, Calendar } from 'lucide-react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useValue } from '@legendapp/state/react';
 import { useAuth } from '../../../hooks/useAuth';
-import { useUserStore } from '../../../lib/store/userStore';
+import { user$ } from '../../../lib/store/user';
 import { useTheme } from '../../../hooks/useTheme';
 import { supabase } from '../../../lib/supabase';
 import { Gender } from '../../../types/onboarding';
@@ -23,7 +24,9 @@ import { calculateDailyCalories } from '../../../utils/calorieCalculator';
 export default function EditProfilePage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { profile, onboarding, fetchUserData } = useUserStore();
+  const profile = useValue(user$.profile);
+  const onboarding = useValue(user$.onboarding);
+  const fetchUserData = user$.fetchUserData;
   const theme = useTheme();
 
   const [isLoading, setIsLoading] = useState(false);

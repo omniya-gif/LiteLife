@@ -3,12 +3,13 @@ import { ArrowLeft, AlertCircle } from 'lucide-react-native';
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, SafeAreaView, Alert, Platform } from 'react-native';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
+import { useValue } from '@legendapp/state/react';
 
 import { CircularProgress } from '../../../components/CircularProgress';
 import { useAuth } from '../../../hooks/useAuth';
 import { useHealthConnect, readMacronutrientData } from '../../../hooks/useHealthConnect';
 import { useTheme } from '../../../hooks/useTheme';
-import { useUserStore } from '../../../lib/store/userStore';
+import { user$ } from '../../../lib/store/user';
 
 const MacroRow = ({ name, amount, percentage, color, index }) => (
   <Animated.View
@@ -29,7 +30,7 @@ export default function CalorieTrackerPage() {
   const router = useRouter();
   const theme = useTheme();
   const { user } = useAuth();
-  const onboarding = useUserStore((state) => state.onboarding);
+  const onboarding = useValue(user$.onboarding);
   const [protein, setProtein] = useState(0);
   const [fat, setFat] = useState(0);
   const [carbs, setCarbs] = useState(0);

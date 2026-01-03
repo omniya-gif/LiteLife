@@ -4,9 +4,10 @@ import { ArrowLeft, Calculator, Droplets } from 'lucide-react-native';
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, SafeAreaView } from 'react-native';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
+import { useValue } from '@legendapp/state/react';
 
 import { useTheme } from '../../../hooks/useTheme';
-import { useOnboardingStore } from '../../../stores/onboardingStore';
+import { onboarding$ } from '../../../stores/onboarding';
 
 // Auto-calculate water intake based on weight and activity level
 const calculateDailyWater = (
@@ -30,7 +31,7 @@ const calculateDailyWater = (
 export default function HydrationPage() {
   const router = useRouter();
   const theme = useTheme();
-  const { formData, updateFormData } = useOnboardingStore();
+  const formData = useValue(onboarding$.formData);
   const [waterTarget, setWaterTarget] = useState(formData.water_target || 2000);
   const [mode, setMode] = useState<'manual' | 'auto'>('manual');
   const [autoWater, setAutoWater] = useState<number | null>(null);
@@ -61,7 +62,7 @@ export default function HydrationPage() {
     console.log('💧 Final water to save:', finalWater);
 
     if (finalWater) {
-      updateFormData({ water_target: finalWater });
+      onboarding$.updateFormData({ water_target: finalWater });
       console.log('💾 Saving water_target to onboarding store:', finalWater);
     }
 

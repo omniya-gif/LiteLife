@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Redirect } from 'expo-router';
+import { useValue } from '@legendapp/state/react';
 import { useAuth } from '../../hooks/useAuth';
-import { useOnboardingStore } from '../../stores/onboardingStore';
+import { onboarding$ } from '../../stores/onboarding';
 import { supabase } from '../../lib/supabase';
 import Loader from '../Loader';
 
@@ -11,7 +12,7 @@ interface AuthGuardProps {
 
 export default function AuthGuard({ children }: AuthGuardProps) {
   const { user, loading: authLoading } = useAuth();
-  const completed = useOnboardingStore(state => state.completed);
+  const completed = useValue(onboarding$.completed);
   const [hasCheckedOnboarding, setHasCheckedOnboarding] = useState(false);
   const [shouldRedirectToOnboarding, setShouldRedirectToOnboarding] = useState(false);
 

@@ -1,16 +1,16 @@
 import type { User } from '@supabase/supabase-js';
 import { useState, useEffect } from 'react';
 
-import { useUserStore } from '../lib/store/userStore';
+import { user$ } from '../lib/store/user';
 import { supabase } from '../lib/supabase';
-import { useOnboardingStore } from '../stores/onboardingStore';
-import { useThemeStore } from '../stores/themeStore';
+import { onboarding$ } from '../stores/onboarding';
+import { theme$ } from '../stores/theme';
 import { AuthError, SignUpData, SignInData } from '../types/auth';
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const { clearUserData } = useUserStore();
+  const clearUserData = user$.clearUserData;
 
   useEffect(() => {
     let lastUserId: string | null = null;
@@ -118,13 +118,11 @@ export function useAuth() {
     clearUserData();
 
     // Reset onboarding form
-    const { resetFormData } = useOnboardingStore.getState();
-    resetFormData();
+    onboarding$.resetFormData();
     console.log('🧹 Onboarding form cleared');
 
     // Reset theme to default (green/male)
-    const { setGender } = useThemeStore.getState();
-    setGender('male');
+    theme$.setGender('male');
     console.log('🎨 Theme reset to default (green)');
 
     await supabase.auth.signOut();

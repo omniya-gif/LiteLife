@@ -10,10 +10,11 @@ import Animated, {
   Extrapolate
 } from 'react-native-reanimated';
 import LottieView from 'lottie-react-native';
+import { useValue } from '@legendapp/state/react';
 
 import { useAuth } from '../../../../hooks/useAuth';
 import { useTheme } from '../../../../hooks/useTheme';
-import { useUserStore } from '../../../../lib/store/userStore';
+import { user$ } from '../../../../lib/store/user';
 import { 
   useHealthConnect, 
   readMacronutrientData, 
@@ -25,7 +26,7 @@ const { width } = Dimensions.get('window');
 
 const WaterMetricCard = ({ value, unit, lastUpdate }) => {
   const theme = useTheme();
-  const { onboarding } = useUserStore();
+  const onboarding = useValue(user$.onboarding);
   const lottieRef = useRef<LottieView>(null);
   const waterGoalMl = onboarding?.water_target || 2000;
   const waterGoalL = waterGoalMl / 1000;
@@ -149,7 +150,7 @@ const MetricCard = ({ title, value, unit, icon, lastUpdate }) => {
 export const MetricsOverview = () => {
   const theme = useTheme();
   const { user } = useAuth();
-  const { onboarding } = useUserStore();
+  const onboarding = useValue(user$.onboarding);
   const [calories, setCalories] = useState(0);
   const [steps, setSteps] = useState(0);
   const [water, setWater] = useState(0.0);

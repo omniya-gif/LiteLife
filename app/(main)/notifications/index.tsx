@@ -4,13 +4,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import { format } from 'date-fns';
-import { useNotifications } from '../../../hooks/useNotifications';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useValue } from '@legendapp/state/react';
+
+import { useNotifications } from '../../../hooks/useNotifications';
 import { useTheme } from '../../../hooks/useTheme';
 
 export default function NotificationsPage() {
   const router = useRouter();
   const { notifications, unreadCount, markAllAsRead, markAsRead } = useNotifications();
+  const notificationsValue = useValue(notifications);
+  const unreadCountValue = useValue(unreadCount);
   const theme = useTheme();
 
   const getNotificationColor = (type: string) => {
@@ -31,7 +35,7 @@ export default function NotificationsPage() {
           <ArrowLeft size={24} color="white" />
         </TouchableOpacity>
         <Text className="text-xl font-bold text-white">Notifications</Text>
-        {unreadCount > 0 && (
+        {unreadCountValue > 0 && (
           <TouchableOpacity onPress={markAllAsRead}>
             <Text style={{ color: theme.primary }}>Mark all read</Text>
           </TouchableOpacity>
@@ -39,12 +43,12 @@ export default function NotificationsPage() {
       </View>
 
       <ScrollView className="flex-1">
-        {notifications.length === 0 ? (
+        {notificationsValue.length === 0 ? (
           <View className="flex-1 items-center justify-center py-12">
             <Text className="text-gray-400">No notifications yet</Text>
           </View>
         ) : (
-          notifications.map((notification, index) => (
+          notificationsValue.map((notification, index) => (
             <Animated.View
               key={notification.id}
               entering={FadeInDown.delay(index * 100)}

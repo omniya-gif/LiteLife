@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { Expertise } from '../../../types/onboarding';
-import { useOnboardingStore } from '../../../stores/onboardingStore';
+import { onboarding$ } from '../../../stores/onboarding';
 
 // Hard-coded green color for pages BEFORE gender selection (Steps 1-4)
 const PRIMARY_COLOR = '#4ADE80';
@@ -29,11 +29,10 @@ const levels: { id: Expertise; label: string; description: string }[] = [
 
 export default function ExpertiseLevel() {
   const router = useRouter();
-  const updateFormData = useOnboardingStore(state => state.updateFormData);
   const [selectedLevel, setSelectedLevel] = useState<Expertise>('beginner');
 
   const handleNext = () => {
-    updateFormData({ expertise: selectedLevel });
+    onboarding$.updateFormData({ expertise: selectedLevel });
     router.push('/onboarding/username');
   };
 

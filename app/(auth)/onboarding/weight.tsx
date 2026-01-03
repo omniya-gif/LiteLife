@@ -4,17 +4,17 @@ import { useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { Slider } from '@miblanchard/react-native-slider';
-import { useOnboardingStore } from '../../../stores/onboardingStore';
+import { useValue } from '@legendapp/state/react';
+import { onboarding$ } from '../../../stores/onboarding';
 
 export default function WeightSelection() {
   const router = useRouter();
-  const updateFormData = useOnboardingStore(state => state.updateFormData);
-  const formData = useOnboardingStore(state => state.formData);
+  const formData = useValue(onboarding$.formData);
   const [currentWeight, setCurrentWeight] = useState(formData.current_weight || 70);
   const [targetWeight, setTargetWeight] = useState(formData.target_weight || 65);
 
   const handleNext = () => {
-    updateFormData({ 
+    onboarding$.updateFormData({ 
       current_weight: currentWeight,
       target_weight: targetWeight 
     });

@@ -11,18 +11,22 @@ import {
 } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useValue } from '@legendapp/state/react';
 
 import { HEALTH_SERVICE_ICONS } from '../../../assets/icons/health';
 import { LoadingScreen } from '../../../components/LoadingScreen';
 import { useAuth } from '../../../hooks/useAuth';
 import { useHealthConnect, getCurrentWeight } from '../../../hooks/useHealthConnect';
 import { useTheme } from '../../../hooks/useTheme';
-import { useUserStore } from '../../../lib/store/userStore';
+import { user$ } from '../../../lib/store/user';
 
 export default function ProfilePage() {
   const router = useRouter();
   const { user, signOut } = useAuth();
-  const { profile, onboarding, fetchUserData, isLoading } = useUserStore();
+  const profile = useValue(user$.profile);
+  const onboarding = useValue(user$.onboarding);
+  const isLoading = useValue(user$.isLoading);
+  const fetchUserData = user$.fetchUserData;
   const theme = useTheme();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [healthConnectWeight, setHealthConnectWeight] = useState<number | null>(null);

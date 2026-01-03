@@ -4,11 +4,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useValue } from '@legendapp/state/react';
 
 import { useAuth } from '../../../hooks/useAuth';
 import { useHealthConnect, readHydrationData } from '../../../hooks/useHealthConnect';
 import { useTheme } from '../../../hooks/useTheme';
-import { useUserStore } from '../../../stores/userStore';
+import { user$ } from '../../../lib/store/user';
 
 type ViewMode = 'day' | 'week' | 'month';
 
@@ -23,7 +24,7 @@ export default function HydrationHistory() {
   const router = useRouter();
   const theme = useTheme();
   const { user } = useAuth();
-  const { onboarding } = useUserStore();
+  const onboarding = useValue(user$.onboarding);
   const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [hydrationData, setHydrationData] = useState<DayData[]>([]);
