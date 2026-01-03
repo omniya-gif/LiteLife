@@ -1,70 +1,69 @@
 import { useRouter, usePathname } from 'expo-router';
-import LottieView from 'lottie-react-native';
-import { Home, Activity, CalendarDays, Heart, Users } from 'lucide-react-native';
+import { Home, Activity, LayoutGrid } from 'lucide-react-native';
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { useTheme } from '../../../../hooks/useTheme';
 
+import { FEATURES } from '../../../../config/features';
+
+// Pure black premium
+const COLORS = {
+  primary: '#29E33C',
+  background: '#000000',
+  inactive: '#808080',
+};
+
+/**
+ * Bottom Navigation - v1.0 (Clean Minimal)
+ * 3 tabs: Home | Health | Tools
+ */
 export const BottomNavigation = () => {
   const router = useRouter();
   const pathname = usePathname();
-  const theme = useTheme();
 
   const isActive = (path: string) => {
-    if (path === '/home' && (pathname === '/home' || pathname === '/')) {
-      return true;
-    }
+    if (path === '/home' && (pathname === '/home' || pathname === '/')) return true;
+    if (path === '/home' && pathname.includes('/workouts')) return true;
     return pathname.includes(path);
   };
 
-  // Determine which chat animation to use based on theme
-  const chatAnimation = theme.primary === '#FF69B4' 
-    ? require('../../../../assets/lottie_animations/chatpink.json')
-    : require('../../../../assets/lottie_animations/chat.json');
+  const NavItem = ({ path, icon: Icon, label }: { path: string; icon: any; label: string }) => {
+    const active = isActive(path);
+    return (
+      <TouchableOpacity 
+        className="items-center flex-1 py-3" 
+        onPress={() => router.push(path as any)}
+        activeOpacity={0.7}
+      >
+        <Icon 
+          size={24} 
+          color={active ? COLORS.primary : COLORS.inactive} 
+        />
+        <Text
+          className="text-xs mt-1"
+          style={{ 
+            color: active ? COLORS.primary : COLORS.inactive,
+            fontWeight: active ? '600' : '400'
+          }}
+        >
+          {label}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
 
   return (
-    <View className="border-t border-[#2C2D32] bg-[#25262B] px-6 py-4">
+    <View 
+      className="absolute bottom-0 left-0 right-0 px-6 pb-8 pt-3"
+      style={{ backgroundColor: COLORS.background }}
+    >
       <View className="flex-row items-center justify-around">
-        <TouchableOpacity className="items-center" onPress={() => router.push('/home')}>
-          <Home size={24} color={isActive('/home') ? theme.primary : '#666'} />
-          <Text
-            className="mt-1 text-sm"
-            style={{ color: isActive('/home') ? theme.primary : '#9CA3AF' }}>
-            Home
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity className="items-center" onPress={() => router.push('/health')}>
-          <Activity size={24} color={isActive('/health') ? theme.primary : '#666'} />
-          <Text
-            className="mt-1 text-sm"
-            style={{ color: isActive('/health') ? theme.primary : '#9CA3AF' }}>
-            Health
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity className="items-center" onPress={() => router.push('/chat')}>
-          <LottieView
-            source={chatAnimation}
-            autoPlay
-            loop
-            style={{ width: 64, height: 64, marginTop: -16 }}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity className="items-center" onPress={() => router.push('/journal')}>
-          <CalendarDays size={24} color={isActive('/journal') ? theme.primary : '#666'} />
-          <Text
-            className="mt-1 text-xs"
-            style={{ color: isActive('/journal') ? theme.primary : '#9CA3AF' }}>
-            Meals
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity className="items-center" onPress={() => router.push('/favorites')}>
-          <Heart size={24} color={isActive('/favorites') ? theme.primary : '#666'} />
-          <Text
-            className="mt-1 text-sm"
-            style={{ color: isActive('/favorites') ? theme.primary : '#9CA3AF' }}>
-            Favorites
-          </Text>
-        </TouchableOpacity>
+        <NavItem path="/home" icon={Home} label="Home" />
+        {FEATURES.HEALTH_TRACKING && (
+          <NavItem path="/health" icon={Activity} label="Health" />
+        )}
+        {FEATURES.CALCULATORS && (
+          <NavItem path="/calculators" icon={LayoutGrid} label="Tools" />
+        )}
       </View>
     </View>
   );

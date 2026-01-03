@@ -1,11 +1,26 @@
 import { Stack } from 'expo-router';
 import { View } from 'react-native';
 import Animated, { SlideInRight, SlideOutLeft, FadeIn, FadeOut } from 'react-native-reanimated';
+
+import { FEATURES } from '../../config/features';
 import OnboardingGuard from '../../components/auth/OnboardingGuard';
 import AuthGuard from '../../components/auth/AuthGuard';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
+/**
+ * Main Layout - v1.0
+ * 
+ * Active routes:
+ * - home (dashboard)
+ * - health (health tracking)
+ * - workouts (exercise library)
+ * - calculators (BMI, BMR, TDEE, etc.)
+ * - profile (user profile & settings)
+ * 
+ * Hidden routes (v1.1+):
+ * - recipes, nutrition, favorites, journal, chat, badges, notifications
+ */
 export default function MainLayout() {
   return (
     <AuthGuard>
@@ -30,18 +45,22 @@ export default function MainLayout() {
               </AnimatedView>
             ),
           }}>
+          {/* ====== v1.0 CORE ROUTES ====== */}
           <Stack.Screen name="home" />
-          <Stack.Screen name="profile" />
-          <Stack.Screen name="journal" />
-          <Stack.Screen name="recipes" />
-          <Stack.Screen name="nutrition" />
+          <Stack.Screen name="health" />
           <Stack.Screen name="workouts" />
-          <Stack.Screen name="favorites" />
-          <Stack.Screen name="settings" />
-          <Stack.Screen name="chat" />
-          <Stack.Screen name="notifications" />
-          <Stack.Screen name="cart" />
-          <Stack.Screen name="calculators/bmr" />
+          <Stack.Screen name="calculators" />
+          <Stack.Screen name="profile" />
+
+          {/* ====== v1.1+ ROUTES (Hidden but preserved) ====== */}
+          {FEATURES.RECIPES && <Stack.Screen name="recipes" />}
+          {FEATURES.NUTRITION && <Stack.Screen name="nutrition" />}
+          {FEATURES.FAVORITES && <Stack.Screen name="favorites" />}
+          {FEATURES.JOURNAL && <Stack.Screen name="journal" />}
+          {FEATURES.AI_CHAT && <Stack.Screen name="chat" />}
+          {FEATURES.BADGES && <Stack.Screen name="badges" />}
+          {FEATURES.NOTIFICATIONS && <Stack.Screen name="notifications" />}
+          {FEATURES.SUBSCRIPTION && <Stack.Screen name="subscription" />}
         </Stack>
       </OnboardingGuard>
     </AuthGuard>

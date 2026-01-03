@@ -9,27 +9,28 @@ export const useTheme = () => {
     const isFemale = gender === 'female';
     
     return {
-      // Primary accent color
-      primary: isFemale ? '#FF69B4' : '#4ADE80',      // Hot pink for female, green for male
-      primaryLight: isFemale ? '#FFB6D9' : '#86EFAC', // Light pink / Light green
-      primaryDark: isFemale ? '#DB5B9A' : '#22C55E',  // Dark pink / Dark green
+      // Primary accent color - Vibrant 2026 colors
+      primary: isFemale ? '#FF69B4' : '#29E33C',      // Hot pink for female, vibrant green for male
+      primaryLight: isFemale ? '#FFB6D9' : '#80F988', // Light pink / Light green
+      primaryDark: isFemale ? '#DB5B9A' : '#1FBA2C',  // Dark pink / Dark green
       
-      // Background colors (same for both)
-      background: '#1A1B1E',
-      backgroundLight: '#25262B',
-      backgroundDark: '#2C2D32',
+      // Background colors - Deep dark theme
+      background: '#0D0D0F',
+      backgroundLight: '#1A1B1E',
+      backgroundCard: '#16171A',
+      backgroundDark: '#25262B',
       
-      // Text colors (same for both)
+      // Text colors
       textPrimary: '#FFFFFF',
       textSecondary: '#9CA3AF',
       textTertiary: '#6B7280',
       
       // Gradient colors for buttons/cards
-      gradientStart: isFemale ? '#FF69B4' : '#4ADE80',
-      gradientEnd: isFemale ? '#FF1493' : '#22C55E',
+      gradientStart: isFemale ? '#FF69B4' : '#29E33C',
+      gradientEnd: isFemale ? '#FF1493' : '#1FBA2C',
       
-      // Status colors (same for both)
-      success: '#22C55E',
+      // Status colors
+      success: '#29E33C',
       warning: '#FBBF24',
       error: '#EF4444',
       info: '#3B82F6',

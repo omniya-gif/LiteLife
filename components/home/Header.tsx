@@ -6,6 +6,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { useQuery } from 'react-query';
 import { useValue } from '@legendapp/state/react';
 
+import { FEATURES } from '../../config/features';
 import { NotificationBell } from '../../components/notifications/NotificationBell';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../hooks/useTheme';
@@ -143,21 +144,27 @@ export const Header = ({ userName }: HeaderProps) => {
         </View>
 
         <View className="flex-row items-center space-x-4">
-          <CoinsDisplay />
+          {/* Health Coins - v1.4+ */}
+          {FEATURES.GAMIFICATION && <CoinsDisplay />}
 
-          {/* Achievements Icon */}
-          <TouchableOpacity onPress={() => router.push('/badges')} className="relative">
-            <View className="h-10 w-10 items-center justify-center rounded-full bg-[#FFD700]/20">
-              <Trophy size={20} color="#FFD700" />
-            </View>
-            {badgeCount > 0 && (
-              <View className="absolute -right-1 -top-1 h-5 w-5 items-center justify-center rounded-full bg-[#FFD700]">
-                <Text className="text-xs font-bold text-black">{badgeCount}</Text>
+          {/* Achievements Icon - v1.4+ */}
+          {FEATURES.BADGES && (
+            <TouchableOpacity onPress={() => router.push('/badges')} className="relative">
+              <View className="h-10 w-10 items-center justify-center rounded-full bg-[#FFD700]/20">
+                <Trophy size={20} color="#FFD700" />
               </View>
-            )}
-          </TouchableOpacity>
+              {badgeCount > 0 && (
+                <View className="absolute -right-1 -top-1 h-5 w-5 items-center justify-center rounded-full bg-[#FFD700]">
+                  <Text className="text-xs font-bold text-black">{badgeCount}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          )}
 
-          <NotificationBell />
+          {/* Notifications - v1.2+ */}
+          {FEATURES.NOTIFICATIONS && <NotificationBell />}
+
+          {/* Profile Icon - Always visible */}
           <TouchableOpacity
             onPress={() => router.push('/profile')}
             className="h-12 w-12 items-center justify-center overflow-hidden rounded-full"
